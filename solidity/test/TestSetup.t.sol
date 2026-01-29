@@ -11,7 +11,7 @@ import { PowersErrors } from "../src/interfaces/PowersErrors.sol";
 import { PowersTypes } from "../src/interfaces/PowersTypes.sol";
 import { PowersEvents } from "../src/interfaces/PowersEvents.sol";
 import { Configurations } from "../script/Configurations.s.sol";
-import { TestConstitutions } from "./TestConstitutions.sol";
+import { TestConstitutions } from "./TestConstitutions.sol"; 
 import { console2 } from "forge-std/console2.sol";
 
 // deploy scripts
@@ -540,9 +540,9 @@ abstract contract TestSetupExecutive is BaseSetup {
 }
 
 abstract contract TestSetupIntegrations is BaseSetup {
-    function setUpVariables() public override {
-        // these tests include interactions with the Safe protocol. To run them, uncomment the fork selection line below.
-        // vm.selectFork(sepoliaFork);
+    function setUpVariables() public override { 
+        // vm.skip(true);
+        vm.selectFork(optSepoliaFork); // options: sepoliaFork, optSepoliaFork, arbSepoliaFork
 
         super.setUpVariables();
 
@@ -558,6 +558,7 @@ abstract contract TestSetupIntegrations is BaseSetup {
             config.maxReturnDataLength,
             config.maxExecutionsLength
         );
+        erc20Taxed = new Erc20Taxed();
         vm.stopPrank();
 
         // initiate multi constitution
@@ -566,7 +567,8 @@ abstract contract TestSetupIntegrations is BaseSetup {
             address(simpleGovernor),
             address(powersFactory),
             address(soulbound1155),
-            address(electionList)
+            address(electionList),
+            address(erc20Taxed)
         );
         (PowersTypes.MandateInitData[] memory mandateInitData2_) =
             testConstitutions.integrationsTestConstitution2(address(daoMock), address(allowedTokens));
@@ -773,7 +775,7 @@ abstract contract TestSetupGovernorProtocolFlow is BaseSetup {
 abstract contract TestSetupSafeProtocolFlow is BaseSetup {
     function setUpVariables() public override {
         vm.skip(false);
-        vm.selectFork(arbSepoliaFork); // currently running on mainnet sepolia fork.
+        vm.selectFork(arbSepoliaFork); // options: sepoliaFork, optSepoliaFork, arbSepoliaFork
         super.setUpVariables();
 
         // initiate multi constitution

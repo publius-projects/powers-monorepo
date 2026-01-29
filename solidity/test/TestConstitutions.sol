@@ -11,6 +11,7 @@ import { ReturnDataMock } from "@mocks/ReturnDataMock.sol";
 import { IPowersFactory } from "@src/helpers/PowersFactory.sol";
 import { ISoulbound1155 } from "@src/helpers/Soulbound1155.sol";
 import { ElectionList } from "@src/helpers/ElectionList.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract TestConstitutions is Test {
     uint256[] milestoneDisbursements;
@@ -693,7 +694,8 @@ contract TestConstitutions is Test {
         address simpleGovernor,
         address powersFactory,
         address soulbound1155,
-        address electionList
+        address electionList, 
+        address erc20Taxed
     ) external returns (PowersTypes.MandateInitData[] memory mandateInitData) {
         delete constitution; // restart constitution array
 
@@ -735,18 +737,58 @@ contract TestConstitutions is Test {
         );
         delete conditions;
 
-        // execute action from safe.
-        inputParams = new string[](3);
-        inputParams[0] = "calldata SafeFunctionTarget";
-        inputParams[1] = "bytes4 SafeFunctionSelector";
-        inputParams[2] = "calldata SafeFunctionCalldata";
+        // set sub-DAO as delegate of safe.
+        inputParams = new string[](1);
+        inputParams[0] = "address sub-DAO";
 
+        conditions.allowedRole = type(uint256).max; // Public 
+        primeConstitution.push(
+            PowersTypes.MandateInitData({
+                nameDescription: "Assign Delegate status: Assign delegate status at Safe treasury to a sub-DAO",
+                targetMandate: initialisePowers.getInitialisedAddress("Safe_ExecTransaction"),
+                config: abi.encode( 
+                    inputParams,
+                    bytes4(0xe71bdf41), // addDelegate(address)   
+                    config.safeAllowanceModule
+                ),
+                conditions: conditions
+            })
+        );
+        delete conditions;
+
+        // setup allowance for an erc20 token.
+        inputParams = new string[](5);
+        inputParams[0] = "address Sub-DAO";
+        inputParams[1] = "address Token";
+        inputParams[2] = "uint96 allowanceAmount";
+        inputParams[3] = "uint16 resetTimeMin";
+        inputParams[4] = "uint32 resetBaseMin";
+        conditions.allowedRole = type(uint256).max; // Public
+        constitution.push(
+            PowersTypes.MandateInitData({
+                nameDescription: "Set Allowance: Execute and set allowance for a sub-DAO.",
+                targetMandate: getInitialisedAddress("SafeAllowance_Action"),
+                config: abi.encode(
+                    inputParams,
+                    bytes4(0xbeaeb388), // == AllowanceModule.setAllowance.selector (because the contracts are compiled with different solidity versions we cannot reference the contract directly here)
+                    config.safeAllowanceModule
+                ),
+                conditions: conditions // everythign zero == Only admin can call directly
+            })
+        );
+        delete conditions;
+
+        // execute action from safe.
+        inputParams = new string[](2);
+        inputParams[0] = "address To";
+        inputParams[1] = "uint256 Value";
+       
         conditions.allowedRole = 1;
         constitution.push(
             PowersTypes.MandateInitData({
-                nameDescription: "Execute an action from the Safe treasury.",
+                nameDescription: "Transfer tokens from the Safe treasury.",
                 targetMandate: getInitialisedAddress("Safe_ExecTransaction"),
-                config: abi.encode(inputParams, config.safeL2Canonical),
+                config: abi.encode(inputParams, IERC20.transfer.selector, erc20Taxed),
                 conditions: conditions
             })
         );

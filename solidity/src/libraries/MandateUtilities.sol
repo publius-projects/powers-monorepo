@@ -144,4 +144,5 @@ library MandateUtilities {
         }
         revert("Invalid hex character");
     }
+ 
 }

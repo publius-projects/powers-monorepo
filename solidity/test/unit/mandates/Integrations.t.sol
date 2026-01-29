@@ -210,8 +210,9 @@ contract SafeAllowanceTest is TestSetupIntegrations {
 
         // IDs from TestConstitutions
         safeAllowanceMandateId_Safe_Setup = 3;
-        safeAllowanceMandateId_ExecuteActionFromSafe = 4;
-        safeAllowanceMandateId_SetAllowance = 5;
+        safeAllowanceMandateId_SetAllowance = 4;
+        safeAllowanceMandateId_ExecuteActionFromSafe = 5;
+    
         // On daoMockChild1
         safeAllowanceTransferId = 1;
 

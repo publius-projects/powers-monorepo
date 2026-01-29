@@ -16,8 +16,8 @@ library Checks {
     ////////////////////////////////////////////////////////////
     //                 ERRORS                                 //
     ////////////////////////////////////////////////////////////
-    error Checks__ParentMandateNotCompleted();
-    error Checks__ParentMandateBlocksCompletion();
+    error Checks__ParentMandateNotFulfilled();
+    error Checks__ParentMandateBlocksFulfillment();
     error Checks__ExecutionGapTooSmall();
     error Checks__ProposalNotSucceeded();
     error Checks__DeadlineNotPassed();
@@ -44,7 +44,7 @@ library Checks {
             PowersTypes.ActionState stateLog = Powers(payable(powers))
                 .getActionState(computeActionId(conditions.needFulfilled, mandateCalldata, nonce));
             if (stateLog != PowersTypes.ActionState.Fulfilled) {
-                revert Checks__ParentMandateNotCompleted();
+                revert Checks__ParentMandateNotFulfilled();
             }
         }
 
@@ -53,7 +53,7 @@ library Checks {
             PowersTypes.ActionState stateLog = Powers(payable(powers))
                 .getActionState(computeActionId(conditions.needNotFulfilled, mandateCalldata, nonce));
             if (stateLog == PowersTypes.ActionState.Fulfilled) {
-                revert Checks__ParentMandateBlocksCompletion();
+                revert Checks__ParentMandateBlocksFulfillment();
             }
         }
 

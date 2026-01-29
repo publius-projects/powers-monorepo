@@ -285,7 +285,7 @@ update-builds:
 ###############################
 
 # Deployment arguments for different networks
-ANVIL_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY_0) --broadcast --ffi -vv
+ANVIL_DEPLOY_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY_0) --broadcast --ffi -vv
 SEPOLIA_DEPLOY_ARGS := --rpc-url $(SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 11155111 --verify --ffi -vv
 ARB_SEPOLIA_DEPLOY_ARGS := --rpc-url $(ARB_SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 421614 --verify --ffi -vv 
 OPT_SEPOLIA_DEPLOY_ARGS := --rpc-url $(OPT_SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 11155420 --verify --ffi -vv
@@ -294,13 +294,15 @@ OPT_SEPOLIA_DEPLOY_ARGS := --rpc-url $(OPT_SEPOLIA_RPC_URL) --account dev_3 --se
 fork-anvil :
 	anvil --fork-url $(SEPOLIA_RPC_URL) --block-time 12  
 
+deploy-allowance-module :; forge script script/DeployAllowanceModule.s.sol:DeployAllowanceModule $(ARB_SEPOLIA_DEPLOY_ARGS) 
+
 # Deploy an organisation to a single chain. 
-# Adjust the ANVIL_ARGS, SEPOLIA_DEPLOY_ARGS, OPT_SEPOLIA_DEPLOY_ARGS, ARB_SEPOLIA_DEPLOY_ARGS variables above to change network and deployment settings.
+# Adjust the ANVIL_DEPLOY_ARGS, SEPOLIA_DEPLOY_ARGS, OPT_SEPOLIA_DEPLOY_ARGS, ARB_SEPOLIA_DEPLOY_ARGS variables above to change network and deployment settings.
 # Adjust the script path and contract name below to change which organisation is deployed.
 # NOTE: all mandates and helper contracts will be deployed as part of the organisation deployment script. 
 deploy-organisation : 
 	@echo "Deploying organisation..."
-	forge script script/deployOrganisations/CulturalStewardsDAO.s.sol:CulturalStewardsDAO $(SEPOLIA_DEPLOY_ARGS)
+	forge script script/deployOrganisations/CulturalStewardsDAO.s.sol:CulturalStewardsDAO $(OPT_SEPOLIA_DEPLOY_ARGS)
 
 initialise-powers :
 	@echo "Initialising Powers contract..."
@@ -310,14 +312,6 @@ initialise-powers :
 # sepoliaVerifyContract :; forge verify-contract --etherscan-api-key $(ETHERSCAN_API_KEY) --chain 11155111 --verifier etherscan 0x05c0379565ef0ebb1bD21C0Ab463ca5CE5211D3A src/Powers.sol:Powers --watch
 optSepoliaVerifyContract :; forge verify-contract --etherscan-api-key $(ETHERSCAN_API_KEY) --chain 11155420 --compiler-version 0.8.26 --num-of-optimizations 600 --verifier etherscan 0x6f8c6ac58a467836D85548Bf2Fef473D5efcFeA4 src/helpers/TreasuryPools.sol:TreasuryPools --watch
 arbSepoliaVerifyContract :; forge verify-contract --etherscan-api-key $(ETHERSCAN_API_KEY) --chain 421614 --compiler-version 0.8.26 --num-of-optimizations 600 --verifier etherscan 0xb1fe867eE7919887EB381c4626bdbAe003969683 src/helpers/TreasuryPools.sol:TreasuryPools --watch
-
-# Deploying Safe with Allowance Module and Mandate Packages
-# Deploy Safe with Allowance Module
-deploy-safe-allowance-op-sepolia :; forge script script/InitialiseSafe.s.sol:InitialiseSafe --sig "run(address)" 0x9a59c253957b09f1d80289febe1eb65442f937c2 $(OPT_SEPOLIA_DEPLOY_ARGS)
-deploy-safe-allowance-sepolia :; forge script script/InitialiseSafe.s.sol:InitialiseSafe --sig "run(address)" 0x9a59c253957b09f1d80289febe1eb65442f937c2 $(SEPOLIA_DEPLOY_ARGS)
-
-deploy-allowance-module-op-sepolia :; forge script script/DeployAllowanceModule.s.sol:DeployAllowanceModule $(OPT_SEPOLIA_DEPLOY_ARGS) 
-deploy-allowance-module-arb-sepolia :; forge script script/DeployAllowanceModule.s.sol:DeployAllowanceModule $(ARB_SEPOLIA_DEPLOY_ARGS) 
 
 deploy-mandatePackages-sepolia :; forge script script/DeployMandatePackages.s.sol:DeployMandatePackages $(SEPOLIA_DEPLOY_ARGS)
 deploy-mandatePackages-op-sepolia :; forge script script/DeployMandatePackages.s.sol:DeployMandatePackages $(OPT_SEPOLIA_DEPLOY_ARGS)

@@ -9,9 +9,6 @@ import { console2 } from "forge-std/console2.sol";
 import { SimpleErc20Votes } from "@mocks/SimpleErc20Votes.sol";
 
 contract SafeProtocolFlowTest is TestSetupSafeProtocolFlow {
-    // £todo: there is an architectural problem with the setup of this test.
-    // CONTINUE HERE AND FIX .
-
     function testSafeProtocolFlow() public {
         // Check skip condition from setup (Safe Allowance Module must be configured)
         console2.log("Chain Id: ", block.chainid);

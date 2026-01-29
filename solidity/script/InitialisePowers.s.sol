@@ -27,6 +27,7 @@ import { AssignExternalRole } from "@src/mandates/electoral/AssignExternalRole.s
 import { RoleByTransaction } from "@src/mandates/electoral/RoleByTransaction.sol";
 import { DelegateTokenSelect } from "@src/mandates/electoral/DelegateTokenSelect.sol";
 import { Nominate } from "@src/mandates/electoral/Nominate.sol";
+import { RevokeInactiveAccounts } from "@src/mandates/electoral/RevokeInactiveAccounts.sol";
 
 // Executive mandates
 import { PresetActions_Single } from "@src/mandates/executive/PresetActions_Single.sol";
@@ -41,6 +42,8 @@ import { BespokeAction_OnOwnPowers } from "@src/mandates/executive/BespokeAction
 import { BespokeAction_Advanced } from "@src/mandates/executive/BespokeAction_Advanced.sol";
 import { BespokeAction_Simple } from "@src/mandates/executive/BespokeAction_Simple.sol";
 import { PowersAction_Simple } from "@src/mandates/executive/PowersAction_Simple.sol";
+import { PowersAction_Flexible } from "@src/mandates/executive/PowersAction_Flexible.sol";
+import { Mandates_Prepackaged } from "@src/mandates/executive/Mandates_Prepackaged.sol";
 
 // Integration Mandates
 import { Governor_CreateProposal } from "@src/mandates/integrations/Governor_CreateProposal.sol";
@@ -60,6 +63,7 @@ import { ElectionList_Tally } from "@src/mandates/integrations/ElectionList_Tall
 import { ElectionList_Vote } from "@src/mandates/integrations/ElectionList_Vote.sol";
 import { ElectionList_CreateVoteMandate } from "@src/mandates/integrations/ElectionList_CreateVoteMandate.sol";
 import { ElectionList_CleanUpVoteMandate } from "@src/mandates/integrations/ElectionList_CleanUpVoteMandate.sol";
+
 
 // singleton Helper contracts
 import { ElectionList } from "@src/helpers/ElectionList.sol";
@@ -182,6 +186,10 @@ contract InitialisePowers is Script {
         creationCodes.push(type(Nominate).creationCode);
         constructorArgs.push(abi.encode("Nominate"));
 
+        names.push("RevokeInactiveAccounts");
+        creationCodes.push(type(RevokeInactiveAccounts).creationCode);
+        constructorArgs.push(abi.encode("RevokeInactiveAccounts"));
+
         //////////////////////////////////////////////////////////////////////////
         //                       Executive Mandates                             //
         //////////////////////////////////////////////////////////////////////////
@@ -232,6 +240,14 @@ contract InitialisePowers is Script {
         names.push("BespokeAction_OnOwnPowers");
         creationCodes.push(type(BespokeAction_OnOwnPowers).creationCode);
         constructorArgs.push(abi.encode("BespokeAction_OnOwnPowers"));
+
+        names.push("PowersAction_Flexible");
+        creationCodes.push(type(PowersAction_Flexible).creationCode);
+        constructorArgs.push(abi.encode("PowersAction_Flexible"));
+
+        names.push("Mandates_Prepackaged");
+        creationCodes.push(type(Mandates_Prepackaged).creationCode);
+        constructorArgs.push(abi.encode("Mandates_Prepackaged"));
 
         //////////////////////////////////////////////////////////////////////////
         //                      Integrations Mandates                           //

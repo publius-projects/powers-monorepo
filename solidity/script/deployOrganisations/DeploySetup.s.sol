@@ -4,7 +4,6 @@ pragma solidity 0.8.26;
 // scripts
 import { Script } from "forge-std/Script.sol";
 import { console2 } from "forge-std/console2.sol";
-import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 
 // interfaces
 import { PowersTypes } from "@src/interfaces/PowersTypes.sol";
@@ -24,6 +23,8 @@ contract DeploySetup is Script {
     function minutesToBlocks(uint256 quantityMinutes, uint256 blocksPerHour) public pure returns (uint32) {
         return uint32((quantityMinutes * blocksPerHour) / 60);
     }
+
+    
 
     // this function takes
     // as param a long list of MandateInitData,
@@ -60,7 +61,17 @@ contract DeploySetup is Script {
 
             // Deploy ReformMandate_Static with the batch
             bytes memory constructorArgs = abi.encode(batch);
-            address deployedAddress = deploy(type(ReformMandate_Static).creationCode, constructorArgs);
+            bytes32 salt = bytes32(abi.encodePacked(constructorArgs));
+            address deployedAddress = vm.computeCreate2Address(
+                salt,
+                keccak256(abi.encodePacked(type(ReformMandate_Static).creationCode, constructorArgs))
+            );
+
+            if (deployedAddress.code.length == 0) {
+                vm.startBroadcast();
+                new ReformMandate_Static{salt: salt}(batch);
+                vm.stopBroadcast();
+            }
 
             // Create MandateInitData for the package
             // Link sequentially using needFulfilled
@@ -81,17 +92,4 @@ contract DeploySetup is Script {
         }
     }
 
-    function deploy(bytes memory creationCode, bytes memory constructorArg) internal returns (address) {
-        bytes32 salt = bytes32(abi.encodePacked(constructorArg));
-        bytes memory deploymentData = abi.encodePacked(creationCode, constructorArg);
-        address computedAddress = Create2.computeAddress(salt, keccak256(deploymentData));
-
-        if (computedAddress.code.length == 0) {
-            vm.startBroadcast();
-            address deployedAddress = Create2.deploy(0, salt, deploymentData);
-            vm.stopBroadcast();
-            return deployedAddress;
-        }
-        return computedAddress;
-    }
 }

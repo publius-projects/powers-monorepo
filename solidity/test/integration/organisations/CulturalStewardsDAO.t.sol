@@ -57,8 +57,6 @@ contract TestableCulturalStewardsDAO is CulturalStewardsDAO {
 contract CulturalStewardsDAO_IntegrationTest is Test {
     struct Mem {
         address admin;
-        uint16 initialSetupMandateIdPrime;
-        uint16 initialSetupMandateIdDigital;
         uint16 setDelegateMandateId;
         uint16 initiateIdeasMandateId;
         uint16 createIdeasMandateId;
@@ -131,36 +129,21 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         safeAllowanceModule = deployScript.getSafeAllowanceModule();
         config = deployScript.getConfig();
 
-        // Unpack mandates - Prime
-        mem.constitutionLength = deployScript.getPrimeConstitutionLength();
-        mem.packageSize = 10;
-        mem.numPackages = (mem.constitutionLength + mem.packageSize - 1) / mem.packageSize;
-
-        // Identify Mandate IDs
-        mem.initialSetupMandateIdPrime = uint16(mem.numPackages + 1);
-        console.log("Executing Initial Setup Prime", mem.initialSetupMandateIdPrime);
-
         // Execute "Initial Setup"
-        primeDAO.request(mem.initialSetupMandateIdPrime, "", 0, "");
-
-        // Unpack mandates - Digital
-        mem.constitutionLength = deployScript.getDigitalConstitutionLength();
-        mem.packageSize = 10;
-        mem.numPackages = (mem.constitutionLength + mem.packageSize - 1) / mem.packageSize;
+        console.log("Executing Initial Setup Prime");
+        primeDAO.request(1, "", 0, "");
 
         // Identify Mandate IDs
-        mem.initialSetupMandateIdDigital = uint16(mem.numPackages + 1);
-        console.log("Executing Initial Setup Digital", mem.initialSetupMandateIdDigital);
-
+        console.log("Executing Initial Setup Digital");
         digitalSubDAO = deployScript.getDigitalSubDAO();
-        digitalSubDAO.request(mem.initialSetupMandateIdDigital, "", 0, "");
+        digitalSubDAO.request(1, "", 0, "");
 
         mem.admin = primeDAO.getRoleHolderAtIndex(1, 0);
         console.log("Admin address: %s", mem.admin);
 
         mem.digitalSubDAOAddr = address(digitalSubDAO);
         vm.prank(mem.digitalSubDAOAddr);
-        digitalSubDAO.assignRole(2, cedars); // Assign Role 2 to Cedars AT THE DIGITAL DAO. (so that cedars can act there as well as convener. )
+        digitalSubDAO.assignRole(2, cedars); // Assign Role 2 to Cedars AT THE DIGITAL DAO. (so that cedars can act there as convener as well.)
     }
 
     function test_InitialSetup() public {
@@ -192,10 +175,10 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
 
     function test_CreateAndRevokeIdeasSubDAO() public {
         // 5. Define Mandate IDs
-        mem.initiateIdeasMandateId = mem.initialSetupMandateIdPrime + 1;
-        mem.createIdeasMandateId = mem.initialSetupMandateIdPrime + 2;
-        mem.assignRoleMandateId = mem.initialSetupMandateIdPrime + 3;
-        mem.revokeIdeasMandateId = mem.initialSetupMandateIdPrime + 5;
+        mem.initiateIdeasMandateId = 2;
+        mem.createIdeasMandateId = 3;
+        mem.assignRoleMandateId = 4;
+        mem.revokeIdeasMandateId = 6;
 
         // --- Step 1: Initiate Ideas sub-DAO (Members) ---
         vm.startPrank(mem.admin);
@@ -247,16 +230,8 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         // --- Verify Creation ---
         mem.returnData = primeDAO.getActionReturnData(mem.actionId, 0);
         mem.ideasSubDAOAddress = abi.decode(mem.returnData, (address));
-        console.log("Ideas sub-DAO created at: %s", mem.ideasSubDAOAddress);
-
-        // Unpack Ideas sub-DAO
-        mem.constitutionLength = deployScript.getIdeasConstitutionLength();
-        mem.numPackages = (mem.constitutionLength + mem.packageSize - 1) / mem.packageSize;
         Powers ideasSubDAO = Powers(mem.ideasSubDAOAddress);
-        console.log("Unpacking Ideas sub-DAO (%s packages)...", mem.numPackages);
-        for (uint256 i = 1; i <= mem.numPackages; i++) {
-            ideasSubDAO.request(uint16(i), "", 0, "");
-        }
+        console.log("Ideas sub-DAO created at: %s", mem.ideasSubDAOAddress);
 
         mem.roleSince = primeDAO.hasRoleSince(mem.ideasSubDAOAddress, 4);
         assertTrue(mem.roleSince > 0, "Ideas sub-DAO should have Role 4");
@@ -290,14 +265,14 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
 
     function test_CreateAndRevokePhysicalSubDAO() public {
         // Mandate IDs
-        mem.initiatePhysicalId = mem.initialSetupMandateIdPrime + 6;
-        mem.createPhysicalId = mem.initialSetupMandateIdPrime + 7;
-        mem.assignRoleId = mem.initialSetupMandateIdPrime + 8;
-        mem.assignAllowanceId = mem.initialSetupMandateIdPrime + 9;
-        mem.revokeRoleId = mem.initialSetupMandateIdPrime + 11;
-        mem.revokeAllowanceId = mem.initialSetupMandateIdPrime + 12;
+        mem.initiatePhysicalId = 7;
+        mem.createPhysicalId = 8;
+        mem.assignRoleId = 9;
+        mem.assignAllowanceId = 10;
+        mem.revokeRoleId = 12;
+        mem.revokeAllowanceId = 13;
 
-        // NB: incomplete test. It does not use the call at ideasSubDAO to request physical DAO creation. See test_JoinParentDAO for full implmentation.
+        // NB: incomplete test. It does not use the call at ideasSubDAO to request physical DAO creation. See test_JoinPrimeDAO for full implmentation.
         vm.startPrank(mem.admin);
 
         // --- Step 1: Initiate Physical sub-DAO ---
@@ -318,16 +293,8 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         // Get address
         bytes memory returnData = primeDAO.getActionReturnData(mem.actionId, 0);
         mem.physicalSubDAOAddress = abi.decode(returnData, (address));
-        console.log("Physical sub-DAO created at: %s", mem.physicalSubDAOAddress);
-
-        // Unpack Physical sub-DAO
-        mem.constitutionLength = deployScript.getPhysicalConstitutionLength();
-        mem.numPackages = (mem.constitutionLength + mem.packageSize - 1) / mem.packageSize;
         Powers physicalSubDAO = Powers(mem.physicalSubDAOAddress);
-        console.log("Unpacking Physical sub-DAO (%s packages)...", mem.numPackages);
-        for (uint256 i = 1; i <= mem.numPackages; i++) {
-            physicalSubDAO.request(uint16(i), "", 0, "");
-        }
+        console.log("Physical sub-DAO created at: %s", mem.physicalSubDAOAddress);
 
         // --- Step 3: Assign Role ---
         console.log("Assigning Role...");
@@ -380,15 +347,15 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
     function test_AddAllowances() public {
         // Define Mandate IDs relative to Initial Setup
         // Based on script/deployOrganisations/CulturalStewardsDAO.s.sol
-        mem.initiatePhysicalId = mem.initialSetupMandateIdPrime + 6;
-        mem.createPhysicalId = mem.initialSetupMandateIdPrime + 7;
-        mem.assignRoleId = mem.initialSetupMandateIdPrime + 8;
-        mem.assignDelegateId = mem.initialSetupMandateIdPrime + 9;
+        mem.initiatePhysicalId = 7;
+        mem.createPhysicalId = 8;
+        mem.assignRoleId = 9;
+        mem.assignDelegateId = 10;
         // ... (skips)
-        mem.requestPhysicalAllowanceId = mem.initialSetupMandateIdPrime + 14;
-        mem.grantPhysicalAllowanceId = mem.initialSetupMandateIdPrime + 15;
-        mem.requestDigitalAllowanceId = mem.initialSetupMandateIdPrime + 16;
-        mem.grantDigitalAllowanceId = mem.initialSetupMandateIdPrime + 17;
+        mem.requestPhysicalAllowanceId = 15;
+        mem.grantPhysicalAllowanceId = 16;
+        mem.requestDigitalAllowanceId = 17;
+        mem.grantDigitalAllowanceId = 18;
 
         // --- PREP: Create Physical sub-DAO first ---
         vm.startPrank(mem.admin);
@@ -497,8 +464,8 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         // --- Grant Allowance to Digital sub-DAO (Prime DAO side) ---
         // Reusing logic from test_AddAllowances
         // Mandate IDs
-        mem.requestDigitalAllowanceId = mem.initialSetupMandateIdPrime + 16;
-        mem.grantDigitalAllowanceId = mem.initialSetupMandateIdPrime + 17;
+        mem.requestDigitalAllowanceId = 17;
+        mem.grantDigitalAllowanceId = 18;
 
         mem.token = address(0); // ETH
         mem.amount = 1 ether;
@@ -554,7 +521,7 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         console.log("Submitting receipt...");
         // Propose
         mem.nonce++;
-        digitalSubDAO.request(uint16(mem.initialSetupMandateIdDigital + 1), paymentParams, mem.nonce, "");
+        digitalSubDAO.request(uint16(4), paymentParams, mem.nonce, "");
         vm.stopPrank();
 
         vm.roll(block.number + 1); // Advance block to avoid same-block issues
@@ -564,13 +531,13 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         vm.startPrank(cedars);
         console.log("OK'ing receipt...");
         // Request (Condition: Role 2. No voting period set).
-        digitalSubDAO.request(uint16(mem.initialSetupMandateIdDigital + 2), paymentParams, mem.nonce, "");
+        digitalSubDAO.request(uint16(5), paymentParams, mem.nonce, "");
         vm.stopPrank();
 
         // Step 3: Approve Payment (Conveners)
         vm.startPrank(cedars);
         console.log("Approving payment...");
-        mem.actionId = digitalSubDAO.propose(uint16(mem.initialSetupMandateIdDigital + 3), paymentParams, mem.nonce, "");
+        mem.actionId = digitalSubDAO.propose(uint16(6), paymentParams, mem.nonce, "");
 
         // Vote (Quorum 50%, SucceedAt 67%)
         // Cedars is likely the only role holder?
@@ -579,11 +546,11 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         digitalSubDAO.castVote(mem.actionId, 1);
 
         // Wait voting period (5 mins)
-        votingPeriod = digitalSubDAO.getConditions(uint16(mem.initialSetupMandateIdDigital + 3)).votingPeriod;
+        votingPeriod = digitalSubDAO.getConditions(uint16(6)).votingPeriod;
         vm.roll(block.number + votingPeriod + 1);
 
         // Execute
-        digitalSubDAO.request(uint16(mem.initialSetupMandateIdDigital + 3), paymentParams, mem.nonce, "");
+        digitalSubDAO.request(uint16(6), paymentParams, mem.nonce, "");
         vm.stopPrank();
 
         // Verify Payment
@@ -595,19 +562,19 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         assertEq(uint96(allowanceInfo[1]), paymentAmount, "Allowance spent should match payment");
     }
 
-    function test_JoinParentDAO() public {
+    function test_JoinPrimeDAO() public {
         // Define Mandate IDs
-        mem.initiateIdeasMandateId = mem.initialSetupMandateIdPrime + 1;
-        mem.createIdeasMandateId = mem.initialSetupMandateIdPrime + 2;
-        mem.assignRoleMandateId = mem.initialSetupMandateIdPrime + 3;
+        mem.initiateIdeasMandateId = 2;
+        mem.createIdeasMandateId = 3;
+        mem.assignRoleMandateId = 4;
 
-        mem.initiatePhysicalId = mem.initialSetupMandateIdPrime + 6;
-        mem.createPhysicalId = mem.initialSetupMandateIdPrime + 7;
-        mem.assignRoleId = mem.initialSetupMandateIdPrime + 8;
-        mem.assignDelegateId = mem.initialSetupMandateIdPrime + 9;
+        mem.initiatePhysicalId = 7;
+        mem.createPhysicalId = 8;
+        mem.assignRoleId = 9;
+        mem.assignDelegateId = 10;
 
-        uint16 claimStep1Id = mem.initialSetupMandateIdPrime + 23;
-        uint16 claimStep2Id = mem.initialSetupMandateIdPrime + 24;
+        uint16 claimStep1Id = 24;
+        uint16 claimStep2Id = 25;
 
         // --- Step 1: Create Ideas sub-DAO ---
         vm.startPrank(mem.admin);
@@ -628,17 +595,8 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
 
         // Get address
         mem.ideasSubDAOAddress = abi.decode(primeDAO.getActionReturnData(mem.actionId, 0), (address));
-        console.log("Ideas sub-DAO created at: %s", mem.ideasSubDAOAddress);
-
-        // Unpack Ideas sub-DAO
-        mem.constitutionLength = deployScript.getIdeasConstitutionLength();
-        mem.numPackages = (mem.constitutionLength + mem.packageSize - 1) / mem.packageSize;
         Powers ideasSubDAO = Powers(mem.ideasSubDAOAddress);
-        console.log("Unpacking Ideas sub-DAO (%s packages)...", mem.numPackages);
-        for (uint256 i = 1; i <= mem.numPackages; i++) {
-            ideasSubDAO.request(uint16(i), "", 0, "");
-        }
-        uint256 ideasNumPackages = mem.numPackages;
+        console.log("Ideas sub-DAO created at: %s", mem.ideasSubDAOAddress);
 
         // Assign Role
         primeDAO.request(mem.assignRoleMandateId, mem.params, mem.nonce, "");
@@ -651,13 +609,13 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         vm.prank(mem.ideasSubDAOAddress);
         ideasSubDAO.assignRole(2, cedars); // Assign Role 2 to Cedars at Ideas sub-DAO
 
-        vm.startPrank(cedars); // has role to, also at Ideas sub-DAO
+        vm.startPrank(cedars); // has role two, also at Ideas sub-DAO
         mem.params = abi.encode("Physical sub-DAO", "ipfs://physical");
         mem.nonce = 1;
 
         console.log("Ideas sub-DAO requesting Physical sub-DAO creation...");
-        // Ideas sub-DAO Mandate 3 calls ParentDAO Mandate 11 (Initiate Physical)
-        ideasSubDAO.request(uint16(ideasNumPackages + 3), mem.params, mem.nonce, "");
+        // Ideas sub-DAO Mandate 3 calls PrimeDAO Mandate 11 (Initiate Physical)
+        ideasSubDAO.request(4, mem.params, mem.nonce, "");
 
         // --- Step 2: Create Physical sub-DAO ---
         console.log("Creating Physical sub-DAO...");
@@ -669,17 +627,8 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         // Get address
         bytes memory returnData = primeDAO.getActionReturnData(mem.actionId, 0);
         mem.physicalSubDAOAddress = abi.decode(returnData, (address));
-        console.log("Physical sub-DAO created at: %s", mem.physicalSubDAOAddress);
-
-        // Unpack Physical sub-DAO
-        mem.constitutionLength = deployScript.getPhysicalConstitutionLength();
-        mem.numPackages = (mem.constitutionLength + mem.packageSize - 1) / mem.packageSize;
         Powers physicalSubDAO = Powers(mem.physicalSubDAOAddress);
-        console.log("Unpacking Physical sub-DAO (%s packages)...", mem.numPackages);
-        for (uint256 i = 1; i <= mem.numPackages; i++) {
-            physicalSubDAO.request(uint16(i), "", 0, "");
-        }
-        uint256 physicalNumPackages = mem.numPackages;
+        console.log("Physical sub-DAO created at: %s", mem.physicalSubDAOAddress);
 
         // --- Step 3: Assign Role ---
         console.log("Assigning Role...");
@@ -706,7 +655,7 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         for (uint256 i = 0; i < 20; i++) {
             mem.nonce++;
             nonces[i] = mem.nonce;
-            ideasSubDAO.request(uint16(ideasNumPackages + 2), mem.params, mem.nonce, "");
+            ideasSubDAO.request(uint16(3), mem.params, mem.nonce, "");
             vm.roll(block.number + deployScript.minutesToBlocks(6, config.BLOCKS_PER_HOUR)); // Advance 6 minutes between mints
         }
 
@@ -720,10 +669,10 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         mem.params = abi.encode(user);
 
         // Mandate 2: Mint POAP
-        physicalSubDAO.request(uint16(physicalNumPackages + 2), mem.params, mem.nonce, "");
+        physicalSubDAO.request(3, mem.params, mem.nonce, "");
         nonces[20] = mem.nonce;
         mem.nonce++;
-        physicalSubDAO.request(uint16(physicalNumPackages + 2), mem.params, mem.nonce, "");
+        physicalSubDAO.request(3, mem.params, mem.nonce, "");
         nonces[21] = mem.nonce;
         vm.stopPrank();
 
@@ -759,8 +708,8 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         // 2. Grant Allowance for Tokens
         SimpleErc20Votes tokenToSweep = new SimpleErc20Votes();
 
-        mem.requestDigitalAllowanceId = mem.initialSetupMandateIdPrime + 16;
-        mem.grantDigitalAllowanceId = mem.initialSetupMandateIdPrime + 17;
+        mem.requestDigitalAllowanceId = 17;
+        mem.grantDigitalAllowanceId = 18;
         mem.amount = 1000 ether; // Large allowance
         mem.resetTime = 0;
         mem.resetBase = 0;
@@ -797,7 +746,7 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         console.log("Executing Transfer Tokens to Treasury...");
 
         mem.nonce = 500;
-        digitalSubDAO.request(uint16(mem.initialSetupMandateIdDigital + 7), "", mem.nonce, "");
+        digitalSubDAO.request(uint16(10), "", mem.nonce, "");
         vm.stopPrank();
 
         // 5. Verify
@@ -807,10 +756,10 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
 
     function test_IdeasSubDAO_Election() public {
         // 5. Define Mandate IDs
-        mem.initiateIdeasMandateId = mem.initialSetupMandateIdPrime + 1;
-        mem.createIdeasMandateId = mem.initialSetupMandateIdPrime + 2;
-        mem.assignRoleMandateId = mem.initialSetupMandateIdPrime + 3;
-        mem.revokeIdeasMandateId = mem.initialSetupMandateIdPrime + 5;
+        mem.initiateIdeasMandateId = 2;
+        mem.createIdeasMandateId = 3;
+        mem.assignRoleMandateId = 4;
+        mem.revokeIdeasMandateId = 6;
 
         // --- Step 1: Initiate Ideas sub-DAO (Members) ---
         vm.startPrank(mem.admin);
@@ -862,19 +811,11 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         // --- Verify Creation ---
         mem.returnData = primeDAO.getActionReturnData(mem.actionId, 0);
         mem.ideasSubDAOAddress = abi.decode(mem.returnData, (address));
+        Powers ideasSubDAO = Powers(mem.ideasSubDAOAddress);
         console.log("Ideas sub-DAO created at: %s", mem.ideasSubDAOAddress);
 
-        // Unpack Ideas sub-DAO
-        mem.constitutionLength = deployScript.getIdeasConstitutionLength();
-        mem.numPackages = (mem.constitutionLength + mem.packageSize - 1) / mem.packageSize;
-        Powers ideasSubDAO = Powers(mem.ideasSubDAOAddress);
-        console.log("Unpacking Ideas sub-DAO (%s packages)...", mem.numPackages);
-        for (uint256 i = 1; i <= mem.numPackages; i++) {
-            ideasSubDAO.request(uint16(i), "", 0, "");
-        }
-        address user = address(0x100);
-
         // --- Setup User (Member) ---
+        address user = address(0x100);
         vm.prank(address(ideasSubDAO)); // Admin of Ideas sub-DAO is itself
         ideasSubDAO.assignRole(1, user);
         assertTrue(ideasSubDAO.hasRoleSince(user, 1) != 0, "User should have Role 1 (Member)");
@@ -883,22 +824,22 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         vm.startPrank(user);
         mem.nonce = 100;
 
-        // 1. Create Election (Mandate 7)
+        // 1. Create Election (Mandate 8)
         console.log("Creating Election...");
         uint48 startBlock = uint48(block.number + 50);
         uint48 endBlock = uint48(block.number + 100);
         bytes memory electionParams = abi.encode("Convener Election", startBlock, endBlock);
 
-        ideasSubDAO.request(uint16(mem.numPackages + 7), electionParams, mem.nonce, "");
+        ideasSubDAO.request(8, electionParams, mem.nonce, "");
 
-        // 2. Nominate (Mandate 8)
+        // 2. Nominate (Mandate 9)
         console.log("Nominating...");
-        ideasSubDAO.request(uint16(mem.numPackages + 8), electionParams, mem.nonce, "");
+        ideasSubDAO.request(9, electionParams, mem.nonce, "");
 
-        // 3. Open Vote (Mandate 10)
+        // 3. Open Vote (Mandate 11)
         console.log("Creating Vote...");
         vm.roll(startBlock + 1); // Advance to start
-        mem.actionId = ideasSubDAO.request(uint16(mem.numPackages + 10), electionParams, mem.nonce, "");
+        mem.actionId = ideasSubDAO.request(11, electionParams, mem.nonce, "");
 
         // Get Vote Mandate ID
         bytes memory returnData = ideasSubDAO.getActionReturnData(mem.actionId, 0);
@@ -913,19 +854,19 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
 
         ideasSubDAO.request(uint16(voteMandateId), mem.params, mem.nonce, "");
 
-        // 5. Tally (Mandate 11)
+        // 5. Tally (Mandate 12)
         console.log("Tallying...");
         vm.roll(endBlock + 1); // Advance to end
-        ideasSubDAO.request(uint16(mem.numPackages + 11), electionParams, mem.nonce, "");
+        ideasSubDAO.request(12, electionParams, mem.nonce, "");
 
-        // 6. Clean Up (Mandate 12)
+        // 6. Clean Up (Mandate 13)
         console.log("Cleaning Up...");
         // Verify Vote Mandate Active
         (,, mem.isActive) = ideasSubDAO.getAdoptedMandate(uint16(voteMandateId));
         assertTrue(mem.isActive, "Vote Mandate should be active before cleanup");
 
         // Clean up needs same calldata and nonce as Open Vote to find the return value
-        ideasSubDAO.request(uint16(mem.numPackages + 12), electionParams, mem.nonce, "");
+        ideasSubDAO.request(13, electionParams, mem.nonce, "");
 
         // Verify Vote Mandate Revoked
         (,, mem.isActive) = ideasSubDAO.getAdoptedMandate(uint16(voteMandateId));

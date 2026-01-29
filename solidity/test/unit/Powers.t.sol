@@ -511,7 +511,7 @@ contract ExecuteTest is TestSetupPowers {
         mandateId = 5; // Execute action - needs mandate 4 completed
         mandateCalldata = abi.encode(true);
 
-        vm.expectRevert(Checks.Checks__ParentMandateNotCompleted.selector);
+        vm.expectRevert(Checks.Checks__ParentMandateNotFulfilled.selector);
         vm.prank(charlotte);
         daoMock.request(mandateId, mandateCalldata, nonce, description);
     }

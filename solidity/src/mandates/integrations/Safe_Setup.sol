@@ -13,7 +13,7 @@ import { ModuleManager } from "lib/safe-smart-account/contracts/base/ModuleManag
 import { SafeProxyFactory } from "lib/safe-smart-account/contracts/proxies/SafeProxyFactory.sol";
 import { IPowers } from "../../interfaces/IPowers.sol";
 
-import { console2 } from "lib/forge-std/src/console2.sol"; // REMOVE AFTER TESTING
+// import { console2 } from "lib/forge-std/src/console2.sol"; // REMOVE AFTER TESTING
 
 contract Safe_Setup is Mandate {
     struct Mem {
