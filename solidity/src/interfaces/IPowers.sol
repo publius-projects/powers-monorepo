@@ -243,6 +243,11 @@ interface IPowers is PowersErrors, PowersEvents, PowersTypes {
         view
         returns (address mandate, bytes32 mandateHash, bool active);
 
+    /// @notice Gets the total number of adopted mandates
+    /// @return mandateCounter The total number of adopted mandates
+    /// @dev Added this function to expose mandateCounter at IPowers interface level.
+    function getMandateCounter() external view returns (uint16 mandateCounter);
+
     /// @notice Gets the latest fulfillment of a mandate
     /// @param mandateId The id of the mandate
     /// @return latestFulfillment The latest fulfillment of the mandate

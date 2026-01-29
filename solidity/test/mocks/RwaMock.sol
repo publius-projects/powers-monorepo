@@ -265,6 +265,8 @@ contract RwaMock is ERC1155 {
         if (bytes(idToName[tokenId]).length == 0) {
             nameToId[name] = tokenId;
             idToName[tokenId] = name;
+        } else {
+            revert("Token already exists");
         }
         return tokenId;
     }

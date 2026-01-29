@@ -8,7 +8,7 @@
 pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 
 // import "forge-std/Test.sol"; // for testing only. remove before deployment.
@@ -62,12 +62,12 @@ contract RoleByRoles is Mandate {
         // step 2: check if the account has any of the needed roles, and if it already has the new role
         mem.hasAnyOfNeededRoles = false;
         for (uint256 i = 0; i < mem.roleIdsNeeded.length; i++) {
-            if (Powers(payable(powers)).hasRoleSince(mem.account, mem.roleIdsNeeded[i]) > 0) {
+            if (IPowers(payable(powers)).hasRoleSince(mem.account, mem.roleIdsNeeded[i]) > 0) {
                 mem.hasAnyOfNeededRoles = true;
                 break;
             }
         }
-        mem.alreadyHasNewRole = Powers(payable(powers)).hasRoleSince(mem.account, mem.newRoleId) > 0;
+        mem.alreadyHasNewRole = IPowers(payable(powers)).hasRoleSince(mem.account, mem.newRoleId) > 0;
 
         // step 3: create empty arrays
         (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
@@ -75,11 +75,11 @@ contract RoleByRoles is Mandate {
         // step 4: set the targets, values and calldatas according to the outcomes at step 2
         if (mem.hasAnyOfNeededRoles && !mem.alreadyHasNewRole) {
             targets[0] = powers;
-            calldatas[0] = abi.encodeWithSelector(Powers.assignRole.selector, mem.newRoleId, mem.account);
+            calldatas[0] = abi.encodeWithSelector(IPowers.assignRole.selector, mem.newRoleId, mem.account);
         }
         if (!mem.hasAnyOfNeededRoles && mem.alreadyHasNewRole) {
             targets[0] = powers;
-            calldatas[0] = abi.encodeWithSelector(Powers.revokeRole.selector, mem.newRoleId, mem.account);
+            calldatas[0] = abi.encodeWithSelector(IPowers.revokeRole.selector, mem.newRoleId, mem.account);
         }
 
         return (actionId, targets, values, calldatas);

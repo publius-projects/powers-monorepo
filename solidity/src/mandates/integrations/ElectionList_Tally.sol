@@ -15,8 +15,8 @@
 pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
-import { Powers } from "../../Powers.sol";
 import { ElectionList } from "../../helpers/ElectionList.sol";
 
 contract ElectionList_Tally is Mandate {
@@ -86,12 +86,12 @@ contract ElectionList_Tally is Mandate {
         }
 
         // Step 2: Get amount of current role holders
-        mem.amountRoleHolders = Powers(payable(powers)).getAmountRoleHolders(mem.roleId);
+        mem.amountRoleHolders = IPowers(payable(powers)).getAmountRoleHolders(mem.roleId);
 
         // Get current role holders from Powers
         mem.currentRoleHolders = new address[](mem.amountRoleHolders);
         for (mem.i = 0; mem.i < mem.amountRoleHolders; mem.i++) {
-            mem.currentRoleHolders[mem.i] = Powers(payable(powers)).getRoleHolderAtIndex(mem.roleId, mem.i);
+            mem.currentRoleHolders[mem.i] = IPowers(payable(powers)).getRoleHolderAtIndex(mem.roleId, mem.i);
         }
 
         // Step 4: Get nominee ranking and select top candidates
@@ -118,7 +118,7 @@ contract ElectionList_Tally is Mandate {
         for (mem.i = 0; mem.i < mem.currentRoleHolders.length; mem.i++) {
             targets[mem.operationIndex] = powers;
             calldatas[mem.operationIndex] =
-                abi.encodeWithSelector(Powers.revokeRole.selector, mem.roleId, mem.currentRoleHolders[mem.i]);
+                abi.encodeWithSelector(IPowers.revokeRole.selector, mem.roleId, mem.currentRoleHolders[mem.i]);
             mem.operationIndex++;
         }
 
@@ -126,7 +126,7 @@ contract ElectionList_Tally is Mandate {
         for (mem.i = 0; mem.i < mem.elected.length; mem.i++) {
             targets[mem.operationIndex] = powers;
             calldatas[mem.operationIndex] =
-                abi.encodeWithSelector(Powers.assignRole.selector, mem.roleId, mem.elected[mem.i]);
+                abi.encodeWithSelector(IPowers.assignRole.selector, mem.roleId, mem.elected[mem.i]);
             mem.operationIndex++;
         }
 

@@ -1,0 +1,7 @@
+- [x] Refactor `solidity/test/unit/mandates/Electoral.t.sol`:
+    - [x] Update `PeerSelectTest` to use dynamic ID and `findMandateAddress`, and inherited `nominees`.
+    - [x] Update `NStrikesRevokesRolesTest` to use dynamic ID and `findMandateAddress`, and inherited `flagActions`.
+    - [x] Update `RoleByRolesTest` to use dynamic ID and `findMandateAddress`.
+    - [x] Update `SelfSelectTest` to use dynamic ID and `findMandateAddress`.
+    - [x] Update `RenounceRoleTest` to use dynamic ID and `findMandateAddress`.
+- [ ] Verify by running tests.

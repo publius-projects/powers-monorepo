@@ -64,10 +64,13 @@ import { ElectionList_Vote } from "@src/mandates/integrations/ElectionList_Vote.
 import { ElectionList_CreateVoteMandate } from "@src/mandates/integrations/ElectionList_CreateVoteMandate.sol";
 import { ElectionList_CleanUpVoteMandate } from "@src/mandates/integrations/ElectionList_CleanUpVoteMandate.sol";
 
-
 // singleton Helper contracts
 import { ElectionList } from "@src/helpers/ElectionList.sol";
 import { Erc20Taxed } from "@mocks/Erc20Taxed.sol"; // though technically not a singleton, deployed here for convenience.
+import { OnchainIdRegistryMock, IdentityRegistryMock, ComplianceRegistryMock, RwaMock } from "@mocks/RwaMock.sol";
+
+// Mandate packages 
+import { CulturalStewards_PaymentSequence } from "@src/packaged-mandates/CulturalStewards_PaymentSequence.sol";
 
 /// @title InitialisePowers
 /// @notice Deploys all library and mandate contracts deterministically using CREATE2
@@ -80,6 +83,11 @@ contract InitialisePowers is Script {
     address[] addresses;
     bytes[] creationCodes;
     bytes[] constructorArgs;
+
+    string[] namePackages;
+    address[] addressPackages;
+    bytes[] creationCodesPackages;
+    bytes[] constructorArgsPackages;
 
     function run() external {
         string memory obj1 = "some key";
@@ -97,6 +105,8 @@ contract InitialisePowers is Script {
         helperConfig = new Configurations();
         config = helperConfig.getConfig();
         outputJson = deployAndRecordMandates(config);
+
+        deployMandatePackages(config); // Deploy mandate packages after individual mandates
 
         string memory finalJson = vm.serializeString(obj1, "mandates", outputJson);
 
@@ -128,10 +138,6 @@ contract InitialisePowers is Script {
         internal
         returns (string memory outputJson)
     {
-        names.push("DUMMY LAW");
-        creationCodes.push(type(PresetActions_Single).creationCode);
-        constructorArgs.push(abi.encode());
-
         //////////////////////////////////////////////////////////////////////////
         //                         Async Mandates                               //
         //////////////////////////////////////////////////////////////////////////
@@ -331,6 +337,22 @@ contract InitialisePowers is Script {
         creationCodes.push(type(Erc20Taxed).creationCode);
         constructorArgs.push(abi.encode());
 
+        names.push("OnchainIdRegistryMock");
+        creationCodes.push(type(OnchainIdRegistryMock).creationCode);
+        constructorArgs.push(abi.encode());
+
+        names.push("IdentityRegistryMock");
+        creationCodes.push(type(IdentityRegistryMock).creationCode);
+        constructorArgs.push(abi.encode());
+
+        names.push("ComplianceRegistryMock");
+        creationCodes.push(type(ComplianceRegistryMock).creationCode);
+        constructorArgs.push(abi.encode());
+
+        names.push("RwaMock");
+        creationCodes.push(type(RwaMock).creationCode);
+        constructorArgs.push(abi.encode());
+
         //////////////////////////////////////////////////////////////////////////
         //                          DEPLOY SEQUENCE                             //
         //////////////////////////////////////////////////////////////////////////
@@ -342,6 +364,33 @@ contract InitialisePowers is Script {
         }
 
         outputJson = vm.serializeUint(obj2, "chainId", uint256(block.chainid));
+    }
+
+    
+
+    //////////////////////////////////////////////////////////////////////////
+    //                    DEPLOYING MANDATE PACKAGES                        //
+    //////////////////////////////////////////////////////////////////////////
+    function deployMandatePackages(Configurations.NetworkConfig memory config_) internal {
+        address[] memory _mandateAddresses; // to be filled with the addresses of mandates included in the package.
+        
+        // CulturalStewards_PaymentSequence
+        _mandateAddresses = new address[](2);
+        _mandateAddresses[0] = getInitialisedAddress("SafeAllowance_Transfer");
+        _mandateAddresses[1] = getInitialisedAddress("StatementOfIntent");
+
+        namePackages.push("CulturalStewards_PaymentSequence");
+        creationCodesPackages.push(type(CulturalStewards_PaymentSequence).creationCode);
+        constructorArgsPackages.push(abi.encode(_mandateAddresses, config_));
+        delete _mandateAddresses;
+
+        //////////////////////////////////////////////////////////////////////////
+        //                          DEPLOY SEQUENCE                             //
+        //////////////////////////////////////////////////////////////////////////
+        for (uint256 i = 0; i < namePackages.length; i++) {
+            address packageAddr = deploy(creationCodesPackages[i], constructorArgsPackages[i]);
+            addressPackages.push(packageAddr); 
+        }
     }
 
     /// @dev Deploys a mandate using CREATE2. Salt is derived from constructor arguments.
@@ -368,7 +417,7 @@ contract InitialisePowers is Script {
         return (names, addresses);
     }
 
-    function getInitialisedAddress(string memory mandateName) external view returns (address) {
+    function getInitialisedAddress(string memory mandateName) public view returns (address) {
         bytes32 mandateHash = keccak256(abi.encodePacked(mandateName));
         for (uint256 i = 0; i < names.length; i++) {
             bytes32 nameHash = keccak256(abi.encodePacked(names[i]));
@@ -377,5 +426,19 @@ contract InitialisePowers is Script {
             }
         }
         revert("Mandate not found");
+    }
+
+    function getInitialisedPackageAddress(string memory packageName) external view returns (address) {
+        bytes32 packageHash = keccak256(abi.encodePacked(packageName));
+        console2.log("Searching for package:", packageName);
+        console2.log("Total packages:", namePackages.length);
+        for (uint256 i = 0; i < namePackages.length; i++) {
+            bytes32 nameHash = keccak256(abi.encodePacked(namePackages[i]));
+            console2.log("Checking package:", namePackages[i]);
+            if (nameHash == packageHash) {
+                return addressPackages[i];
+            }
+        }
+        revert("Package not found");
     }
 }

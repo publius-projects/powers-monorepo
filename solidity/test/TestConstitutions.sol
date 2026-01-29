@@ -348,35 +348,7 @@ contract TestConstitutions is Test {
             })
         );
         delete conditions;
-
-        // ElectionList_Vote - for voting in open elections
-        conditions.allowedRole = type(uint256).max;
-        constitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "ElectionList_Vote: A mandate to vote in open elections.",
-                targetMandate: getInitialisedAddress("ElectionList_Vote"), // ElectionList_Vote (electoral mandate)
-                config: abi.encode(openElection, 1), // ElectionList contract, max votes per voter
-                conditions: conditions
-            })
-        );
-        delete conditions;
-
-        // ElectionList_Tally - for delegate elections
-        conditions.allowedRole = type(uint256).max;
-        constitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "ElectionList_Tally: A mandate to run delegate elections and assign roles based on results.",
-                targetMandate: getInitialisedAddress("ElectionList_Tally"), // ElectionList_Tally (electoral mandate)
-                config: abi.encode(
-                    erc20DelegateElection, // Erc20DelegateElection contract
-                    3, // roleId to be elected
-                    3 // max role holders
-                ),
-                conditions: conditions
-            })
-        );
-        delete conditions;
-
+ 
         // TaxSelect - for tax-based role assignment
         conditions.allowedRole = type(uint256).max;
         constitution.push(
@@ -472,6 +444,21 @@ contract TestConstitutions is Test {
                 nameDescription: "A Single Action: to assign labels to roles. It self-destructs after execution.",
                 targetMandate: getInitialisedAddress("PresetActions_Single"), // presetSingleAction
                 config: abi.encode(targets, values, calldatas),
+                conditions: conditions
+            })
+        );
+        delete conditions;
+
+        conditions.allowedRole = type(uint256).max; // = public role. .
+        constitution.push(
+            PowersTypes.MandateInitData({
+                nameDescription: "RevokeInactiveAccounts: A mandate to revoke roles from inactive accounts.",
+                targetMandate: getInitialisedAddress("RevokeInactiveAccounts"), // presetSingleAction
+                config: abi.encode(
+                    3, // roleId to monitor
+                    1,  // minimum actions in period
+                    5 // number of latest actions to check
+                    ),
                 conditions: conditions
             })
         );
@@ -742,10 +729,10 @@ contract TestConstitutions is Test {
         inputParams[0] = "address sub-DAO";
 
         conditions.allowedRole = type(uint256).max; // Public 
-        primeConstitution.push(
+        constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Assign Delegate status: Assign delegate status at Safe treasury to a sub-DAO",
-                targetMandate: initialisePowers.getInitialisedAddress("Safe_ExecTransaction"),
+                targetMandate: getInitialisedAddress("Safe_ExecTransaction"),
                 config: abi.encode( 
                     inputParams,
                     bytes4(0xe71bdf41), // addDelegate(address)   
@@ -767,7 +754,7 @@ contract TestConstitutions is Test {
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Set Allowance: Execute and set allowance for a sub-DAO.",
-                targetMandate: getInitialisedAddress("SafeAllowance_Action"),
+                targetMandate: getInitialisedAddress("Safe_ExecTransaction"),
                 config: abi.encode(
                     inputParams,
                     bytes4(0xbeaeb388), // == AllowanceModule.setAllowance.selector (because the contracts are compiled with different solidity versions we cannot reference the contract directly here)
@@ -905,7 +892,7 @@ contract TestConstitutions is Test {
         // Members revoke nomination for Executive election. (ID 11)
         mandateCount++;
         conditions.allowedRole = 1; // = Members (should be Executives according to MD, but code says Members)
-        conditions.needFulfilled = 10; // = Nominate for election
+        conditions.needFulfilled = 12; // = Nominate for election
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Revoke nomination for election: any member can revoke their nomination for an election.",
@@ -922,7 +909,7 @@ contract TestConstitutions is Test {
         // Members: Open Vote for election (ID 12)
         mandateCount++;
         conditions.allowedRole = 1; // = Members
-        conditions.needFulfilled = 9; // = Create election
+        conditions.needFulfilled = 11; // = Create election
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Open voting for election: Members can open the vote for an election. This will create a dedicated vote mandate.",
@@ -988,7 +975,7 @@ contract TestConstitutions is Test {
 
         // Safe Allowance Integration //
         // Mandate: Execute Allowance Transaction
-        conditions.allowedRole = 0;
+        conditions.allowedRole = type(uint256).max;
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Execute Allowance Transaction: Execute a transaction from the Safe Treasury within the allowance set.",

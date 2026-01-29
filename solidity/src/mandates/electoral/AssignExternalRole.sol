@@ -3,7 +3,6 @@ pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
-import { Powers } from "../../Powers.sol";
 import { IPowers } from "../../interfaces/IPowers.sol";
 
 contract AssignExternalRole is Mandate {
@@ -48,11 +47,11 @@ contract AssignExternalRole is Mandate {
         (mem.externalPowersAddress, mem.roleId) = abi.decode(getConfig(powers, mandateId), (address, uint256));
 
         // A: Check if the account has the role in the Child contract (current Powers contract)
-        mem.hasRoleInChild = Powers(powers).hasRoleSince(mem.account, mem.roleId);
+        mem.hasRoleInChild = IPowers(powers).hasRoleSince(mem.account, mem.roleId);
         mem.A = mem.hasRoleInChild > 0;
 
         // B: Check if the account has the role in the Parent contract (external Powers contract)
-        mem.hasRoleInParent = Powers(mem.externalPowersAddress).hasRoleSince(mem.account, mem.roleId);
+        mem.hasRoleInParent = IPowers(mem.externalPowersAddress).hasRoleSince(mem.account, mem.roleId);
         mem.B = mem.hasRoleInParent > 0;
 
         // Prepare the action ID

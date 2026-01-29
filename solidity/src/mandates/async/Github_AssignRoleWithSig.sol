@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 // Base contracts
 import { Mandate } from "../../Mandate.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { PowersTypes } from "../../interfaces/PowersTypes.sol";
 
 import { Github_ClaimRoleWithSig } from "./Github_ClaimRoleWithSig.sol";
@@ -67,13 +67,13 @@ contract Github_AssignRoleWithSig is Mandate {
         // Hash the action
         actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
 
-        PowersTypes.Conditions memory conditions = Powers(payable(powers)).getConditions(mandateId);
+        PowersTypes.Conditions memory conditions = IPowers(payable(powers)).getConditions(mandateId);
         if (conditions.needFulfilled == 0) {
             revert("Need fulfilled condition not set");
         }
         // step 2: retrieve address of ClaimRoleByGitCommit
         (mem.addressClaimRole, mem.mandateHashClaimRole, mem.active) =
-            Powers(payable(powers)).getAdoptedMandate(conditions.needFulfilled);
+            IPowers(payable(powers)).getAdoptedMandate(conditions.needFulfilled);
         if (!mem.active) {
             revert("Claim role mandate not active");
         }
@@ -90,7 +90,7 @@ contract Github_AssignRoleWithSig is Mandate {
         targets[0] = mem.addressClaimRole;
         targets[1] = powers;
         calldatas[0] = abi.encodeWithSelector(Github_ClaimRoleWithSig.resetReply.selector, powers, mandateId, caller);
-        calldatas[1] = abi.encodeWithSelector(Powers.assignRole.selector, mem.roleId, caller);
+        calldatas[1] = abi.encodeWithSelector(IPowers.assignRole.selector, mem.roleId, caller);
 
         return (actionId, targets, values, calldatas);
     }

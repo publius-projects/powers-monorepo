@@ -19,7 +19,7 @@ import { ReturnDataMock } from "@mocks/ReturnDataMock.sol";
 contract StatementOfIntentTest is TestSetupExecutive {
     function setUp() public override {
         super.setUp();
-        mandateId = 1; // StatementOfIntent
+        mandateId = findMandateIdInOrg("StatementOfIntent: A mandate to propose actions without execution.", daoMock);
     }
 
     function testStatementOfIntentRequestWorks() public {
@@ -77,7 +77,7 @@ contract OpenActionTest is TestSetupExecutive {
 
     function setUp() public override {
         super.setUp();
-        mandateId = 2; // OpenAction
+        mandateId = findMandateIdInOrg("OpenAction: A mandate to execute any action with full power.", daoMock);
     }
 
     ////////////////////////////////////////////////////////////////
@@ -163,7 +163,7 @@ contract OpenActionTest is TestSetupExecutive {
 contract BespokeAction_SimpleTest is TestSetupExecutive {
     function setUp() public override {
         super.setUp();
-        mandateId = 3; // BespokeAction_Simple
+        mandateId = findMandateIdInOrg("BespokeAction_Simple: A mandate to execute a simple function call.", daoMock);
     }
 
     function testSimpleExecute() public {
@@ -194,7 +194,9 @@ contract BespokeAction_SimpleTest is TestSetupExecutive {
 contract BespokeAction_AdvancedTest is TestSetupExecutive {
     function setUp() public override {
         super.setUp();
-        mandateId = 4; // BespokeAction_Advanced
+        mandateId = findMandateIdInOrg(
+            "BespokeAction_Advanced: A mandate to execute complex function calls with mixed parameters.", daoMock
+        );
     }
 
     function testAdvancedExecute() public {
@@ -224,7 +226,7 @@ contract BespokeAction_AdvancedTest is TestSetupExecutive {
 contract PresetActions_SingleTest is TestSetupExecutive {
     function setUp() public override {
         super.setUp();
-        mandateId = 5; // PresetActions_Single
+        mandateId = findMandateIdInOrg("PresetActions_Single: A mandate to execute preset actions.", daoMock);
     }
 
     function testPresetExecute() public {
@@ -266,12 +268,14 @@ contract BespokeAction_OnReturnValueTest is TestSetupExecutive {
 
     function setUp() public override {
         super.setUp();
-        mandateId = 10; // BespokeAction_OnReturnValue
+        mandateId = findMandateIdInOrg(
+            "BespokeAction_OnReturnValue: Execute a call using return value of previous mandate call.", daoMock
+        );
     }
 
     function testExecuteWithReturnValue() public {
         // 1. Execute Parent Action (BespokeActionReturner - ID 9)
-        uint16 parentMandateId = 9;
+        uint16 parentMandateId = findMandateIdInOrg("BespokeActionReturner: Returns a value for testing.", daoMock);
         bytes memory emptyCalldata = "";
         uint256 testNonce = 12_345;
 

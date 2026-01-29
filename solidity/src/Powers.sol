@@ -780,6 +780,11 @@ contract Powers is EIP712, IPowers, Context {
     }
 
     /// @inheritdoc IPowers
+    function getMandateCounter() external view returns (uint16) {
+        return mandateCounter;
+    }
+
+    /// @inheritdoc IPowers
     function getLatestFulfillment(uint16 mandateId) external view returns (uint48 latestFulfillment) {
         return mandates[mandateId].latestFulfillment;
     }

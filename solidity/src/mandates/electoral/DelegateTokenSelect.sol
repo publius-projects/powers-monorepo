@@ -15,7 +15,7 @@ pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { Nominees } from "../../helpers/Nominees.sol";
 import { ERC20Votes } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
@@ -68,11 +68,11 @@ contract DelegateTokenSelect is Mandate {
             abi.decode(getConfig(powers, mandateId), (address, address, uint256, uint256));
 
         // Step 1: Get current role holders from Powers
-        mem.amountRoleHolders = Powers(payable(powers)).getAmountRoleHolders(mem.roleId);
+        mem.amountRoleHolders = IPowers(payable(powers)).getAmountRoleHolders(mem.roleId);
 
         mem.currentRoleHolders = new address[](mem.amountRoleHolders);
         for (mem.i = 0; mem.i < mem.amountRoleHolders; mem.i++) {
-            mem.currentRoleHolders[mem.i] = Powers(payable(powers)).getRoleHolderAtIndex(mem.roleId, mem.i);
+            mem.currentRoleHolders[mem.i] = IPowers(payable(powers)).getRoleHolderAtIndex(mem.roleId, mem.i);
         }
 
         // Step 2: Get nominees
@@ -134,7 +134,7 @@ contract DelegateTokenSelect is Mandate {
         for (mem.i = 0; mem.i < mem.currentRoleHolders.length; mem.i++) {
             targets[mem.operationIndex] = powers;
             calldatas[mem.operationIndex] =
-                abi.encodeWithSelector(Powers.revokeRole.selector, mem.roleId, mem.currentRoleHolders[mem.i]);
+                abi.encodeWithSelector(IPowers.revokeRole.selector, mem.roleId, mem.currentRoleHolders[mem.i]);
             mem.operationIndex++;
         }
 
@@ -142,7 +142,7 @@ contract DelegateTokenSelect is Mandate {
         for (mem.i = 0; mem.i < mem.elected.length; mem.i++) {
             targets[mem.operationIndex] = powers;
             calldatas[mem.operationIndex] =
-                abi.encodeWithSelector(Powers.assignRole.selector, mem.roleId, mem.elected[mem.i]);
+                abi.encodeWithSelector(IPowers.assignRole.selector, mem.roleId, mem.elected[mem.i]);
             mem.operationIndex++;
         }
 

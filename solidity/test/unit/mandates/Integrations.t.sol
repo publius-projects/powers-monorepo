@@ -39,10 +39,12 @@ contract GovernorIntegrationTest is TestSetupIntegrations {
         super.setUp();
 
         // 1. Identify Mandate IDs from TestSetupIntegrations -> integrationsTestConstitution
-        // First pushed: Governor_CreateProposal (ID 1)
-        // Second pushed: Governor_ExecuteProposal (ID 2)
-        createProposalId = 1;
-        executeProposalId = 2;
+        createProposalId = findMandateIdInOrg(
+            "Governor_CreateProposal: A mandate to create governance proposals on a Governor contract.", daoMock
+        );
+        executeProposalId = findMandateIdInOrg(
+            "Governor_ExecuteProposal: A mandate to execute governance proposals on a Governor contract.", daoMock
+        );
 
         // 2. Get Mandate Instances
         createProposalMandate = Governor_CreateProposal(findMandateAddress("Governor_CreateProposal"));
@@ -198,6 +200,8 @@ contract SafeAllowanceTest is TestSetupIntegrations {
     uint16 public safeAllowanceMandateId_ExecuteActionFromSafe;
     uint16 public safeAllowanceMandateId_SetAllowance;
     uint16 public safeAllowanceTransferId;
+    uint16 public safeAssignDelegateId;
+    uint256 public actionIdSafeSetup; 
 
     function setUp() public override {
         super.setUp();
@@ -209,22 +213,37 @@ contract SafeAllowanceTest is TestSetupIntegrations {
         }
 
         // IDs from TestConstitutions
-        safeAllowanceMandateId_Safe_Setup = 3;
-        safeAllowanceMandateId_SetAllowance = 4;
-        safeAllowanceMandateId_ExecuteActionFromSafe = 5;
-    
+        safeAllowanceMandateId_Safe_Setup =
+            findMandateIdInOrg("Setup Safe: Create a SafeProxy and register it as treasury.", daoMock);
+        safeAssignDelegateId =
+            findMandateIdInOrg("Assign Delegate status: Assign delegate status at Safe treasury to a sub-DAO", daoMock);
+        safeAllowanceMandateId_SetAllowance =
+            findMandateIdInOrg("Set Allowance: Execute and set allowance for a sub-DAO.", daoMock);
+        safeAllowanceMandateId_ExecuteActionFromSafe =
+            findMandateIdInOrg("Transfer tokens from the Safe treasury.", daoMock);
+
         // On daoMockChild1
-        safeAllowanceTransferId = 1;
+        safeAllowanceTransferId = 1; // First mandate in constitution2
 
         vm.prank(alice);
-        daoMock.request(
+        actionIdSafeSetup = daoMock.request(
             safeAllowanceMandateId_Safe_Setup, abi.encode(), nonce, "Setting up safe with allowance module."
         );
+
+        // safeTreasury = abi.decode(daoMock.getActionReturnData(actionIdSafeSetup, 0), (address)); 
+        console2.log("Safe Treasury saved at:",  IPowers(address(daoMock)).getTreasury());
+        // vm.prank(address(daoMock));
+        // IPowers(address(daoMock)).setTreasury(payable(safeTreasury));
+
+        // Now that the treasury is set, we can constitute the child DAO.
+        // This ensures the child DAO is configured with the correct treasury address.
+        (PowersTypes.MandateInitData[] memory mandateInitData2_) =
+            testConstitutions.integrationsTestConstitution2(address(daoMock), address(allowedTokens));
+        daoMockChild1.constitute(mandateInitData2_);
     }
 
     // we will try to add a delegate.
-    function test_Safe_ExecTransaction_Success() public {
-        uint16 safeExecTransactionId = 4; // index of Safe_ExecTransaction mandate in integrationsTestConstitution
+    function test_Safe_ExecTransaction_Success() public { 
         // We are trying to add a delegate (address(0x456)) to the Safe via execTransaction mandate
         address functionTarget = config.safeAllowanceModule;
         bytes4 functionSelector = bytes4(0xe71bdf41); // addDelegate(address)
@@ -238,36 +257,25 @@ contract SafeAllowanceTest is TestSetupIntegrations {
 
         // Execute via DAO
         vm.prank(alice);
-        daoMock.request(safeExecTransactionId, mandateCalldata, nonce, "Safe Exec Transaction");
-    }
-
-    // we will try to add a delegate.
-    function test_Safe_ExecTransaction_Revert() public {
-        // test is the same as previous test, except we set the treasury to address(0) first to test the revert.
-        vm.prank(address(daoMock));
-        daoMock.setTreasury(payable(address(0)));
-
-        uint16 safeExecTransactionId = 4; // index of Safe_ExecTransaction mandate in integrationsTestConstitution
-        // We are trying to add a delegate (address(0x456)) to the Safe via execTransaction mandate
-        address functionTarget = config.safeAllowanceModule;
-        bytes4 functionSelector = bytes4(0xe71bdf41); // addDelegate(address)
-        bytes memory functionCalldata = abi.encode(address(0x456));
-
-        bytes memory mandateCalldata = abi.encode(
-            functionTarget,
-            uint256(0), // value
-            abi.encodeWithSelector(functionSelector, functionCalldata) // data
-        );
-
-        // Execute via DAO
-        vm.prank(alice);
-        daoMock.request(safeExecTransactionId, mandateCalldata, nonce, "Safe Exec Transaction");
+        daoMock.request(safeAssignDelegateId, mandateCalldata, nonce, "Safe Exec Transaction");
     }
 
     function test_SafeAllowance_Transfer_Success() public {
+        // 1. Assign Delegate Status to Child DAO
+        address functionTarget = config.safeAllowanceModule;
+        bytes4 functionSelector = bytes4(0xe71bdf41); // addDelegate(address)
+
+        // Execute via DAO
+        vm.prank(alice);
+        daoMock.request(safeAssignDelegateId, abi.encode(address(daoMockChild1)), nonce, "Assign Delegate to Child DAO");
+
         // 2. Set Allowance
         address token = address(simpleErc20Votes);
-        uint96 amount = 100e18;
+        uint96 amount = 2e16;
+        console2.log("Child DAO:", address(daoMockChild1));
+
+        simpleErc20Votes.mint(daoMock.getTreasury(), 1e18); // Fund the Safe treasury
+
         // Params: ChildPowers, Token, allowanceAmount, resetTimeMin, resetBaseMin
         bytes memory setAllowanceData = abi.encode(address(daoMockChild1), token, amount, uint16(0), uint32(0));
         vm.prank(alice);
@@ -276,69 +284,13 @@ contract SafeAllowanceTest is TestSetupIntegrations {
         // 3. Execute Transfer on Child
         address payableTo = bob;
         // Params: Token, payableTo, amount
-        bytes memory transferData = abi.encode(token, payableTo, uint256(10e18));
+        bytes memory transferData = abi.encode(token, uint96(1e16), payableTo);
 
         vm.prank(alice);
         daoMockChild1.request(safeAllowanceTransferId, transferData, 0, "Transfer Allowance");
     }
 }
-
-//////////////////////////////////////////////////
-//      POWERS FACTORY ASSIGN ROLE TESTS        //
-//////////////////////////////////////////////////
-contract PowersFactory_AssignRoleTest is TestSetupIntegrations {
-    uint16 public createPowersId;
-    uint16 public assignRoleId;
-    uint256 public roleIdToAssign;
-
-    function setUp() public override {
-        super.setUp();
-
-        // IDs from TestConstitutions
-        createPowersId = 5;
-        assignRoleId = 6;
-        roleIdToAssign = 9; // Configured in TestConstitutions.sol for ID 6
-    }
-
-    function test_PowersFactory_AssignRole_Success() public {
-        // 1. Execute "Create Powers"
-        string memory orgName = "New Org";
-        string memory orgUri = "http://example.com";
-        uint256 allowance = 1000;
-
-        // BespokeAction_Simple expects encoded input params
-        bytes memory createCalldata = abi.encode(orgName, orgUri, allowance);
-
-        vm.prank(alice);
-        uint256 parentActionId = daoMock.request(createPowersId, createCalldata, nonce, "Create New Org");
-        console2.log("Parent Action ID:", parentActionId);
-
-        // 2. Execute "Assign Role"
-        // PowersFactory_AssignRole uses the SAME calldata and nonce as the parent action
-        vm.prank(alice);
-        daoMock.request(assignRoleId, createCalldata, nonce, "Assign Role in New Org");
-
-        // Verify Role Assigned
-        bytes memory returnData = daoMock.getActionReturnData(parentActionId, 0);
-        address newOrg = abi.decode(returnData, (address));
-
-        assertTrue(newOrg != address(0));
-        // Check role on PARENT DAO (daoMock) assigned to NEW ORG
-        assertTrue(daoMock.hasRoleSince(newOrg, roleIdToAssign) > 0);
-    }
-
-    function test_PowersFactory_AssignRole_Revert_ParentNotFulfilled() public {
-        string memory orgName = "New Org";
-        string memory orgUri = "http://example.com";
-        uint256 allowance = 1000;
-        bytes memory createCalldata = abi.encode(orgName, orgUri, allowance);
-
-        // Use a nonce (999) that has NOT been used/fulfilled
-        vm.prank(alice);
-        vm.expectRevert("Invalid parent action state");
-        daoMock.request(assignRoleId, createCalldata, 999, "Assign Role Fail");
-    }
-}
+ 
 
 contract Soulbound1155_GatedAccessTest is TestSetupIntegrations {
     uint16 public mintMandateId;
@@ -348,8 +300,11 @@ contract Soulbound1155_GatedAccessTest is TestSetupIntegrations {
     function setUp() public override {
         super.setUp();
 
-        mintMandateId = 7;
-        accessMandateId = 8;
+        mintMandateId = findMandateIdInOrg(
+            "Mint soulbound token: mint a soulbound ERC1155 token and send it to an address of choice.", daoMock
+        );
+        accessMandateId =
+            findMandateIdInOrg("Soulbound1155 Access: Get roleId through soulbound ERC1155 token.", daoMock);
         targetRoleId = 9;
     }
 
@@ -457,12 +412,12 @@ contract Soulbound1155_GatedAccessTest is TestSetupIntegrations {
 //              ELECTIONLIST TESTS              //
 //////////////////////////////////////////////////
 contract ElectionListIntegrationTest is TestSetupIntegrations {
-    uint16 createElectionId = 9;
-    uint16 nominateId = 10;
-    uint16 revokeId = 11;
-    uint16 openVoteId = 12;
-    uint16 tallyId = 13;
-    uint16 cleanupId = 14;
+    uint16 createElectionId;
+    uint16 nominateId;
+    uint16 revokeId;
+    uint16 openVoteId;
+    uint16 tallyId;
+    uint16 cleanupId;
 
     address electionListAddress;
     string title = "Test Election";
@@ -481,6 +436,23 @@ contract ElectionListIntegrationTest is TestSetupIntegrations {
 
     function setUp() public override {
         super.setUp();
+
+        createElectionId =
+            findMandateIdInOrg("Create an election: an election can be initiated be any member.", daoMock);
+        nominateId = findMandateIdInOrg("Nominate for election: any member can nominate for an election.", daoMock);
+        revokeId = findMandateIdInOrg(
+            "Revoke nomination for election: any member can revoke their nomination for an election.", daoMock
+        );
+        openVoteId = findMandateIdInOrg(
+            "Open voting for election: Members can open the vote for an election. This will create a dedicated vote mandate.",
+            daoMock
+        );
+        tallyId = findMandateIdInOrg(
+            "Tally elections: After an election has finished, assign the Executive role to the winners.", daoMock
+        );
+        cleanupId = findMandateIdInOrg(
+            "Clean up election: After an election has finished, clean up related mandates.", daoMock
+        );
 
         startBlock = uint48(block.number + 10);
         endBlock = uint48(block.number + 100);

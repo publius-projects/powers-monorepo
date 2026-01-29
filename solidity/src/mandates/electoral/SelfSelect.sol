@@ -8,7 +8,7 @@
 pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 
 contract SelfSelect is Mandate {
@@ -40,12 +40,12 @@ contract SelfSelect is Mandate {
         actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         uint256 roleId = abi.decode(getConfig(powers, mandateId), (uint256));
 
-        if (Powers(payable(powers)).hasRoleSince(caller, roleId) != 0) {
+        if (IPowers(payable(powers)).hasRoleSince(caller, roleId) != 0) {
             revert("Account already has role.");
         }
 
         targets[0] = powers;
-        calldatas[0] = abi.encodeWithSelector(Powers.assignRole.selector, roleId, caller); // selector = assignRole
+        calldatas[0] = abi.encodeWithSelector(IPowers.assignRole.selector, roleId, caller); // selector = assignRole
 
         return (actionId, targets, values, calldatas);
     }

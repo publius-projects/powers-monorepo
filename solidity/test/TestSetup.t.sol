@@ -7,6 +7,7 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 // protocol
 import { Powers } from "../src/Powers.sol";
+import { Mandate } from "../src/Mandate.sol";
 import { PowersErrors } from "../src/interfaces/PowersErrors.sol";
 import { PowersTypes } from "../src/interfaces/PowersTypes.sol";
 import { PowersEvents } from "../src/interfaces/PowersEvents.sol";
@@ -335,6 +336,18 @@ abstract contract TestHelperFunctions is Test, TestVariables {
         }
         return address(0);
     }
+
+    function findMandateIdInOrg(string memory description, Powers org) public view returns (uint16) {
+        uint16 counter = org.mandateCounter();
+        for (uint16 i = 1; i < counter; i++) {
+            (address mandateAddress, , ) = org.getAdoptedMandate(i);
+            string memory mandateDesc = Mandate(mandateAddress).getNameDescription(address(org), i);
+            if (Strings.equal(mandateDesc, description)) {
+                return i;
+            }
+        }
+        revert("Mandate not found");
+    }
 }
 
 abstract contract BaseSetup is TestVariables, TestHelperFunctions {
@@ -570,12 +583,12 @@ abstract contract TestSetupIntegrations is BaseSetup {
             address(electionList),
             address(erc20Taxed)
         );
-        (PowersTypes.MandateInitData[] memory mandateInitData2_) =
-            testConstitutions.integrationsTestConstitution2(address(daoMock), address(allowedTokens));
+        // (PowersTypes.MandateInitData[] memory mandateInitData2_) =
+        //     testConstitutions.integrationsTestConstitution2(address(daoMock), address(allowedTokens));
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
-        daoMockChild1.constitute(mandateInitData2_);
+        // daoMockChild1.constitute(mandateInitData2_);
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);

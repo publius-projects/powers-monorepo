@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 // Base contracts
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { Mandate } from "../../Mandate.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 
@@ -292,7 +292,7 @@ contract Github_ClaimRoleWithSig is Mandate, FunctionsClient {
         (address[] memory targets, uint256[] memory values, bytes[] memory calldatas) =
             MandateUtilities.createEmptyArrays(1);
 
-        Powers(request.powers).fulfill(request.mandateId, request.actionId, targets, values, calldatas);
+        IPowers(request.powers).fulfill(request.mandateId, request.actionId, targets, values, calldatas);
     }
 
     // --- View Functions ---

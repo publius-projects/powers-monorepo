@@ -13,7 +13,7 @@
 pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { Nominees } from "../../helpers/Nominees.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
@@ -129,7 +129,7 @@ contract PeerSelect is Mandate {
         // Check each selected nominee and determine if it's assignment or revocation
         for (mem.i = 0; mem.i < mem.numSelections; mem.i++) {
             mem.selectedIndex = mem.selectedIndices[mem.i];
-            mem.hasRoleSince = Powers(payable(powers)).hasRoleSince(mem.nominees[mem.selectedIndex], mem.roleId);
+            mem.hasRoleSince = IPowers(payable(powers)).hasRoleSince(mem.nominees[mem.selectedIndex], mem.roleId);
             mem.assignFlags[mem.i] = (mem.hasRoleSince == 0);
 
             if (mem.assignFlags[mem.i]) {
@@ -141,7 +141,7 @@ contract PeerSelect is Mandate {
 
         // Validate assignments don't exceed max role holders
         if (mem.assignCount > 0) {
-            mem.currentRoleHolders = Powers(payable(powers)).getAmountRoleHolders(mem.roleId);
+            mem.currentRoleHolders = IPowers(payable(powers)).getAmountRoleHolders(mem.roleId);
             if (mem.currentRoleHolders + mem.assignCount > mem.maxRoleHolders) {
                 revert("Too many assignments. Would exceed max role holders.");
             }
@@ -156,10 +156,10 @@ contract PeerSelect is Mandate {
 
             if (mem.assignFlags[mem.i]) {
                 calldatas[mem.i] =
-                    abi.encodeWithSelector(Powers.assignRole.selector, mem.roleId, mem.nominees[mem.selectedIndex]);
+                    abi.encodeWithSelector(IPowers.assignRole.selector, mem.roleId, mem.nominees[mem.selectedIndex]);
             } else {
                 calldatas[mem.i] =
-                    abi.encodeWithSelector(Powers.revokeRole.selector, mem.roleId, mem.nominees[mem.selectedIndex]);
+                    abi.encodeWithSelector(IPowers.revokeRole.selector, mem.roleId, mem.nominees[mem.selectedIndex]);
             }
         }
 

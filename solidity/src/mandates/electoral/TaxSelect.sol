@@ -22,8 +22,8 @@
 /// @author 7Cedars
 pragma solidity 0.8.26;
 
-import { Mandate } from "../../Mandate.sol";
-import { Powers } from "../../Powers.sol";
+import { Mandate } from "../../Mandate.sol"; 
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 import { Erc20Taxed } from "@mocks/Erc20Taxed.sol";
 
@@ -107,7 +107,7 @@ contract TaxSelect is Mandate {
         }
 
         // step 2: retrieve data on tax paid and role
-        mem.hasRole = Powers(payable(powers)).hasRoleSince(mem.account, mem.roleIdToSet) > 0;
+        mem.hasRole = IPowers(payable(powers)).hasRoleSince(mem.account, mem.roleIdToSet) > 0;
         // console.log("mem.hasRole", mem.hasRole);
         mem.taxPaid = Erc20Taxed(mem.erc20TaxedMock).getTaxLogs(uint48(block.number) - mem.epochDuration, mem.account);
         // console.log("mem.taxPaid", mem.taxPaid);
@@ -118,10 +118,10 @@ contract TaxSelect is Mandate {
         // step 3: create arrays
         if (mem.hasRole && mem.taxPaid < mem.thresholdTaxPaid) {
             // console.log("revoking role");
-            calldatas[0] = abi.encodeWithSelector(Powers.revokeRole.selector, mem.roleIdToSet, mem.account);
+            calldatas[0] = abi.encodeWithSelector(IPowers.revokeRole.selector, mem.roleIdToSet, mem.account);
         } else if (!mem.hasRole && mem.taxPaid >= mem.thresholdTaxPaid) {
             // console.log("assigning role");
-            calldatas[0] = abi.encodeWithSelector(Powers.assignRole.selector, mem.roleIdToSet, mem.account);
+            calldatas[0] = abi.encodeWithSelector(IPowers.assignRole.selector, mem.roleIdToSet, mem.account);
         }
 
         // step 4: return data

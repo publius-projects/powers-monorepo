@@ -7,7 +7,7 @@
 pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 
 // import "forge-std/Test.sol"; // for testing only. remove before deployment.
@@ -95,7 +95,7 @@ contract RoleByTransaction is Mandate {
 
         (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
         targets[0] = msg.sender;
-        calldatas[0] = abi.encodeWithSelector(Powers.assignRole.selector, mem.newRoleId, mem.account);
+        calldatas[0] = abi.encodeWithSelector(IPowers.assignRole.selector, mem.newRoleId, mem.account);
 
         // step 2: execute the role assignment if the amount threshold is met
         _replyPowers(mandateId, actionId, targets, values, calldatas);

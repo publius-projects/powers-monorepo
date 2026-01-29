@@ -12,7 +12,7 @@
 pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 import { FlagActions } from "../../helpers/FlagActions.sol";
 
@@ -71,10 +71,10 @@ contract NStrikesRevokesRoles is Mandate {
         }
 
         // Get all current role holders
-        mem.amountRoleHolders = Powers(payable(powers)).getAmountRoleHolders(mem.roleId);
+        mem.amountRoleHolders = IPowers(payable(powers)).getAmountRoleHolders(mem.roleId);
         mem.roleHolders = new address[](mem.amountRoleHolders);
         for (uint256 i = 0; i < mem.amountRoleHolders; i++) {
-            mem.roleHolders[i] = Powers(payable(powers)).getRoleHolderAtIndex(mem.roleId, i);
+            mem.roleHolders[i] = IPowers(payable(powers)).getRoleHolderAtIndex(mem.roleId, i);
         }
 
         // Set up calls to revoke roles from all holders
@@ -82,7 +82,7 @@ contract NStrikesRevokesRoles is Mandate {
 
         for (mem.i = 0; mem.i < mem.amountRoleHolders; mem.i++) {
             targets[mem.i] = powers;
-            calldatas[mem.i] = abi.encodeWithSelector(Powers.revokeRole.selector, mem.roleId, mem.roleHolders[mem.i]);
+            calldatas[mem.i] = abi.encodeWithSelector(IPowers.revokeRole.selector, mem.roleId, mem.roleHolders[mem.i]);
             mem.i++;
         }
         mem.i = 0;

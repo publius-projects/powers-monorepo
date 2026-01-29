@@ -8,7 +8,7 @@
 pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 
 contract RenounceRole is Mandate {
@@ -54,7 +54,7 @@ contract RenounceRole is Mandate {
         mem.allowedRoleIds = abi.decode(getConfig(powers, mandateId), (uint256[]));
 
         // step 2: check if the account has the role
-        if (Powers(payable(powers)).hasRoleSince(caller, mem.roleId) == 0) {
+        if (IPowers(payable(powers)).hasRoleSince(caller, mem.roleId) == 0) {
             revert("Account does not have role.");
         }
 
@@ -74,7 +74,7 @@ contract RenounceRole is Mandate {
         (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
         actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         targets[0] = powers;
-        calldatas[0] = abi.encodeWithSelector(Powers.revokeRole.selector, mem.roleId, caller); // selector = revokeRole
+        calldatas[0] = abi.encodeWithSelector(IPowers.revokeRole.selector, mem.roleId, caller); // selector = revokeRole
 
         return (actionId, targets, values, calldatas);
     }

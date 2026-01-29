@@ -3,7 +3,6 @@ pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
-import { Powers } from "../../Powers.sol";
 import { IPowers } from "../../interfaces/IPowers.sol";
 import { PowersTypes } from "../../interfaces/PowersTypes.sol";
 
@@ -67,7 +66,7 @@ contract RevokeInactiveAccounts is Mandate {
         actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
 
         // 1. Retrieve role holders
-        mem.amountRoleHolders = Powers(payable(powers)).getAmountRoleHolders(mem.roleId);
+        mem.amountRoleHolders = IPowers(payable(powers)).getAmountRoleHolders(mem.roleId);
         if (mem.amountRoleHolders == 0) {
             (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
             return (actionId, targets, values, calldatas);
@@ -75,11 +74,11 @@ contract RevokeInactiveAccounts is Mandate {
         
         mem.roleHolders = new address[](mem.amountRoleHolders);
         for (uint256 i = 0; i < mem.amountRoleHolders; i++) {
-            mem.roleHolders[i] = Powers(payable(powers)).getRoleHolderAtIndex(mem.roleId, i);
+            mem.roleHolders[i] = IPowers(payable(powers)).getRoleHolderAtIndex(mem.roleId, i);
         }
 
         // 2. Find relevant mandates
-        mem.mandateCounter = Powers(payable(powers)).mandateCounter();
+        mem.mandateCounter = IPowers(payable(powers)).getMandateCounter();
         
         // Oversize array to max possible mandates, then track actual count
         uint16[] memory tempMandates = new uint16[](mem.mandateCounter);
@@ -87,7 +86,7 @@ contract RevokeInactiveAccounts is Mandate {
         
         // Loop through all mandates to find those with the matching role
         for (uint16 i = 1; i < mem.mandateCounter; i++) {
-            PowersTypes.Conditions memory conditions = Powers(payable(powers)).getConditions(i);
+            PowersTypes.Conditions memory conditions = IPowers(payable(powers)).getConditions(i);
             if (conditions.allowedRole == mem.roleId) {
                 tempMandates[mem.relevantMandatesCount] = i;
                 mem.relevantMandatesCount++;
@@ -100,7 +99,7 @@ contract RevokeInactiveAccounts is Mandate {
         
         for (uint256 i = 0; i < mem.relevantMandatesCount; i++) {
             uint16 mId = tempMandates[i];
-            uint256 count = Powers(payable(powers)).getQuantityMandateActions(mId);
+            uint256 count = IPowers(payable(powers)).getQuantityMandateActions(mId);
             mem.mandateActionCounts[i] = count;
             mem.totalAvailableActions += count;
         }
@@ -127,7 +126,7 @@ contract RevokeInactiveAccounts is Mandate {
                 // Retrieve the latest action IDs
                 for (uint256 k = 0; k < toCheckForMandate; k++) {
                     if (mem.actionIdsToCheckCount < actualCheckCount) {
-                        mem.actionIdsToCheck[mem.actionIdsToCheckCount] = Powers(payable(powers)).getMandateActionAtIndex(mId, available - 1 - k);
+                        mem.actionIdsToCheck[mem.actionIdsToCheckCount] = IPowers(payable(powers)).getMandateActionAtIndex(mId, available - 1 - k);
                         mem.actionIdsToCheckCount++;
                     }
                 }
@@ -139,7 +138,7 @@ contract RevokeInactiveAccounts is Mandate {
         
         for (uint256 i = 0; i < mem.actionIdsToCheckCount; i++) {
             uint256 aId = mem.actionIdsToCheck[i];
-            (,,,,, address actionCaller,) = Powers(payable(powers)).getActionData(aId);
+            (,,,,, address actionCaller,) = IPowers(payable(powers)).getActionData(aId);
             
             for (uint256 h = 0; h < mem.amountRoleHolders; h++) {
                 address holder = mem.roleHolders[h];
@@ -150,7 +149,7 @@ contract RevokeInactiveAccounts is Mandate {
                 }
                 
                 // 6c: Check if address voted
-                if (Powers(payable(powers)).hasVoted(aId, holder)) {
+                if (IPowers(payable(powers)).hasVoted(aId, holder)) {
                     mem.observedActions[h]++;
                 }
             }

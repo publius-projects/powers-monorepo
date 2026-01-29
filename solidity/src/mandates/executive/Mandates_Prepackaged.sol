@@ -46,7 +46,7 @@ contract Mandates_Prepackaged is Mandate {
     {
         actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         PowersTypes.MandateInitData[] memory initData = abi.decode(getConfig(powers, mandateId), (PowersTypes.MandateInitData[])); 
-        uint256 mandateCount = IPowers(powers).getMandateCount();
+        uint256 mandateCount = IPowers(powers).getMandateCounter();
 
         (uint256[] memory roleIds) = abi.decode(mandateCalldata, (uint256[]));
 
