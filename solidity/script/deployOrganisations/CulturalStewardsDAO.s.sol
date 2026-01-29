@@ -187,7 +187,7 @@ contract CulturalStewardsDAO is DeploySetup {
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    //                        PARENT DAO CONSTITUTION                         //
+    //                         PRIME DAO CONSTITUTION                         //
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
@@ -204,15 +204,15 @@ contract CulturalStewardsDAO is DeploySetup {
             uint8(1) // v = 1 This is a type 1 call. See Safe.sol for details.
         );
 
-        targets = new address[](12);
-        values = new uint256[](12);
-        calldatas = new bytes[](12);
+        targets = new address[](13);
+        values = new uint256[](13);
+        calldatas = new bytes[](13);
 
         for (uint256 i = 0; i < targets.length; i++) {
             targets[i] = address(primeDAO);
         }
-        targets[9] = treasury; // the Safe treasury address.
         targets[10] = treasury; // the Safe treasury address.
+        targets[11] = treasury; // the Safe treasury address.
 
         calldatas[0] = abi.encodeWithSelector(IPowers.labelRole.selector, 1, "Members");
         calldatas[1] = abi.encodeWithSelector(IPowers.labelRole.selector, 2, "Executives");
@@ -222,8 +222,9 @@ contract CulturalStewardsDAO is DeploySetup {
         calldatas[5] = abi.encodeWithSelector(IPowers.assignRole.selector, 1, cedars);
         calldatas[6] = abi.encodeWithSelector(IPowers.assignRole.selector, 2, cedars);
         calldatas[7] = abi.encodeWithSelector(IPowers.assignRole.selector, 3, cedars);
-        calldatas[8] = abi.encodeWithSelector(IPowers.setTreasury.selector, treasury);
-        calldatas[9] = abi.encodeWithSelector( // cal to set allowance module to the Safe treasury.
+        calldatas[8] = abi.encodeWithSelector(IPowers.assignRole.selector, 5, address(digitalSubDAO));
+        calldatas[9] = abi.encodeWithSelector(IPowers.setTreasury.selector, treasury);
+        calldatas[10] = abi.encodeWithSelector( // cal to set allowance module to the Safe treasury.
             Safe.execTransaction.selector,
             treasury, // The internal transaction's destination
             0, // The internal transaction's value in this mandate is always 0. To transfer Eth use a different mandate.
@@ -239,7 +240,7 @@ contract CulturalStewardsDAO is DeploySetup {
             address(0), // refundReceiver
             signature // the signature constructed above
         );
-        calldatas[10] = abi.encodeWithSelector( // call to set Digital sub-DAO as delegate to the Safe treasury.
+        calldatas[11] = abi.encodeWithSelector( // call to set Digital sub-DAO as delegate to the Safe treasury.
             Safe.execTransaction.selector,
             config.safeAllowanceModule, // The internal transaction's destination: the Allowance Module.
             0, // The internal transaction's value in this mandate is always 0. To transfer Eth use a different mandate.
@@ -255,7 +256,7 @@ contract CulturalStewardsDAO is DeploySetup {
             address(0), // refundReceiver
             signature // the signature constructed above
         );
-        calldatas[11] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1); // revoke mandate after use.
+        calldatas[12] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1); // revoke mandate after use.
 
         mandateCount++;
         conditions.allowedRole = type(uint256).max; // = public.
@@ -1404,7 +1405,7 @@ contract CulturalStewardsDAO is DeploySetup {
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = 5 minutes / days
         conditions.succeedAt = 51; // simple majority
         conditions.quorum = 10; // = low quorum 
-        primeConstitution.push(
+        digitalConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Clean up Executives: Revoke Executive status of inactive accounts.",
                 targetMandate: initialisePowers.getInitialisedAddress("RevokeInactiveAccounts"),
@@ -1498,7 +1499,7 @@ contract CulturalStewardsDAO is DeploySetup {
         conditions.quorum = 30; //  
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
         conditions.succeedAt = 67; // two thirds majority
-        physicalConstitution.push(
+        ideasConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Veto setting role labels: Role 1 can veto setting role labels",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -1516,7 +1517,7 @@ contract CulturalStewardsDAO is DeploySetup {
         conditions.succeedAt = 51; // simple majority
         conditions.timelock = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minute timelock after passing
         conditions.needNotFulfilled = mandateCount - 1; // need role 1 not to have vetoed.
-        physicalConstitution.push(
+        ideasConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Setting role label: Role 2 (coveners) can set role labels",
                 targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_OnOwnPowers"),
@@ -1573,7 +1574,6 @@ contract CulturalStewardsDAO is DeploySetup {
         delete conditions;
         uint16 requestNewPhysicalDaoWorkingGroupMandateId = mandateCount;
 
-
         // CREATE NEW IDEAS WORKING GROUP FLOW //  
         // NB
         // conveners: create governance flow for creating new working groups within the idea DAO.
@@ -1604,7 +1604,7 @@ contract CulturalStewardsDAO is DeploySetup {
             conditions.allowedRole = 1; // = Members
             conditions.throttleExecution = minutesToBlocks(120, config.BLOCKS_PER_HOUR); // = once every 2 hours
             workingGroupFlow[1] = PowersTypes.MandateInitData({
-                nameDescription: "Create an election: an election can be initiated be any member.",
+                nameDescription: "Create an WG election: an election can be initiated be any member.",
                 targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
                 config: abi.encode(
                     initialisePowers.getInitialisedAddress("ElectionList"), // election list contract
@@ -1618,7 +1618,7 @@ contract CulturalStewardsDAO is DeploySetup {
             // Members: Nominate for Convener election
             conditions.allowedRole = 1; // = Members
             workingGroupFlow[2] = PowersTypes.MandateInitData({
-                nameDescription: "Nominate for election: any member can nominate for an election.",
+                nameDescription: "Nominate for WG election: any member can nominate for an election.",
                 targetMandate: initialisePowers.getInitialisedAddress("ElectionList_Nominate"),
                 config: abi.encode(
                     initialisePowers.getInitialisedAddress("ElectionList"), // election list contract
@@ -1632,7 +1632,7 @@ contract CulturalStewardsDAO is DeploySetup {
             conditions.allowedRole = 1; // = Members
             conditions.needFulfilled = 2; // number will be automatically adjusted = nominate for election
             workingGroupFlow[3] = PowersTypes.MandateInitData({
-                nameDescription: "Revoke nomination for election: any member can revoke their nomination for an election.",
+                nameDescription: "Revoke nomination for WG election: any member can revoke their nomination for an election.",
                 targetMandate: initialisePowers.getInitialisedAddress("ElectionList_Nominate"),
                 config: abi.encode(
                     initialisePowers.getInitialisedAddress("ElectionList"), // election list contract
@@ -1648,7 +1648,7 @@ contract CulturalStewardsDAO is DeploySetup {
             conditions.allowedRole = 1; // = Members
             conditions.needFulfilled = 1; // = Create election 
             workingGroupFlow[4] = PowersTypes.MandateInitData({
-                nameDescription: "Open voting for election: Members can open the vote for an election. This will create a dedicated vote mandate.",
+                nameDescription: "Open voting for WG election: Members can open the vote for an election. This will create a dedicated vote mandate.",
                 targetMandate: initialisePowers.getInitialisedAddress("ElectionList_CreateVoteMandate"),
                 config: abi.encode(
                     initialisePowers.getInitialisedAddress("ElectionList"), // election list contract
@@ -1662,7 +1662,7 @@ contract CulturalStewardsDAO is DeploySetup {
 
             // Members: Tally election
             conditions.allowedRole = 1;
-            conditions.needFulfilled = mandateCount - 1; // = Open Vote election
+            conditions.needFulfilled = 4; // = Open Vote election
             workingGroupFlow[5] = PowersTypes.MandateInitData({
                 nameDescription: "Tally elections: After an election has finished, assign the Convener role to the winners.",
                 targetMandate: initialisePowers.getInitialisedAddress("ElectionList_Tally"),
@@ -1677,7 +1677,7 @@ contract CulturalStewardsDAO is DeploySetup {
 
             // Members: clean up election
             conditions.allowedRole = 1;
-            conditions.needFulfilled = mandateCount - 1; // = Tally election
+            conditions.needFulfilled = 5; // = Tally election
             workingGroupFlow[6] = PowersTypes.MandateInitData({
                 nameDescription: "Clean up election: After an election has finished, clean up related mandates.",
                 targetMandate: initialisePowers.getInitialisedAddress("ElectionList_CleanUpVoteMandate"),
@@ -1695,13 +1695,11 @@ contract CulturalStewardsDAO is DeploySetup {
             PowersTypes.MandateInitData({
                 nameDescription: "Create new Working group: Conveners can create new Working group.",
                 targetMandate: initialisePowers.getInitialisedAddress("Mandates_Prepackaged"),
-                config: abi.encode( 
-
-                ),
+                config: abi.encode(workingGroupFlow),
                 conditions: conditions
             })
         );
-        delete conditions
+        delete conditions; 
 
 
         // UPDATE URI //
@@ -1881,7 +1879,7 @@ contract CulturalStewardsDAO is DeploySetup {
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = 5 minutes / days
         conditions.succeedAt = 51; // simple majority
         conditions.quorum = 10; // = low quorum 
-        primeConstitution.push(
+        ideasConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Clean up Executives: Revoke Executive status of inactive accounts.",
                 targetMandate: initialisePowers.getInitialisedAddress("RevokeInactiveAccounts"),
@@ -1942,11 +1940,28 @@ contract CulturalStewardsDAO is DeploySetup {
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     //                       PHYSICAL DAO CONSTITUTION                        //
-    ////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////// 
     ////////////////////////////////////////////////////////////////////////////
 
     function createPhysicalConstitution() internal {
         mandateCount = 0; // resetting mandate count.
+        //////////////////////////////////////////////////////////////////////
+        //                              SETUP                               //
+        //////////////////////////////////////////////////////////////////////
+        // SETUP PAYMENT FLOW //
+        // Role 1: Veto setting role labels
+        mandateCount++;
+        conditions.allowedRole = 2; // = Any convener.
+        physicalConstitution.push(
+            PowersTypes.MandateInitData({
+                nameDescription: "Setup Payment Flow: Any convener can setup the payment flow for the physical DAO.",
+                targetMandate: initialisePowers.getInitialisedPackageAddress("CulturalStewards_PaymentSequence"),
+                config: abi.encode(inputParams),
+                conditions: conditions
+            })
+        );
+        delete conditions;
+
         //////////////////////////////////////////////////////////////////////
         //                      EXECUTIVE MANDATES                          //
         //////////////////////////////////////////////////////////////////////
@@ -1991,6 +2006,26 @@ contract CulturalStewardsDAO is DeploySetup {
             })
         );
         delete conditions;
+
+        // CREATE NEW RWA TOKEN //
+        // role 1: veto creating RWA token
+        // role 2: create RWA token
+
+        // SET COMPLIANCE TOKEN //
+        // role 1: veto setting compliance token
+        // role 2: set compliance token
+
+        // MINT AND TRANSFER RWA TOKEN TO TREASURY // 
+        // role 1: veto minting RWA token to treasury
+        // role 2: mint RWA token to treasury
+
+        // TRANSFER RWA TOKEN TO THIRD PARTY //
+        // role 1: veto transfer RWA token to third party
+        // role 2: transfer RWA token to third party
+
+        // FORCED TRANSFER RWA TO TREASURY // 
+        // role 1: veto forced transfer RWA token to treasury
+        // role 2: forced transfer RWA token to treasury
 
         // MINT POAPS // 
         inputParams = new string[](1);
@@ -2172,7 +2207,7 @@ contract CulturalStewardsDAO is DeploySetup {
         mandateCount++;
         conditions.allowedRole = 1;
         conditions.needFulfilled = mandateCount - 1; // = Tally election
-        ideasConstitution.push(
+        physicalConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Clean up election: After an election has finished, clean up related mandates.",
                 targetMandate: initialisePowers.getInitialisedAddress("ElectionList_CleanUpVoteMandate"),
@@ -2190,7 +2225,7 @@ contract CulturalStewardsDAO is DeploySetup {
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = 5 minutes / days
         conditions.succeedAt = 51; // simple majority
         conditions.quorum = 10; // = low quorum 
-        primeConstitution.push(
+        physicalConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Clean up Executives: Revoke Executive status of inactive accounts.",
                 targetMandate: initialisePowers.getInitialisedAddress("RevokeInactiveAccounts"),
@@ -2260,6 +2295,25 @@ contract CulturalStewardsDAO is DeploySetup {
             })
         );
         delete conditions;
+    }
+
+    //////////////////////////////////////////////////////////////
+    //                      HELPER FUNCTIONS                    //
+    //////////////////////////////////////////////////////////////
+    function getPrimeDAO() public view returns (Powers) {
+        return primeDAO;   
+    }
+
+    function getDigitalSubDAO() public view returns (Powers) {
+        return digitalSubDAO;   
+    }
+
+    function getTreasury() public view returns (address treasuryAddress) {
+        return primeDAO.getTreasury();   
+    }
+
+    function getConfig() public view returns (Configurations.NetworkConfig memory) {
+        return config;   
     }
 }
 
