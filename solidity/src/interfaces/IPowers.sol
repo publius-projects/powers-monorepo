@@ -19,11 +19,14 @@ interface IPowers is PowersErrors, PowersEvents, PowersTypes {
     /// @param mandates The list of mandate contracts to activate
     function constitute(MandateInitData[] calldata mandates) external;
 
-    /// @notice Initializes the DAO by activating its founding mandates and setting a new admin
-    /// @dev Can only be called once by an admin account
-    /// @param mandates The list of mandate contracts to activate
-    /// @param newAdmin The address of the new admin
-    function constitute(MandateInitData[] calldata mandates, address newAdmin) external;
+    /// @notice Closes the constitute phase, preventing further mandates from being added
+    /// @dev Can only be called by an admin account
+    function closeConstitute() external;
+
+    /// @notice Closes the constitute phase, preventing further mandates from being added
+    /// @dev Can only be called by an admin account
+    /// @param newAdmin The address of the new admin account
+    function closeConstitute(address newAdmin) external;
 
     //////////////////////////////////////////////////////////////
     //                  GOVERNANCE FUNCTIONS                    //

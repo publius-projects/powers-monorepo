@@ -1,7 +1,4 @@
-- [x] Refactor `solidity/test/unit/mandates/Electoral.t.sol`:
-    - [x] Update `PeerSelectTest` to use dynamic ID and `findMandateAddress`, and inherited `nominees`.
-    - [x] Update `NStrikesRevokesRolesTest` to use dynamic ID and `findMandateAddress`, and inherited `flagActions`.
-    - [x] Update `RoleByRolesTest` to use dynamic ID and `findMandateAddress`.
-    - [x] Update `SelfSelectTest` to use dynamic ID and `findMandateAddress`.
-    - [x] Update `RenounceRoleTest` to use dynamic ID and `findMandateAddress`.
-- [ ] Verify by running tests.
+- [ ] Analyze changes in `solidity/script/deployOrganisations/CulturalStewardsDAO.s.sol` around lines 1556-1694.
+- [ ] Analyze `test_JoinPrimeDAO` in `solidity/test/integration/organisations/CulturalStewardsDAO.t.sol` and run it to confirm failure.
+- [ ] Refactor `test_JoinPrimeDAO` to fix the failure, mocking the Physical DAO creation/steps as needed.
+- [ ] Verify the fix by running the test.

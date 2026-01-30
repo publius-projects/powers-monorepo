@@ -58,6 +58,7 @@ contract Bicameralism is DeploySetup {
         // step 3: run constitute.
         vm.startBroadcast();
         powers.constitute(constitution);
+        powers.closeConstitute();
         vm.stopBroadcast();
         console2.log("Powers successfully constituted.");
     }

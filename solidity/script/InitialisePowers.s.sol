@@ -28,6 +28,7 @@ import { RoleByTransaction } from "@src/mandates/electoral/RoleByTransaction.sol
 import { DelegateTokenSelect } from "@src/mandates/electoral/DelegateTokenSelect.sol";
 import { Nominate } from "@src/mandates/electoral/Nominate.sol";
 import { RevokeInactiveAccounts } from "@src/mandates/electoral/RevokeInactiveAccounts.sol";
+import { RevokeAccountsRoleId } from "@src/mandates/electoral/RevokeAccountsRoleId.sol";
 
 // Executive mandates
 import { PresetActions_Single } from "@src/mandates/executive/PresetActions_Single.sol";
@@ -196,6 +197,10 @@ contract InitialisePowers is Script {
         creationCodes.push(type(RevokeInactiveAccounts).creationCode);
         constructorArgs.push(abi.encode("RevokeInactiveAccounts"));
 
+        names.push("RevokeAccountsRoleId");
+        creationCodes.push(type(RevokeAccountsRoleId).creationCode);
+        constructorArgs.push(abi.encode("RevokeAccountsRoleId"));
+
         //////////////////////////////////////////////////////////////////////////
         //                       Executive Mandates                             //
         //////////////////////////////////////////////////////////////////////////
@@ -337,32 +342,24 @@ contract InitialisePowers is Script {
         creationCodes.push(type(Erc20Taxed).creationCode);
         constructorArgs.push(abi.encode());
 
-        names.push("OnchainIdRegistryMock");
-        creationCodes.push(type(OnchainIdRegistryMock).creationCode);
-        constructorArgs.push(abi.encode());
-
-        names.push("IdentityRegistryMock");
-        creationCodes.push(type(IdentityRegistryMock).creationCode);
-        constructorArgs.push(abi.encode());
-
         names.push("ComplianceRegistryMock");
         creationCodes.push(type(ComplianceRegistryMock).creationCode);
         constructorArgs.push(abi.encode());
-
+        
         names.push("RwaMock");
         creationCodes.push(type(RwaMock).creationCode);
         constructorArgs.push(abi.encode());
-
+ 
         //////////////////////////////////////////////////////////////////////////
         //                          DEPLOY SEQUENCE                             //
         //////////////////////////////////////////////////////////////////////////
         string memory obj2 = "second key";
+        address mandateAddr;
         for (uint256 i = 0; i < names.length; i++) {
-            address mandateAddr = deploy(creationCodes[i], constructorArgs[i]);
+            mandateAddr = deploy(creationCodes[i], constructorArgs[i]);
             addresses.push(mandateAddr);
             vm.serializeAddress(obj2, names[i], mandateAddr);
         }
-
         outputJson = vm.serializeUint(obj2, "chainId", uint256(block.chainid));
     }
 
@@ -426,6 +423,17 @@ contract InitialisePowers is Script {
             }
         }
         revert("Mandate not found");
+    }
+
+    function getInitialisedAddressNoRevert(string memory mandateName) public view returns (address) {
+        bytes32 mandateHash = keccak256(abi.encodePacked(mandateName));
+        for (uint256 i = 0; i < names.length; i++) {
+            bytes32 nameHash = keccak256(abi.encodePacked(names[i]));
+            if (nameHash == mandateHash) {
+                return addresses[i];
+            }
+        }
+        return address(0);
     }
 
     function getInitialisedPackageAddress(string memory packageName) external view returns (address) {

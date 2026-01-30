@@ -41,6 +41,7 @@ contract SafeProtocolFlowTest is TestSetupSafeProtocolFlow {
         (PowersTypes.MandateInitData[] memory mandateInitData1_) =
             testConstitutions.safeProtocol_Child_IntegrationTestConstitution(safeTreasury, config.safeAllowanceModule);
         daoMockChild1.constitute(mandateInitData1_);
+        daoMockChild1.closeConstitute();
 
         // ---------------------------------------------------------
         // 3. Add Child as Delegate on Parent (Mandate 2)

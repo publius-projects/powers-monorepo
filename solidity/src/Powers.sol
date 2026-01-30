@@ -59,7 +59,7 @@ contract Powers is EIP712, IPowers, Context {
     string public name; // name of the DAO.
     string public uri; // a uri to metadata of the DAO. // note can be altered
     address payable private treasury; // address to the treasury of the organisation.
-    bool private _constituteExecuted; // has the constitute function been called before?
+    bool private _constituteClosed; // Is the constitute phase closed? Note: no actions can be started when the constitute phase is open.
 
     //////////////////////////////////////////////////////////////
     //                          MODIFIERS                       //
@@ -72,6 +72,15 @@ contract Powers is EIP712, IPowers, Context {
 
     function _onlyPowers() internal view {
         if (_msgSender() != address(this)) revert Powers__OnlyPowers();
+    }
+
+    modifier onlyAdmin() {
+        _onlyAdmin();
+        _;
+    }
+
+    function _onlyAdmin() internal view {
+        if (_msgSender() != getRoleHolderAtIndex(ADMIN_ROLE, 0)) revert Powers__OnlyAdmin();
     }
 
     /// @notice A modifier that sets a function to only be callable by the {Powers} contract.
@@ -121,40 +130,36 @@ contract Powers is EIP712, IPowers, Context {
     //                  CONSTITUTE LOGIC                        //
     //////////////////////////////////////////////////////////////
     /// @inheritdoc IPowers
-    function constitute(MandateInitData[] memory constituentMandates) external {
-        _constitute(constituentMandates, _msgSender());
-    }
-
-    /// @inheritdoc IPowers
-    function constitute(MandateInitData[] memory constituentMandates, address newAdmin) external {
-        _constitute(constituentMandates, newAdmin);
-    }
-
-    function _constitute(MandateInitData[] memory constituentMandates, address newAdmin) internal {
-        address currentAdmin = getRoleHolderAtIndex(ADMIN_ROLE, 0); // before constitute is called, there should be only one admin.
-
-        // check 1: only admin can call this function
-        if (currentAdmin != _msgSender()) revert Powers__NotAdmin();
-
-        // check 2: this function can only be called once.
-        if (_constituteExecuted) revert Powers__ConstitutionAlreadyExecuted();
-
-        // if checks pass, set _constituentMandatesExecuted to true...
-        _constituteExecuted = true;
-
-        if (currentAdmin != newAdmin) {
-            _setRole(ADMIN_ROLE, currentAdmin, false);
-            _setRole(ADMIN_ROLE, newAdmin, true);
-        }
-
-        // ...and set mandates as active.
+    function constitute(MandateInitData[] memory constituentMandates) external onlyAdmin {
+        if (_constituteClosed) revert Powers__ConstituteClosed();
+        
+        //  set mandates as active.
         for (uint256 i = 0; i < constituentMandates.length; i++) {
             // note: ignore empty slots in MandateInitData array.
             if (constituentMandates[i].targetMandate != address(0)) {
                 _adoptMandate(constituentMandates[i]);
             }
         }
-        emit ConstitutionExecuted();
+    }
+
+    /// @inheritdoc IPowers
+    function closeConstitute() external onlyAdmin() { 
+        _closeConstitute(_msgSender());
+    }
+
+    /// @inheritdoc IPowers
+    function closeConstitute(address newAdmin) external onlyAdmin() { 
+        _closeConstitute(newAdmin);
+    }
+
+    function _closeConstitute(address newAdmin) internal { 
+        // if newAdmin is different from current admin, set new admin...
+        if (_msgSender() != newAdmin) {
+            _setRole(ADMIN_ROLE, _msgSender(), false);
+            _setRole(ADMIN_ROLE, newAdmin, true);
+        }
+
+        _constituteClosed = true;
     }
 
     //////////////////////////////////////////////////////////////
@@ -167,6 +172,8 @@ contract Powers is EIP712, IPowers, Context {
         onlyAdoptedMandate(mandateId)
         returns (uint256 actionId)
     {
+        if (!_constituteClosed) revert Powers__ConstituteOpen();
+
         actionId = Checks.computeActionId(mandateId, mandateCalldata, nonce);
         AdoptedMandate memory mandate = mandates[mandateId];
 
@@ -261,7 +268,7 @@ contract Powers is EIP712, IPowers, Context {
         }
 
         // emit event. -- commented out to save gas, can be re-enabled if needed.
-        // emit ActionExecuted(mandateId, actionId, targets, values, calldatas);
+        // emit ActionFulfilled(mandateId, actionId, targets, values, calldatas);
 
         // register latestFulfillment at mandate. -- is there anyway to do this more efficiently?
         mandates[mandateId].latestFulfillment = uint48(block.number);
@@ -273,6 +280,8 @@ contract Powers is EIP712, IPowers, Context {
         onlyAdoptedMandate(mandateId)
         returns (uint256 actionId)
     {
+        if (!_constituteClosed) revert Powers__ConstituteOpen();
+        
         AdoptedMandate memory mandate = mandates[mandateId];
 
         // check 1: is targetMandate is an active mandate?
@@ -626,7 +635,7 @@ contract Powers is EIP712, IPowers, Context {
     //////////////////////////////////////////////////////////////
     /// @notice saves the version of the Powersimplementation.
     function version() public pure returns (string memory) {
-        return "0.4";
+        return "0.5";
     }
 
     /// @inheritdoc IPowers

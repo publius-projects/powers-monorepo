@@ -108,11 +108,12 @@ contract PeerSelectTest is TestSetupElectoral {
             })
         );
 
+
         // Verify mandate data is stored correctly
         mandateHash = keccak256(abi.encode(address(daoMock), newMandateId));
                 // Verify mandate data is stored correctly 
         (uint256 maxRoleHolders, uint256 roleId, uint8 maxVotes, address nomineesContract) =
-            abi.decode(peerSelect.getConfig(address(daoMock), mandateId), (uint256, uint256, uint8, address));
+            abi.decode(peerSelect.getConfig(address(daoMock), newMandateId), (uint256, uint256, uint8, address));
         
         assertEq(maxRoleHolders, 2);
         assertEq(roleId, 4);

@@ -435,6 +435,7 @@ abstract contract TestSetupPowers is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ADMIN_ROLE, alice);
@@ -459,6 +460,7 @@ abstract contract TestSetupMandate is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -482,6 +484,7 @@ abstract contract TestSetupAsync is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -516,6 +519,7 @@ abstract contract TestSetupElectoral is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -542,6 +546,7 @@ abstract contract TestSetupExecutive is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -566,11 +571,11 @@ abstract contract TestSetupIntegrations is BaseSetup {
         soulbound1155 = new Soulbound1155("this is a test uri");
         electionList = new ElectionList();
         powersFactory = new PowersFactory(
-            testConstitutions.powersTestConstitution(address(daoMock)),
             config.maxCallDataLength,
             config.maxReturnDataLength,
             config.maxExecutionsLength
         );
+        powersFactory.setMandateInitData(testConstitutions.powersTestConstitution(address(daoMock)));
         erc20Taxed = new Erc20Taxed();
         vm.stopPrank();
 
@@ -589,6 +594,7 @@ abstract contract TestSetupIntegrations is BaseSetup {
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
         // daoMockChild1.constitute(mandateInitData2_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -629,6 +635,7 @@ abstract contract TestSetupDelegateTokenFlow is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -652,6 +659,7 @@ abstract contract TestSetupElectionListFlow is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -675,6 +683,7 @@ abstract contract TestSetupRoleByTransactionFlow is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -698,7 +707,9 @@ abstract contract TestSetupAssignExternalRoleParentFlow is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
         daoMockChild1.constitute(mandateInitData1_);
+        daoMockChild1.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -722,6 +733,7 @@ abstract contract TestSetupOpenActionFlow is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -745,7 +757,9 @@ abstract contract TestSetupCheckExternalActionStateFlow is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
         daoMockChild1.constitute(mandateInitData1_);
+        daoMockChild1.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -774,6 +788,7 @@ abstract contract TestSetupGovernorProtocolFlow is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -797,6 +812,7 @@ abstract contract TestSetupSafeProtocolFlow is BaseSetup {
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);

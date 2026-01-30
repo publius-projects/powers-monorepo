@@ -26,7 +26,7 @@ contract PowerLabs is DeploySetup {
     Configurations.NetworkConfig public config;
 
     PowersTypes.Conditions conditions;
-    PowersTypes.MandateInitData[] primeConstitution;
+    PowersTypes.MandateInitData[] primaryConstitution;
     PowersTypes.MandateInitData[] childConstitution;
     Powers powersParent;
     Powers powersChild;
@@ -67,9 +67,9 @@ contract PowerLabs is DeploySetup {
         console2.log("Powers Child deployed at:", address(powersChild));
 
         // step 2: create constitution
-        uint256 primeConstitutionLength = createPrimeConstitution();
+        uint256 primaryConstitutionLength = createPrimaryConstitution();
         console2.log("Parent Constitution created with length:");
-        console2.logUint(primeConstitutionLength);
+        console2.logUint(primaryConstitutionLength);
 
         // Mandate 17 in Parent is "Adopt a Child Mandate"
         uint256 childConstitutionLength = createChildConstitution(address(powersParent), 17);
@@ -78,18 +78,20 @@ contract PowerLabs is DeploySetup {
 
         // step 3: run constitute.
         vm.startBroadcast();
-        powersParent.constitute(primeConstitution);
+        powersParent.constitute(primaryConstitution);
+        powersParent.closeConstitute();
         powersChild.constitute(childConstitution);
+        powersChild.closeConstitute();
         vm.stopBroadcast();
         console2.log("Parent and Child Powers successfully constituted.");
     }
 
-    function createPrimeConstitution() internal returns (uint256 constitutionLength) {
+    function createPrimaryConstitution() internal returns (uint256 constitutionLength) {
         // Mandate 1: Setup Safe
         // Safe_Setup
         mandateCount++;
         conditions.allowedRole = type(uint256).max; // Public
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Setup Safe: Create a SafeProxy, set up allowance module and register it as treasury.",
                 targetMandate: initialisePowers.getInitialisedAddress("Safe_Setup"),
@@ -124,7 +126,7 @@ contract PowerLabs is DeploySetup {
 
         mandateCount++;
         conditions.allowedRole = 0; // Admin
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Assign role labels.",
                 targetMandate: initialisePowers.getInitialisedAddress("PresetActions_Single"),
@@ -140,7 +142,7 @@ contract PowerLabs is DeploySetup {
 
         mandateCount++;
         conditions.allowedRole = 0; // Admin
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Update URI: The admin can update the organization's URI.",
                 targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
@@ -163,7 +165,7 @@ contract PowerLabs is DeploySetup {
         mandateCount++;
         conditions.allowedRole = type(uint256).max; // Public
         conditions.throttleExecution = minutesToBlocks(3, config.BLOCKS_PER_HOUR);
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Apply for Contributor Role: Anyone can claim contributor roles based on their GitHub contributions to the 7cedars/powers repository",
                 targetMandate: initialisePowers.getInitialisedAddress("Github_ClaimRoleWithSig"),
@@ -185,7 +187,7 @@ contract PowerLabs is DeploySetup {
         mandateCount++;
         conditions.allowedRole = type(uint256).max; // Public
         conditions.needFulfilled = mandateCount - 1; // must have applied for contributor role.
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Claim Contributor Role: Following a successful initial claim, contributors can get contributor role assigned to their account.",
                 targetMandate: initialisePowers.getInitialisedAddress("Github_AssignRoleWithSig"),
@@ -204,7 +206,7 @@ contract PowerLabs is DeploySetup {
 
         mandateCount++;
         conditions.allowedRole = type(uint256).max; // Public
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Apply for Member Role: Receive Member role when holding Funder or any Contributor role",
                 targetMandate: initialisePowers.getInitialisedAddress("RoleByRoles"),
@@ -224,7 +226,7 @@ contract PowerLabs is DeploySetup {
 
         mandateCount++;
         conditions.allowedRole = 0; // Admin
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Veto Role Revocation: Admin can veto proposals to remove roles from accounts",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -242,7 +244,7 @@ contract PowerLabs is DeploySetup {
         conditions.quorum = 5;
         conditions.timelock = minutesToBlocks(3, config.BLOCKS_PER_HOUR);
         conditions.needNotFulfilled = mandateCount - 1; // veto mandate
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Revoke Role: Members vote to remove a role from an account",
                 targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
@@ -271,7 +273,7 @@ contract PowerLabs is DeploySetup {
         conditions.quorum = 20; // = 30% quorum needed
         conditions.succeedAt = 66; // = 51% simple majority needed for assigning and revoking members.
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = number of blocks
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Propose to add a new Child Powers as a delegate to the Safe Treasury.",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -287,7 +289,7 @@ contract PowerLabs is DeploySetup {
         conditions.succeedAt = 66; // = 51% simple majority needed for assigning and revoking members.
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = number of blocks
         conditions.needFulfilled = mandateCount - 1; // = mandate that must be completed before this one.
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Veto adding a new Child Powers as a delegate to the Safe Treasury.",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -304,7 +306,7 @@ contract PowerLabs is DeploySetup {
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = number of blocks
         conditions.needFulfilled = mandateCount - 2; // = the proposal mandate.
         conditions.needNotFulfilled = mandateCount - 1; // = the funders veto mandate.
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "OK adding a new Child Powers as a delegate to the Safe Treasury.",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -320,7 +322,7 @@ contract PowerLabs is DeploySetup {
         conditions.succeedAt = 66; // = 51% simple majority needed for assigning and revoking members.
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = number of blocks
         conditions.needFulfilled = mandateCount - 1; // = the proposal mandate.
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "OK adding a new Child Powers as a delegate to the Safe Treasury.",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -336,7 +338,7 @@ contract PowerLabs is DeploySetup {
         conditions.succeedAt = 66; // = 51% simple majority needed for assigning and revoking members.
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = number of blocks
         conditions.needFulfilled = mandateCount - 1; // = the proposal mandate.
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Execute and adopt new child Powers as a delegate to the Safe treasury.",
                 targetMandate: initialisePowers.getInitialisedAddress("SafeAllowance_Action"),
@@ -367,7 +369,7 @@ contract PowerLabs is DeploySetup {
         conditions.quorum = 20; // = 30% quorum needed
         conditions.succeedAt = 66; // = 51% simple majority needed for assigning and revoking members.
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = number of blocks
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Propose to set allowance for a Powers Child at the Safe Treasury.",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -383,7 +385,7 @@ contract PowerLabs is DeploySetup {
         conditions.succeedAt = 66; // = 51% simple majority needed for assigning and revoking members.
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = number of blocks
         conditions.needFulfilled = mandateCount - 1; // = mandate that must be completed before this one.
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Veto setting allowance for a Powers Child at the Safe Treasury.",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -400,7 +402,7 @@ contract PowerLabs is DeploySetup {
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = number of blocks
         conditions.needFulfilled = mandateCount - 2; // = the proposal mandate.
         conditions.needNotFulfilled = mandateCount - 1; // = the funders veto mandate.
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "OK setting allowance for a Powers Child at the Safe Treasury.",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -416,7 +418,7 @@ contract PowerLabs is DeploySetup {
         conditions.succeedAt = 66; // = 51% simple majority needed for assigning and revoking members.
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = number of blocks
         conditions.needFulfilled = mandateCount - 1; // = the proposal mandate.
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "OK setting allowance for a Powers Child at the Safe Treasury.",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -432,7 +434,7 @@ contract PowerLabs is DeploySetup {
         conditions.succeedAt = 66; // = 51% simple majority needed for assigning and revoking members.
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = number of blocks
         conditions.needFulfilled = mandateCount - 1; // = the proposal mandate.
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Execute and set allowance for a Powers Child at the Safe Treasury.",
                 targetMandate: initialisePowers.getInitialisedAddress("SafeAllowance_Action"),
@@ -457,7 +459,7 @@ contract PowerLabs is DeploySetup {
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR);
         conditions.succeedAt = 51;
         conditions.quorum = 50;
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Propose Adopting Mandates: Members propose adopting new mandates",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -474,7 +476,7 @@ contract PowerLabs is DeploySetup {
         conditions.succeedAt = 33;
         conditions.quorum = 50;
         conditions.needFulfilled = mandateCount - 1;
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Veto Adopting Mandates: Funders can veto proposals to adopt new mandates",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -489,7 +491,7 @@ contract PowerLabs is DeploySetup {
         conditions.allowedRole = 0; // Admin
         conditions.needFulfilled = mandateCount - 2;
         conditions.needNotFulfilled = mandateCount - 1;
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Adopt Mandates: Admin adopts new mandates into the organization",
                 targetMandate: initialisePowers.getInitialisedAddress("Mandates_Adopt"),
@@ -508,7 +510,7 @@ contract PowerLabs is DeploySetup {
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR);
         conditions.succeedAt = 51;
         conditions.quorum = 50;
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Propose Revoking Mandates: Members propose revoking existing mandates",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -525,7 +527,7 @@ contract PowerLabs is DeploySetup {
         conditions.succeedAt = 33;
         conditions.quorum = 50;
         conditions.needFulfilled = mandateCount - 1;
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Veto Revoking Mandates: Funders can veto proposals to revoke existing mandates",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -540,7 +542,7 @@ contract PowerLabs is DeploySetup {
         conditions.allowedRole = 0; // Admin
         conditions.needFulfilled = mandateCount - 1;
         conditions.needNotFulfilled = mandateCount - 2;
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Revoke Mandates: Admin revokes mandates from the organization",
                 targetMandate: initialisePowers.getInitialisedAddress("Mandates_Revoke"),
@@ -562,7 +564,7 @@ contract PowerLabs is DeploySetup {
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR);
         conditions.succeedAt = 51;
         conditions.quorum = 50;
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Propose adopting a Child Mandate: Members propose adopting new mandates for a Powers' child",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -579,7 +581,7 @@ contract PowerLabs is DeploySetup {
         conditions.succeedAt = 33;
         conditions.quorum = 50;
         conditions.needFulfilled = mandateCount - 1;
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Veto Adopting A child Mandate: Funders can veto proposals to adopt new mandates for a Powers' child",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -594,7 +596,7 @@ contract PowerLabs is DeploySetup {
         conditions.allowedRole = 0; // Admin
         conditions.needFulfilled = mandateCount - 2;
         conditions.needNotFulfilled = mandateCount - 1;
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Adopt a Child Mandate: Admin adopts the new mandate for a Powers' child",
                 targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
@@ -604,7 +606,7 @@ contract PowerLabs is DeploySetup {
         );
         delete conditions;
 
-        return primeConstitution.length;
+        return primaryConstitution.length;
     }
 
     function createChildConstitution(address parent, uint16 adoptChildMandateId)

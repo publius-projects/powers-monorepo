@@ -32,7 +32,7 @@ interface PowersEvents {
     /// @param targets the targets of the action
     /// @param values the values of the action
     /// @param calldatas the calldatas of the action
-    event ActionExecuted(
+    event ActionFulfilled(
         uint16 indexed mandateId, uint256 indexed actionId, address[] targets, uint256[] values, bytes[] calldatas
     );
 
@@ -87,15 +87,8 @@ interface PowersEvents {
     /// @param mandateId the id of the mandate
     event MandateRevoked(uint16 indexed mandateId);
 
-    /// @notice Emitted when a mandate is revived.
-    /// @param mandateId the id of the mandate
-    event MandateRevived(uint16 indexed mandateId);
-
     /// @notice Emitted when a address is blacklisted.
     /// @param account the address of the account
     /// @param blacklisted the blacklisted status of the account
     event BlacklistSet(address indexed account, bool indexed blacklisted);
-
-    /// @notice Emitted when the constitution is executed.
-    event ConstitutionExecuted();
 }

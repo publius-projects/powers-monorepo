@@ -27,7 +27,7 @@ contract DeployTest is TestSetupPowers {
             daoMock.uri(),
             "https://aqua-famous-sailfish-288.mypinata.cloud/ipfs/bafkreibd3qgeohyjeamqtfgk66lr427gpp4ify5q4civ2khcgkwyvz5hcq"
         );
-        assertEq(daoMock.version(), "0.4");
+        assertEq(daoMock.version(), "0.5");
         assertNotEq(daoMock.mandateCounter(), 0);
 
         assertNotEq(daoMock.hasRoleSince(alice, ROLE_ONE), 0);
@@ -584,7 +584,7 @@ contract ConstituteTest is TestSetupPowers {
         }
     }
 
-    function testConstituteRevertsOnSecondCall() public {
+    function testConstituteRevertsWhenClosed() public {
         vm.prank(alice);
         PowersMock daoMockTest = new PowersMock();
 
@@ -598,8 +598,9 @@ contract ConstituteTest is TestSetupPowers {
 
         vm.prank(alice);
         daoMockTest.constitute(mandateInitData);
+        daoMockTest.closeConstitute();
 
-        vm.expectRevert(Powers__ConstitutionAlreadyExecuted.selector);
+        vm.expectRevert(Powers__ConstituteClosed.selector);
         vm.prank(alice);
         daoMockTest.constitute(mandateInitData);
     }
@@ -616,7 +617,7 @@ contract ConstituteTest is TestSetupPowers {
             conditions: conditions
         });
 
-        vm.expectRevert(Powers__NotAdmin.selector);
+        vm.expectRevert(Powers__OnlyAdmin.selector);
         vm.prank(bob);
         daoMockTest.constitute(mandateInitData);
     }

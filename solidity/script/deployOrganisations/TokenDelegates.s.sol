@@ -65,6 +65,7 @@ contract TokenDelegates is DeploySetup {
         // step 3: transfer ownership and run constitute.
         vm.startBroadcast();
         powers.constitute(constitution);
+        powers.closeConstitute();
         vm.stopBroadcast();
         console2.log("Powers successfully constituted.");
     }

@@ -11,7 +11,7 @@ import { MandateUtilities } from "../libraries/MandateUtilities.sol";
 /// @dev This factory deploys a _static_ list of init data for mandates to be used in each Powers deployment. As such, the deployments are not dynamic.
 /// @author 7Cedars
 interface IPowersFactory is PowersTypes { 
-    function createPowers(string memory name, string memory uri, address admin) external returns (address);
+    function createPowers(string memory name, string memory uri) external returns (address);
     function getLatestDeployment() external view returns (address);
 }
 
@@ -22,24 +22,28 @@ contract PowersFactory is IPowersFactory, Ownable {
     uint256 public immutable maxExecutionsLength;
     address public latestDeployment;
 
-    constructor(
-        MandateInitData[] memory _mandateInitData,
+    constructor( 
         uint256 _maxCallDataLength,
         uint256 _maxReturnDataLength,
         uint256 _maxExecutionsLength
     ) Ownable(msg.sender) {
-        for (uint256 i = 0; i < _mandateInitData.length; i++) {
-            mandateInitData.push(_mandateInitData[i]);
-        }
         maxCallDataLength = _maxCallDataLength;
         maxReturnDataLength = _maxReturnDataLength;
         maxExecutionsLength = _maxExecutionsLength;
     }
 
-    function createPowers(string memory name, string memory uri, address admin) external onlyOwner returns (address) {
+    function setMandateInitData(MandateInitData[] memory _mandateInitData) external onlyOwner {
+        delete mandateInitData;
+        for (uint256 i = 0; i < _mandateInitData.length; i++) {
+            mandateInitData.push(_mandateInitData[i]);
+        }
+    }
+
+    function createPowers(string memory name, string memory uri) external onlyOwner returns (address) {
         Powers powers = new Powers(name, uri, maxCallDataLength, maxReturnDataLength, maxExecutionsLength);
 
-        powers.constitute(mandateInitData, admin); // set the Powers address as the initial deployer and admin! 
+        powers.constitute(mandateInitData); // set the Powers address as the initial deployer and set as the admin!
+        powers.closeConstitute(msg.sender); 
 
         latestDeployment = address(powers);
 

@@ -240,6 +240,7 @@ contract SafeAllowanceTest is TestSetupIntegrations {
         (PowersTypes.MandateInitData[] memory mandateInitData2_) =
             testConstitutions.integrationsTestConstitution2(address(daoMock), address(allowedTokens));
         daoMockChild1.constitute(mandateInitData2_);
+        daoMockChild1.closeConstitute();
     }
 
     // we will try to add a delegate.

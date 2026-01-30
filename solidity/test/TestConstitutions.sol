@@ -35,7 +35,7 @@ contract TestConstitutions is Test {
     address[] mandatesToAdopt;
     bytes[] mandateInitDatas;
     PowersTypes.MandateInitData[] constitution;
-    PowersTypes.MandateInitData[] primeConstitution;
+    PowersTypes.MandateInitData[] primaryConstitution;
     PowersTypes.MandateInitData[] childConstitution;
 
     string[] mandateNames;
@@ -952,7 +952,7 @@ contract TestConstitutions is Test {
                 nameDescription: "Clean up election: After an election has finished, clean up related mandates.",
                 targetMandate: getInitialisedAddress("BespokeAction_OnReturnValue"),
                 config: abi.encode(
-                    address(daoMock), // target contract (primeDAO in original but here it seems we are testing on daoMock)
+                    address(daoMock), // target contract (primaryDAO in original but here it seems we are testing on daoMock)
                     IPowers.revokeMandate.selector, // function selector to call
                     abi.encode(), // params before
                     inputParams,
@@ -1246,11 +1246,11 @@ contract TestConstitutions is Test {
         external
         returns (PowersTypes.MandateInitData[] memory mandateInitData)
     {
-        delete primeConstitution; // restart primeConstitution array.
+        delete primaryConstitution; // restart primaryConstitution array.
 
         // Mandate: Adopt a Child Mandate
         conditions.allowedRole = 0; // Admin
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Adopt a Child Mandate: Admin adopts the new mandate for a Powers' child",
                 targetMandate: getInitialisedAddress("StatementOfIntent"),
@@ -1260,7 +1260,7 @@ contract TestConstitutions is Test {
         );
         delete conditions;
 
-        return primeConstitution;
+        return primaryConstitution;
     }
 
     function checkExternalActionState_Child_IntegrationTestConstitution(
@@ -1328,11 +1328,11 @@ contract TestConstitutions is Test {
         external
         returns (PowersTypes.MandateInitData[] memory mandateInitData)
     {
-        delete primeConstitution; // restart primeConstitution array.
+        delete primaryConstitution; // restart primaryConstitution array.
 
         // Safe_Setup
         conditions.allowedRole = type(uint256).max; // Public
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Setup Safe: Create a SafeProxy and register it as treasury.",
                 targetMandate: getInitialisedAddress("Safe_Setup"),
@@ -1346,7 +1346,7 @@ contract TestConstitutions is Test {
         inputParams = new string[](1);
         inputParams[0] = "address NewChildPowers";
         conditions.allowedRole = type(uint256).max; // Public
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Assign Delegate status: Assign delegate status at Safe treasury to the sub-DAO",
                 targetMandate: getInitialisedAddress("Safe_ExecTransaction"),
@@ -1369,7 +1369,7 @@ contract TestConstitutions is Test {
         inputParams[4] = "uint32 resetBaseMin";
 
         conditions.allowedRole = type(uint256).max; // Public
-        primeConstitution.push(
+        primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Set Allowance: Set allowance for sub-DAO.",
                 targetMandate: getInitialisedAddress("SafeAllowance_Action"),
@@ -1383,7 +1383,7 @@ contract TestConstitutions is Test {
         );
         delete conditions;
 
-        return primeConstitution;
+        return primaryConstitution;
     }
 
     function safeProtocol_Child_IntegrationTestConstitution(address treasury, address allowanceModule)

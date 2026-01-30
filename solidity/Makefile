@@ -290,11 +290,12 @@ SEPOLIA_DEPLOY_ARGS := --rpc-url $(SEPOLIA_RPC_URL) --account dev_3 --sender ${D
 ARB_SEPOLIA_DEPLOY_ARGS := --rpc-url $(ARB_SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 421614 --verify --ffi -vv 
 OPT_SEPOLIA_DEPLOY_ARGS := --rpc-url $(OPT_SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 11155420 --verify --ffi -vv
 
-# create forked anvil chain 
+# create forked anvil chain. 
+# included in .env are SEPOLIA_RPC_URL, ARB_SEPOLIA_RPC_URL, OPT_SEPOLIA_RPC_URL
 fork-anvil :
-	anvil --fork-url $(SEPOLIA_RPC_URL) --block-time 12  
+	anvil --fork-url $(OPT_SEPOLIA_RPC_URL) --block-time 1 --chain-id 31337   
 
-deploy-allowance-module :; forge script script/DeployAllowanceModule.s.sol:DeployAllowanceModule $(ARB_SEPOLIA_DEPLOY_ARGS) 
+deploy-allowance-module :; forge script script/DeployAllowanceModule.s.sol:DeployAllowanceModule $(OPT_SEPOLIA_DEPLOY_ARGS) 
 
 # Deploy an organisation to a single chain. 
 # Adjust the ANVIL_DEPLOY_ARGS, SEPOLIA_DEPLOY_ARGS, OPT_SEPOLIA_DEPLOY_ARGS, ARB_SEPOLIA_DEPLOY_ARGS variables above to change network and deployment settings.
