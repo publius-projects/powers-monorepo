@@ -77,7 +77,7 @@ export function DynamicInput({dataType, varName, values, onChange, index}: Input
 
     if (expand) {
       const newItemsArray = [...Array(itemsArray.length + 1).keys()]
-      const newInputArray = new Array<InputType>(newItemsArray.length) 
+      const newInputArray = [...inputArray, ""]
       setItemsArray(newItemsArray) 
       setInputArray(newInputArray)
       // Update global action store

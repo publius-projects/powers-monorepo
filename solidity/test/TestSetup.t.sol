@@ -575,7 +575,7 @@ abstract contract TestSetupIntegrations is BaseSetup {
             config.maxReturnDataLength,
             config.maxExecutionsLength
         );
-        powersFactory.setMandateInitData(testConstitutions.powersTestConstitution(address(daoMock)));
+        powersFactory.addMandates(testConstitutions.powersTestConstitution(address(daoMock)));
         erc20Taxed = new Erc20Taxed();
         vm.stopPrank();
 

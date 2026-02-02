@@ -147,7 +147,8 @@ export function SectionDeployDemo() {
       
       // Build complete list of final transactions
       const finalTransactionsList: { name: string; status: Status }[] = [
-        { name: "Constitute Powers", status: "idle" }
+        { name: "Constitute Powers", status: "idle" },
+        { name: "Close Constitute", status: "idle" }
       ];
       
       // Add ownership transfer transactions
@@ -324,7 +325,44 @@ export function SectionDeployDemo() {
       currentTxIndex++;
       console.log("Moving to next transaction, currentTxIndex:", currentTxIndex);
 
-      // 4b: Execute transferOwnership for ownable contracts
+      // 4b: Execute closeConstitute
+      console.log("Calling closeConstitute...");
+      setDeployStatus(prev => ({
+        ...prev,
+        finalTransactions: prev.finalTransactions.map((tx) =>
+          tx.name === "Close Constitute" ? { ...tx, status: "pending" as Status } : tx
+        )
+      }));
+
+      const closeConstituteTxHash = await writeContract(wagmiConfig, {
+        address: powersAddress,
+        abi: powersAbi,
+        functionName: 'closeConstitute',
+        args: []
+      });
+      
+      console.log("Waiting for closeConstitute transaction:", closeConstituteTxHash);
+      const closeConstituteReceipt = await waitForTransactionReceipt(wagmiConfig, { 
+        hash: closeConstituteTxHash,
+        confirmations: isAnvil ? 1 : 2
+      });
+      console.log("Close Constitute completed successfully!", { 
+        txHash: closeConstituteTxHash, 
+        status: closeConstituteReceipt.status,
+        receipt: closeConstituteReceipt
+      });
+
+      setDeployStatus(prev => ({
+        ...prev,
+        finalTransactions: prev.finalTransactions.map((tx) =>
+          tx.name === "Close Constitute" ? { ...tx, status: "success" as Status } : tx
+        )
+      }));
+
+      await delayIfNeeded();
+      currentTxIndex++;
+
+      // 4c: Execute transferOwnership for ownable contracts
       for (const dep of dependencies) {
         if (dep.ownable) {
           let depAddress: `0x${string}`;

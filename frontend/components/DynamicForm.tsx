@@ -37,8 +37,8 @@ export function DynamicForm({mandate, params, status, checks, onCheck}: DynamicF
 
   const handleChange = (input: InputType | InputType[], index: number) => {
     // console.log("@handleChange: ", {input, index, action})
-    let currentInput = action.paramValues 
-    currentInput ? currentInput[index] = input : currentInput = [input]
+    let currentInput = action.paramValues ? [...action.paramValues] : []
+    currentInput[index] = input
     
     setAction({...action, paramValues: currentInput, upToDate: false})
   }
@@ -97,11 +97,44 @@ export function DynamicForm({mandate, params, status, checks, onCheck}: DynamicF
     // console.log("Handle Simulate called:", {paramValues, nonce, mandate})
     setError({error: null})
     let mandateCalldata: `0x${string}` | undefined
+
+    // Sanitize paramValues to fill in any missing holes with defaults
+    let sanitizedParamValues = paramValues;
+    if (mandate.params) {
+       sanitizedParamValues = mandate.params.map((param, i) => {
+          let val = paramValues[i];
+          const isArray = param.dataType.indexOf('[]') > -1;
+          
+          if (val === undefined) {
+              if (param.dataType.indexOf('string') > -1) {
+                return isArray ? [""] : "";
+              } else if (param.dataType.indexOf('bool') > -1) {
+                return isArray ? [false] : false;
+              } else {
+                return isArray ? [0] : 0;
+              }
+          }
+
+          if (isArray && Array.isArray(val)) {
+             return val.map(item => {
+                 if (param.dataType.indexOf('bool') > -1) {
+                     return (typeof item === 'boolean') ? item : false;
+                 }
+                 if (item !== undefined) return item;
+                 if (param.dataType.indexOf('string') > -1) return "";
+                 return 0;
+             });
+          }
+          
+          return val;
+       });
+    }
+
     // console.log("Handle Simulate waypoint 1")
-    if (paramValues.length > 0 && paramValues) {
+    if (sanitizedParamValues.length > 0 && sanitizedParamValues) {
       try {
         // console.log("Handle Simulate waypoint 2a")
-        mandateCalldata = encodeAbiParameters(parseAbiParameters(mandate.params?.map(param => param.dataType).toString() || ""), paramValues); 
+        mandateCalldata = encodeAbiParameters(parseAbiParameters(mandate.params?.map(param => param.dataType).toString() || ""), sanitizedParamValues); 
         // console.log("Handle Simulate waypoint 2b", {mandateCalldata}) 
       } catch (error) {
         // console.log("Handle Simulate waypoint 2c")
@@ -124,7 +157,7 @@ export function DynamicForm({mandate, params, status, checks, onCheck}: DynamicF
         mandateId: mandate.index,
         caller: wallets[0] ? wallets[0].address as `0x${string}` : '0x0',
         dataTypes: mandate.params?.map(param => param.dataType),
-        paramValues,
+        paramValues: sanitizedParamValues,
         nonce: nonce.toString(),
         description,
         callData: mandateCalldata,

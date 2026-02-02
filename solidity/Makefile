@@ -303,7 +303,7 @@ deploy-allowance-module :; forge script script/DeployAllowanceModule.s.sol:Deplo
 # NOTE: all mandates and helper contracts will be deployed as part of the organisation deployment script. 
 deploy-organisation : 
 	@echo "Deploying organisation..."
-	forge script script/deployOrganisations/CulturalStewardsDAO.s.sol:CulturalStewardsDAO $(OPT_SEPOLIA_DEPLOY_ARGS)
+	forge script script/deployOrganisations/TestRig.s.sol:TestRig $(ANVIL_DEPLOY_ARGS)
 
 initialise-powers :
 	@echo "Initialising Powers contract..."

@@ -147,7 +147,7 @@ contract CulturalStewardsDAO is DeploySetup {
             config.maxReturnDataLength, // max return data length
             config.maxExecutionsLength // max executions length
         );
-        physicalDaoFactory.setMandateInitData(packedPhysicalConstitution);
+        physicalDaoFactory.addMandates(packedPhysicalConstitution); // Note: if needed we can also loop through mandates one-by-one. 
         vm.stopBroadcast();
 
         // Create primary constitution first to set mandate IDs
@@ -172,7 +172,7 @@ contract CulturalStewardsDAO is DeploySetup {
             config.maxReturnDataLength, // max return data length
             config.maxExecutionsLength // max executions length
         );
-        ideasDaoFactory.setMandateInitData(packedIdeasConstitution);
+        ideasDaoFactory.addMandates(packedIdeasConstitution); // Note: if needed we can also loop through mandates one-by-one. 
         vm.stopBroadcast();
         
         console2.log("Ideas sub-DAO factory deployed at:", address(ideasDaoFactory));
@@ -181,15 +181,10 @@ contract CulturalStewardsDAO is DeploySetup {
         // Step 4: run constitute on vanilla DAOs. Send 10 mandates each time to avoid gas limits overruns.
         
         console2.log("Constituting Primary DAO...");
-        for (uint256 i = 0; i < primaryConstitution.length; i += PACKAGE_SIZE) {
-            uint256 end = i + PACKAGE_SIZE;
-            if (end > primaryConstitution.length) {
-                end = primaryConstitution.length;
-            }
-            PowersTypes.MandateInitData[] memory batch = new PowersTypes.MandateInitData[](end - i);
-            for (uint256 j = i; j < end; j++) {
-                batch[j - i] = primaryConstitution[j];
-            }
+        // due to the size of these DAOs, we add them one by one in a loop.
+        PowersTypes.MandateInitData[] memory batch = new PowersTypes.MandateInitData[](1); 
+        for (uint256 i = 0; i < primaryConstitution.length; i++) {
+            batch[0] = primaryConstitution[i];
             vm.startBroadcast();
             primaryDAO.constitute(batch); // set msg.sender as admin
             vm.stopBroadcast();
@@ -199,19 +194,12 @@ contract CulturalStewardsDAO is DeploySetup {
         vm.stopBroadcast();
 
         console2.log("Constituting Digital sub-DAO...");
-        for (uint256 i = 0; i < digitalConstitution.length; i += PACKAGE_SIZE) {    
-            uint256 end = i + PACKAGE_SIZE;
-            if (end > digitalConstitution.length) {
-                end = digitalConstitution.length;
-            }
-            PowersTypes.MandateInitData[] memory batch = new PowersTypes.MandateInitData[](end - i);
-            for (uint256 j = i; j < end; j++) {
-                batch[j - i] = digitalConstitution[j];
-            }
+        for (uint256 i = 0; i < digitalConstitution.length; i++) {
+            batch[0] = digitalConstitution[i];
             vm.startBroadcast();
             digitalSubDAO.constitute(batch); // set msg.sender as admin
             vm.stopBroadcast();
-        }
+        } 
         vm.startBroadcast();
         digitalSubDAO.closeConstitute();
         vm.stopBroadcast();

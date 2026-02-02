@@ -2200,7 +2200,7 @@ contract PowersFactoryTest is TestSetupPowers {
 
         vm.startPrank(address(daoMock));
         factory = new PowersFactory(MAX_CALL_DATA, MAX_RETURN_DATA, MAX_EXECUTIONS);
-        factory.setMandateInitData(mandateInitDataArray);
+        factory.addMandates(mandateInitDataArray);
         vm.stopPrank();
     }
 
@@ -2257,7 +2257,7 @@ contract PowersFactoryTest is TestSetupPowers {
 
         vm.startPrank(address(daoMockChild1));
         factory = new PowersFactory(MAX_CALL_DATA, MAX_RETURN_DATA, MAX_EXECUTIONS);
-        factory.setMandateInitData(mandateInitDataArray);
+        factory.addMandates(mandateInitDataArray);
         address deployedAddress = factory.createPowers(nameDescription, uri);
         vm.stopPrank();
 
