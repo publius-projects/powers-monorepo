@@ -34,22 +34,24 @@ abstract contract Mandate is ERC165, IMandate {
         bytes config;
         address powers;
     }
-
     mapping(bytes32 mandateHash => MandateData) public mandates;
 
     //////////////////////////////////////////////////////////////
     //                   LAW EXECUTION                          //
     //////////////////////////////////////////////////////////////
     // note this is an unrestricted function. Anyone can initialize a mandate.
-    function initializeMandate(uint16 index, string memory nameDescription, bytes memory inputParams, bytes memory config)
-        public
-        virtual
-    {
+    function initializeMandate(
+        uint16 index,
+        string memory nameDescription,
+        bytes memory inputParams,
+        bytes memory config
+    ) public virtual {
         bytes32 mandateHash = MandateUtilities.hashMandate(msg.sender, index);
         MandateUtilities.checkStringLength(nameDescription, 1, 255);
 
-        mandates[mandateHash] =
-            MandateData({ nameDescription: nameDescription, inputParams: inputParams, config: config, powers: msg.sender });
+        mandates[mandateHash] = MandateData({
+            nameDescription: nameDescription, inputParams: inputParams, config: config, powers: msg.sender
+        });
 
         emit Mandate__Initialized(msg.sender, index, nameDescription, inputParams, config);
     }
@@ -91,7 +93,13 @@ abstract contract Mandate is ERC165, IMandate {
     /// @return targets Target contract addresses for calls
     /// @return values ETH values to send with calls
     /// @return calldatas Encoded function calls
-    function handleRequest(address caller, address powers, uint16 mandateId, bytes memory mandateCalldata, uint256 nonce)
+    function handleRequest(
+        address caller,
+        address powers,
+        uint16 mandateId,
+        bytes memory mandateCalldata,
+        uint256 nonce
+    )
         public
         view
         virtual

@@ -739,24 +739,50 @@ function createHierarchicalLayout(mandates: Mandate[], savedLayout?: Record<stri
     visiting.delete(mandateId);
   }
 
-  // Place all root nodes, stacking them vertically
+  // Place all root nodes, respecting sequence and grouping singletons
+  let processingSingletons = false
+  let singletonX = 0
+
   rootNodes.forEach(rootId => {
-    placeNode(rootId, 0, nextY)
-    nextY += subtreeSize.get(rootId) || 1
+    // A singleton here is a root node with no dependents (no outgoing connections)
+    // It is "unconnected" because it is a root (no incoming) and has no dependents (no outgoing)
+    const isSingleton = (dependents.get(rootId)?.size || 0) === 0
+
+    if (isSingleton) {
+      if (!processingSingletons) {
+        // Start a new singleton row
+        processingSingletons = true
+        singletonX = 0
+        // We use the current nextY for this row
+      }
+      // Place singleton at current singletonX, nextY
+      placeNode(rootId, singletonX, nextY)
+      singletonX++
+    } else {
+      // It is a chain (connected root)
+      if (processingSingletons) {
+        // Finish the previous singleton row
+        nextY += 1
+        processingSingletons = false
+      }
+      
+      // Place the chain starting at the new line
+      placeNode(rootId, 0, nextY)
+      nextY += subtreeSize.get(rootId) || 1
+    }
   })
 
-  // Place any unplaced nodes (disconnected or cycles)
-  // Collect all singletons (no dependencies and no dependents)
-  const singletons: string[] = []
+  // If we ended while processing singletons, we need to account for that row
+  if (processingSingletons) {
+    nextY += 1
+  }
+
+  // Place any unplaced nodes (disconnected cycles that are not roots)
   allMandateIds.forEach(mandateId => {
     if (!placed.has(mandateId)) {
-      if ((dependencies.get(mandateId)?.size || 0) === 0 && (dependents.get(mandateId)?.size || 0) === 0) {
-        singletons.push(mandateId)
-      } else {
-        positions.set(mandateId, { x: 0, y: nextY * NODE_SPACING_Y })
-        nextY += 1
-        placed.add(mandateId)
-      }
+      positions.set(mandateId, { x: 0, y: nextY * NODE_SPACING_Y })
+      nextY += 1
+      placed.add(mandateId)
     }
   })
 
@@ -773,22 +799,6 @@ function createHierarchicalLayout(mandates: Mandate[], savedLayout?: Record<stri
         positions.set(mandateId, { x: pos.x, y: newRow * NODE_SPACING_Y })
       }
     })
-
-  // Place all singletons in a horizontal row at the bottom
-  // Find all y rows (in row units, not pixels) used by non-singleton nodes
-  const singletonSet = new Set(singletons);
-  let maxRow = 0;
-  positions.forEach((pos, mandateId) => {
-    if (!singletonSet.has(mandateId)) {
-      const row = Math.round(pos.y / NODE_SPACING_Y);
-      if (row > maxRow) maxRow = row;
-    }
-  });
-  const singletonRow = maxRow + 1;
-  singletons.forEach((mandateId, idx) => {
-    positions.set(mandateId, { x: idx * NODE_SPACING_X, y: singletonRow * NODE_SPACING_Y });
-    placed.add(mandateId);
-  });
 
   return positions
 }

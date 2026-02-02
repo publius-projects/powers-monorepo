@@ -9,7 +9,7 @@ import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import { PowersEvents } from "../../src/interfaces/PowersEvents.sol";
 import { TestSetupMandate } from "../TestSetup.t.sol";
 import { OpenAction } from "../../src/mandates/executive/OpenAction.sol";
-import { PresetSingleAction } from "../../src/mandates/executive/PresetSingleAction.sol";
+import { PresetActions_Single } from "../../src/mandates/executive/PresetActions_Single.sol";
 import { EmptyTargetsMandate, MockTargetsMandate } from "../mocks/MandateMocks.sol";
 
 /// @notice Comprehensive unit tests for Mandate.sol contract
@@ -32,7 +32,7 @@ contract MandateBasicTest is TestSetupMandate {
         // prep: create test data
         mandateId = daoMock.mandateCounter();
         nameDescription = "Test Mandate";
-        bytes memory localConfig = abi.encode();
+        configBytes = abi.encode();
 
         // act: initialize the mandate
         vm.prank(address(daoMock));
@@ -40,21 +40,21 @@ contract MandateBasicTest is TestSetupMandate {
             MandateInitData({
                 nameDescription: nameDescription,
                 targetMandate: address(testMandate),
-                config: localConfig,
+                config: configBytes,
                 conditions: conditions
             })
         );
 
         // assert: verify mandate data is set correctly
         assertEq(testMandate.getNameDescription(address(daoMock), mandateId), nameDescription);
-        assertEq(keccak256(testMandate.getConfig(address(daoMock), mandateId)), keccak256(localConfig));
+        assertEq(keccak256(testMandate.getConfig(address(daoMock), mandateId)), keccak256(configBytes));
     }
 
     function testInitializeMandateEmitsEvent() public {
         // prep: create test data
         mandateId = daoMock.mandateCounter();
         nameDescription = "Test Mandate";
-        bytes memory localConfig = abi.encode("test config");
+        configBytes = abi.encode("test config");
 
         // assert: verify event is emitted
         vm.expectEmit(true, true, false, true);
@@ -65,7 +65,7 @@ contract MandateBasicTest is TestSetupMandate {
             MandateInitData({
                 nameDescription: nameDescription,
                 targetMandate: address(testMandate),
-                config: localConfig,
+                config: configBytes,
                 conditions: conditions
             })
         );
@@ -75,7 +75,7 @@ contract MandateBasicTest is TestSetupMandate {
         // prep: create test data with empty name
         mandateId = daoMock.mandateCounter();
         nameDescription = "";
-        bytes memory localConfig = abi.encode("test config");
+        configBytes = abi.encode("test config");
 
         // act & assert: verify initialization reverts
         vm.expectRevert("String too short");
@@ -84,7 +84,7 @@ contract MandateBasicTest is TestSetupMandate {
             MandateInitData({
                 nameDescription: nameDescription,
                 targetMandate: address(testMandate),
-                config: localConfig,
+                config: configBytes,
                 conditions: conditions
             })
         );
@@ -94,7 +94,7 @@ contract MandateBasicTest is TestSetupMandate {
         // prep: create test data with too long name
         mandateId = daoMock.mandateCounter();
         nameDescription = string(abi.encodePacked(new bytes(256))); // 256 character string
-        bytes memory localConfig = abi.encode();
+        configBytes = abi.encode();
 
         // act & assert: verify initialization reverts
         vm.expectRevert("String too long");
@@ -103,7 +103,7 @@ contract MandateBasicTest is TestSetupMandate {
             MandateInitData({
                 nameDescription: nameDescription,
                 targetMandate: address(testMandate),
-                config: localConfig,
+                config: configBytes,
                 conditions: conditions
             })
         );
@@ -113,14 +113,14 @@ contract MandateBasicTest is TestSetupMandate {
         // prep: initialize the mandate
         mandateId = daoMock.mandateCounter();
         nameDescription = "Test Mandate";
-        bytes memory localConfig = abi.encode("test config");
+        configBytes = abi.encode("test config");
 
         vm.prank(address(daoMock));
         daoMock.adoptMandate(
             MandateInitData({
                 nameDescription: nameDescription,
                 targetMandate: address(testMandate),
-                config: localConfig,
+                config: configBytes,
                 conditions: conditions
             })
         );
@@ -135,7 +135,7 @@ contract MandateBasicTest is TestSetupMandate {
         // prep: initialize the mandate
         mandateId = daoMock.mandateCounter();
         nameDescription = "Test Mandate";
-        bytes memory localConfig = abi.encode("test config");
+        configBytes = abi.encode("test config");
         conditions.allowedRole = 1;
         vm.prank(address(daoMock));
         daoMock.assignRole(1, alice);
@@ -154,7 +154,7 @@ contract MandateBasicTest is TestSetupMandate {
             MandateInitData({
                 nameDescription: nameDescription,
                 targetMandate: address(testMandate),
-                config: localConfig,
+                config: configBytes,
                 conditions: conditions
             })
         );
@@ -163,7 +163,7 @@ contract MandateBasicTest is TestSetupMandate {
         vm.prank(alice);
         daoMock.request(mandateId, abi.encode(targets, values, calldatas), nonce, "Test Mandate");
 
-        actionId = MandateUtilities.hashActionId(mandateId, abi.encode(targets, values, calldatas), nonce);
+        actionId = MandateUtilities.computeActionId(mandateId, abi.encode(targets, values, calldatas), nonce);
 
         // assert: verify execution succeeds
         assertTrue(daoMock.getActionState(actionId) == ActionState.Fulfilled);
@@ -186,13 +186,13 @@ contract MandateHelperTest is TestSetupMandate {
         mandateId = 1;
         nameDescription = "Test Mandate Name";
         inputParams = abi.encode("test input");
-        bytes memory localConfig = abi.encode();
+        configBytes = abi.encode();
 
         vm.prank(address(daoMock));
-        testMandate.initializeMandate(mandateId, nameDescription, inputParams, localConfig);
+        testMandate.initializeMandate(mandateId, nameDescription, inputParams, configBytes);
 
         // act: get name description
-        string memory retrievedName = testMandate.getNameDescription(address(daoMock), mandateId);
+        retrievedName = testMandate.getNameDescription(address(daoMock), mandateId);
 
         // assert: verify name is correct
         assertEq(retrievedName, nameDescription);
@@ -204,34 +204,34 @@ contract MandateHelperTest is TestSetupMandate {
         mandateId = 1;
         nameDescription = "Test Mandate";
         inputParams = abi.encode("test input");
-        bytes memory localConfig = abi.encode("test config", 456, false);
+        configBytes = abi.encode("test config", 456, false);
 
         vm.prank(address(daoMock));
-        testMandate.initializeMandate(mandateId, nameDescription, inputParams, localConfig);
+        testMandate.initializeMandate(mandateId, nameDescription, inputParams, configBytes);
 
         // act: get config
-        bytes memory retrievedConfig = testMandate.getConfig(address(daoMock), mandateId);
+        retrievedConfig = testMandate.getConfig(address(daoMock), mandateId);
 
         // assert: verify config is correct
-        assertEq(keccak256(retrievedConfig), keccak256(localConfig));
+        assertEq(keccak256(retrievedConfig), keccak256(configBytes));
         delete inputParams; // clean up
     }
 
     function testGetNameDescriptionRevertsForNonExistentMandate() public {
         // act & assert: verify getting name for non-existent mandate returns empty string
-        string memory retrievedName = testMandate.getNameDescription(address(daoMock), 999);
+        retrievedName = testMandate.getNameDescription(address(daoMock), 999);
         assertEq(retrievedName, "");
     }
 
     function testGetInputParamsRevertsForNonExistentMandate() public {
         // act & assert: verify getting params for non-existent mandate returns empty bytes
-        bytes memory retrievedParams = testMandate.getInputParams(address(daoMock), 999);
+        retrievedParams = testMandate.getInputParams(address(daoMock), 999);
         assertEq(retrievedParams.length, 0);
     }
 
     function testGetConfigRevertsForNonExistentMandate() public {
         // act & assert: verify getting config for non-existent mandate returns empty bytes
-        bytes memory retrievedConfig = testMandate.getConfig(address(daoMock), 999);
+        retrievedConfig = testMandate.getConfig(address(daoMock), 999);
         assertEq(retrievedConfig.length, 0);
     }
 }
@@ -249,26 +249,26 @@ contract MandateInterfaceTest is TestSetupMandate {
 
     function testSupportsIMandateInterface() public {
         // act: check if contract supports IMandate interface
-        bool supportsIMandate = testMandate.supportsInterface(type(IMandate).interfaceId);
+        supportsInterface = testMandate.supportsInterface(type(IMandate).interfaceId);
 
         // assert: verify interface is supported
-        assertTrue(supportsIMandate);
+        assertTrue(supportsInterface);
     }
 
     function testSupportsERC165Interface() public {
         // act: check if contract supports ERC165 interface
-        bool supportsERC165 = testMandate.supportsInterface(type(IERC165).interfaceId);
+        supportsInterface = testMandate.supportsInterface(type(IERC165).interfaceId);
 
         // assert: verify interface is supported
-        assertTrue(supportsERC165);
+        assertTrue(supportsInterface);
     }
 
     function testDoesNotSupportRandomInterface() public {
         // act: check if contract supports random interface
-        bool supportsRandom = testMandate.supportsInterface(0x12345678);
+        supportsInterface = testMandate.supportsInterface(0x12345678);
 
         // assert: verify interface is not supported
-        assertFalse(supportsRandom);
+        assertFalse(supportsInterface);
     }
 }
 
@@ -283,7 +283,7 @@ contract MandateUtilitiesTest is TestSetupMandate {
         nonce = 123;
 
         // act: hash the action ID
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
 
         // assert: verify hash is consistent
         assertEq(actionId, uint256(keccak256(abi.encode(mandateId, mandateCalldata, nonce))));
@@ -292,7 +292,7 @@ contract MandateUtilitiesTest is TestSetupMandate {
     function testHashMandateReturnsConsistentHash() public {
         // prep: create test data
         mandateId = 1;
-        address powersAddress = address(daoMock);
+        powersAddress = address(daoMock);
 
         // act: hash the mandate
         mandateHash = MandateUtilities.hashMandate(powersAddress, mandateId);
@@ -357,7 +357,7 @@ contract MandateEdgeCaseTest is TestSetupMandate {
         // prep: create test data with maximum length name (255 characters)
         mandateId = daoMock.mandateCounter();
         nameDescription = string(abi.encodePacked(new bytes(255)));
-        bytes memory localConfig = abi.encode("test config");
+        configBytes = abi.encode("test config");
 
         // act: initialize the mandate
         vm.prank(address(daoMock));
@@ -365,7 +365,7 @@ contract MandateEdgeCaseTest is TestSetupMandate {
             MandateInitData({
                 nameDescription: nameDescription,
                 targetMandate: address(testMandate),
-                config: localConfig,
+                config: configBytes,
                 conditions: conditions
             })
         );
@@ -378,7 +378,7 @@ contract MandateEdgeCaseTest is TestSetupMandate {
         // prep: create test data with minimum length name (1 character)
         mandateId = daoMock.mandateCounter();
         nameDescription = "A";
-        bytes memory localConfig = abi.encode("test config");
+        configBytes = abi.encode("test config");
 
         // act: initialize the mandate
         vm.prank(address(daoMock));
@@ -386,7 +386,7 @@ contract MandateEdgeCaseTest is TestSetupMandate {
             MandateInitData({
                 nameDescription: nameDescription,
                 targetMandate: address(testMandate),
-                config: localConfig,
+                config: configBytes,
                 conditions: conditions
             })
         );
@@ -400,7 +400,7 @@ contract MandateEdgeCaseTest is TestSetupMandate {
         mandateId = daoMock.mandateCounter();
         nameDescription = "Test Mandate";
         inputParams = abi.encode();
-        bytes memory localConfig = abi.encode("test config");
+        configBytes = abi.encode("test config");
 
         // act: initialize the mandate
         vm.prank(address(daoMock));
@@ -408,7 +408,7 @@ contract MandateEdgeCaseTest is TestSetupMandate {
             MandateInitData({
                 nameDescription: nameDescription,
                 targetMandate: address(testMandate),
-                config: localConfig,
+                config: configBytes,
                 conditions: conditions
             })
         );
@@ -421,7 +421,7 @@ contract MandateEdgeCaseTest is TestSetupMandate {
         // prep: create test data with empty config
         mandateId = daoMock.mandateCounter();
         nameDescription = "Test Mandate";
-        bytes memory localConfig = abi.encode();
+        configBytes = abi.encode();
 
         // act: initialize the mandate
         vm.prank(address(daoMock));
@@ -429,7 +429,7 @@ contract MandateEdgeCaseTest is TestSetupMandate {
             MandateInitData({
                 nameDescription: nameDescription,
                 targetMandate: address(testMandate),
-                config: localConfig,
+                config: configBytes,
                 conditions: conditions
             })
         );
@@ -449,7 +449,7 @@ contract MandateEdgeCaseTest is TestSetupMandate {
         configAddresses[1] = address(0x2);
         configAddresses[2] = address(0x3);
 
-        bytes memory localConfig = abi.encode(configAddresses, 789, false);
+        configBytes = abi.encode(configAddresses, 789, false);
 
         // act: initialize the mandate
         vm.prank(address(daoMock));
@@ -457,14 +457,14 @@ contract MandateEdgeCaseTest is TestSetupMandate {
             MandateInitData({
                 nameDescription: nameDescription,
                 targetMandate: address(testMandate),
-                config: localConfig,
+                config: configBytes,
                 conditions: conditions
             })
         );
 
         // assert: verify mandate is initialized successfully
         assertEq(testMandate.getNameDescription(address(daoMock), mandateId), nameDescription);
-        assertEq(keccak256(testMandate.getConfig(address(daoMock), mandateId)), keccak256(localConfig));
+        assertEq(keccak256(testMandate.getConfig(address(daoMock), mandateId)), keccak256(configBytes));
     }
 
     function testMultipleMandatesWithSamePowers() public {
@@ -575,15 +575,10 @@ contract MandateHandleRequestTest is TestSetupMandate {
         mandateCalldata = abi.encode(targets, values, calldatas);
 
         // act: call handleRequest
-        (
-            uint256 actionId,
-            address[] memory returnedTargets,
-            uint256[] memory returnedValues,
-            bytes[] memory returnedCalldatas
-        ) = testMandate.handleRequest(alice, address(daoMock), mandateId, mandateCalldata, nonce);
+        (uint256 actionId,,,) = testMandate.handleRequest(alice, address(daoMock), mandateId, mandateCalldata, nonce);
 
         // assert: verify actionId is correct
-        uint256 expectedActionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        uint256 expectedActionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         assertEq(actionId, expectedActionId);
     }
 
@@ -652,7 +647,7 @@ contract MandateHandleRequestTest is TestSetupMandate {
         assertEq(returnedCalldatas.length, 0);
 
         // assert: verify actionId is still correct
-        uint256 expectedActionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        uint256 expectedActionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         assertEq(actionId, expectedActionId);
     }
 
@@ -690,7 +685,7 @@ contract MandateHandleRequestTest is TestSetupMandate {
         assertEq(keccak256(returnedCalldatas[0]), keccak256(calldatas[0]));
 
         // assert: verify actionId is correct
-        uint256 expectedActionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        uint256 expectedActionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         assertEq(actionId, expectedActionId);
     }
 
@@ -712,13 +707,14 @@ contract MandateHandleRequestTest is TestSetupMandate {
         // act: call handleRequest with different callers
         (uint256 actionId1,,,) = testMandate.handleRequest(alice, address(daoMock), mandateId, mandateCalldata, nonce);
         (uint256 actionId2,,,) = testMandate.handleRequest(bob, address(daoMock), mandateId, mandateCalldata, nonce);
-        (uint256 actionId3,,,) = testMandate.handleRequest(charlotte, address(daoMock), mandateId, mandateCalldata, nonce);
+        (uint256 actionId3,,,) =
+            testMandate.handleRequest(charlotte, address(daoMock), mandateId, mandateCalldata, nonce);
 
         // assert: verify actionId is the same regardless of caller (as expected for pure function)
         assertEq(actionId1, actionId2);
         assertEq(actionId2, actionId3);
 
-        uint256 expectedActionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        uint256 expectedActionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         assertEq(actionId1, expectedActionId);
     }
 
@@ -746,7 +742,7 @@ contract MandateHandleRequestTest is TestSetupMandate {
         assertEq(actionId1, actionId2);
         assertEq(actionId2, actionId3);
 
-        uint256 expectedActionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        uint256 expectedActionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         assertEq(actionId1, expectedActionId);
     }
 
@@ -756,26 +752,26 @@ contract MandateHandleRequestTest is TestSetupMandate {
         nonce = 333;
 
         // Create complex calldata with multiple parameters
-        address[] memory complexTargets = new address[](2);
-        complexTargets[0] = address(0xAAA);
-        complexTargets[1] = address(0xBBB);
+        targets = new address[](2);
+        targets[0] = address(0xAAA);
+        targets[1] = address(0xBBB);
 
-        uint256[] memory complexValues = new uint256[](2);
-        complexValues[0] = 0;
-        complexValues[1] = 1 ether;
+        values = new uint256[](2);
+        values[0] = 0;
+        values[1] = 1 ether;
 
-        bytes[] memory complexCalldatas = new bytes[](2);
-        complexCalldatas[0] = abi.encodeWithSignature(
+        calldatas = new bytes[](2);
+        calldatas[0] = abi.encodeWithSignature(
             "multiParamFunction(address[],uint256[],bool,string)",
             new address[](2),
             new uint256[](2),
             true,
             "complex string"
         );
-        complexCalldatas[1] =
+        calldatas[1] =
             abi.encodeWithSignature("anotherFunction(bytes32,address,uint256)", keccak256("test"), address(0xCCC), 999);
 
-        mandateCalldata = abi.encode(complexTargets, complexValues, complexCalldatas);
+        mandateCalldata = abi.encode(targets, values, calldatas);
 
         // act: call handleRequest
         (
@@ -786,18 +782,18 @@ contract MandateHandleRequestTest is TestSetupMandate {
         ) = testMandate.handleRequest(alice, address(daoMock), mandateId, mandateCalldata, nonce);
 
         // assert: verify complex data is decoded correctly
-        assertEq(returnedTargets.length, complexTargets.length);
-        assertEq(returnedValues.length, complexValues.length);
-        assertEq(returnedCalldatas.length, complexCalldatas.length);
+        assertEq(returnedTargets.length, targets.length);
+        assertEq(returnedValues.length, values.length);
+        assertEq(returnedCalldatas.length, calldatas.length);
 
-        for (uint256 i = 0; i < complexTargets.length; i++) {
-            assertEq(returnedTargets[i], complexTargets[i]);
-            assertEq(returnedValues[i], complexValues[i]);
-            assertEq(keccak256(returnedCalldatas[i]), keccak256(complexCalldatas[i]));
+        for (uint256 i = 0; i < targets.length; i++) {
+            assertEq(returnedTargets[i], targets[i]);
+            assertEq(returnedValues[i], values[i]);
+            assertEq(keccak256(returnedCalldatas[i]), keccak256(calldatas[i]));
         }
 
         // assert: verify actionId is correct
-        uint256 expectedActionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        uint256 expectedActionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         assertEq(actionId, expectedActionId);
     }
 
@@ -805,11 +801,11 @@ contract MandateHandleRequestTest is TestSetupMandate {
         // prep: create invalid calldata that cannot be decoded as (address[], uint256[], bytes[])
         mandateId = 7;
         nonce = 444;
-        bytes memory invalidCalldata = abi.encode("invalid data", 123, true);
+        mandateCalldata = abi.encode("invalid data", 123, true);
 
         // act & assert: verify handleRequest reverts with invalid calldata
         vm.expectRevert();
-        testMandate.handleRequest(alice, address(daoMock), mandateId, invalidCalldata, nonce);
+        testMandate.handleRequest(alice, address(daoMock), mandateId, mandateCalldata, nonce);
     }
 
     function testHandleRequestWithMismatchedArrayLengths() public {
@@ -817,19 +813,19 @@ contract MandateHandleRequestTest is TestSetupMandate {
         mandateId = 8;
         nonce = 555;
 
-        address[] memory targetsArray = new address[](2);
-        targetsArray[0] = address(0x111);
-        targetsArray[1] = address(0x222);
+        targets = new address[](2);
+        targets[0] = address(0x111);
+        targets[1] = address(0x222);
 
-        uint256[] memory valuesArray = new uint256[](1); // Different length
-        valuesArray[0] = 1 ether;
+        values = new uint256[](1); // Different length
+        values[0] = 1 ether;
 
-        bytes[] memory calldatasArray = new bytes[](2);
-        calldatasArray[0] = abi.encodeWithSignature("function1()");
-        calldatasArray[1] = abi.encodeWithSignature("function2()");
+        calldatas = new bytes[](2);
+        calldatas[0] = abi.encodeWithSignature("function1()");
+        calldatas[1] = abi.encodeWithSignature("function2()");
 
         // This will create calldata with mismatched array lengths
-        mandateCalldata = abi.encode(targetsArray, valuesArray, calldatasArray);
+        mandateCalldata = abi.encode(targets, values, calldatas);
 
         // act: call handleRequest (OpenAction doesn't validate array length consistency)
         (
@@ -845,7 +841,7 @@ contract MandateHandleRequestTest is TestSetupMandate {
         assertEq(returnedCalldatas.length, 2);
 
         // assert: verify actionId is still correct
-        uint256 expectedActionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        uint256 expectedActionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         assertEq(actionId, expectedActionId);
     }
 }

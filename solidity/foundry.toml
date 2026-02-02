@@ -30,7 +30,10 @@ remappings = [
     "@safe/=lib/safe-smart-account/contracts/",
     "@chainlink/contracts/=lib/chainlink-evm/contracts", 
     "@chainlink/contracts-ccip/=lib/chainlink-ccip/chains/evm/contracts",
-    "@mocks/=test/mocks/"
+    "@mocks/=test/mocks/", 
+    "@src/=src/",
+    "@script/=script"
+    
 ] 
 
 [fmt]

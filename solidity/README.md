@@ -64,10 +64,10 @@ solidity/
 ├── out/                                       # Compilation output
 ├── powered/                                   # Chain specific deployment addresses of protocol contracts
 ├── script/                                    # Deployment scripts
-│    ├── DeployMocks.s.sol                     # Deploys mock contracts
+│    ├── InitialiseHelpers.s.sol                     # Deploys mock contracts
 │    ├── DeployTestOrgs.s.sol                  # Deploys a test organisation
 │    ├── FundTreasury.s.sol                    # Funds a treasury
-│    ├── HelperConfig.s.sol                    # Helper configuration
+│    ├── Configuration.s.sol                    # Helper configuration
 │    └── InitialisePowers.s.sol                # Initialises the Powers protocol
 │
 ├── src/                                       # Protocol resources

@@ -12,7 +12,24 @@ import { PowersTypes } from "./PowersTypes.sol";
 
 interface IPowers is PowersErrors, PowersEvents, PowersTypes {
     //////////////////////////////////////////////////////////////
-    //                  GOVERNANCE FUNCTIONS                     //
+    //                  CONSTITUTE LOGIC                        //
+    //////////////////////////////////////////////////////////////
+    /// @notice Initializes the DAO by activating its founding mandates
+    /// @dev Can only be called once by an admin account
+    /// @param mandates The list of mandate contracts to activate
+    function constitute(MandateInitData[] calldata mandates) external;
+
+    /// @notice Closes the constitute phase, preventing further mandates from being added
+    /// @dev Can only be called by an admin account
+    function closeConstitute() external;
+
+    /// @notice Closes the constitute phase, preventing further mandates from being added
+    /// @dev Can only be called by an admin account
+    /// @param newAdmin The address of the new admin account
+    function closeConstitute(address newAdmin) external;
+
+    //////////////////////////////////////////////////////////////
+    //                  GOVERNANCE FUNCTIONS                    //
     //////////////////////////////////////////////////////////////
 
     /// @notice Initiates an action to be executed through a mandate
@@ -76,16 +93,10 @@ interface IPowers is PowersErrors, PowersEvents, PowersTypes {
     //////////////////////////////////////////////////////////////
     //                  ROLE AND LAW ADMIN                       //
     //////////////////////////////////////////////////////////////
-
-    /// @notice Initializes the DAO by activating its founding mandates
-    /// @dev Can only be called once by an admin account
-    /// @param mandates The list of mandate contracts to activate
-    function constitute(MandateInitData[] calldata mandates) external;
-
     /// @notice Activates a new mandate in the protocol
     /// @dev Can only be called through the protocol itself
     /// @param mandateInitData The data of the mandate
-    function adoptMandate(MandateInitData calldata mandateInitData) external returns (uint256 mandateId);
+    function adoptMandate(MandateInitData calldata mandateInitData) external returns (uint16 mandateId);
 
     /// @notice Deactivates an existing mandate
     /// @dev Can only be called through the protocol itself
@@ -230,7 +241,15 @@ interface IPowers is PowersErrors, PowersEvents, PowersTypes {
     /// @return mandate The address of the mandate
     /// @return mandateHash The hash of the mandate
     /// @return active The active status of the mandate
-    function getAdoptedMandate(uint16 mandateId) external view returns (address mandate, bytes32 mandateHash, bool active);
+    function getAdoptedMandate(uint16 mandateId)
+        external
+        view
+        returns (address mandate, bytes32 mandateHash, bool active);
+
+    /// @notice Gets the total number of adopted mandates
+    /// @return mandateCounter The total number of adopted mandates
+    /// @dev Added this function to expose mandateCounter at IPowers interface level.
+    function getMandateCounter() external view returns (uint16 mandateCounter);
 
     /// @notice Gets the latest fulfillment of a mandate
     /// @param mandateId The id of the mandate
@@ -266,22 +285,4 @@ interface IPowers is PowersErrors, PowersEvents, PowersTypes {
     /// @param account The address to check
     /// @return blacklisted The blacklisted status of the account
     function isBlacklisted(address account) external view returns (bool blacklisted);
-
-    //////////////////////////////////////////////////////////////
-    //                      TOKEN HANDLING                      //
-    //////////////////////////////////////////////////////////////
-
-    /// @notice Handles the receipt of a single ERC721 token
-    /// @dev Implements IERC721Receiver
-    function onERC721Received(address, address, uint256, bytes memory) external returns (bytes4);
-
-    /// @notice Handles the receipt of a single ERC1155 token
-    /// @dev Implements IERC1155Receiver
-    function onERC1155Received(address, address, uint256, uint256, bytes memory) external returns (bytes4);
-
-    /// @notice Handles the receipt of multiple ERC1155 tokens
-    /// @dev Implements IERC1155Receiver
-    function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory, bytes memory)
-        external
-        returns (bytes4);
 }

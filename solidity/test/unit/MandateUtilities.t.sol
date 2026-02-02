@@ -13,7 +13,6 @@ import { TestSetupMandate } from "../TestSetup.t.sol";
 import { IMandate } from "../../src/interfaces/IMandate.sol";
 import { Mandate } from "../../src/Mandate.sol";
 
-import { SoulboundErc721 } from "../../src/helpers/SoulboundErc721.sol";
 import { SimpleErc1155 } from "@mocks/SimpleErc1155.sol";
 
 contract MandateUtilitiesTest is TestSetupMandate {
@@ -38,37 +37,19 @@ contract MandateUtilitiesTest is TestSetupMandate {
     }
 
     //////////////////////////////////////////////////////////////
-    //                  NFT CHECKS                               //
-    //////////////////////////////////////////////////////////////
-    function testNftCheckPassesWithValidToken() public {
-        // Setup: Mint an NFT to alice
-        vm.prank(address(daoMock));
-        SoulboundErc721(mockAddresses[2]).mintNft(1, alice);
-
-        // Should not revert when alice owns an NFT
-        MandateUtilities.nftCheck(alice, mockAddresses[2]);
-    }
-
-    function testNftCheckRevertsWithoutToken() public {
-        // Should revert when alice doesn't own any NFTs
-        vm.expectRevert("Does not own token.");
-        MandateUtilities.nftCheck(alice, mockAddresses[2]);
-    }
-
-    //////////////////////////////////////////////////////////////
     //                  ROLE CHECKS                              //
     //////////////////////////////////////////////////////////////
-    function testHasRoleCheckPassesWithValidRole() public {
-        uint32[] memory roles = new uint32[](1);
-        roles[0] = uint32(ROLE_ONE);
+    function testHasRoleCheckPassesWithValidRole() public view {
+        uint256[] memory roles = new uint256[](1);
+        roles[0] = ROLE_ONE;
 
         // Should not revert when alice has ROLE_ONE
         MandateUtilities.hasRoleCheck(alice, roles, address(daoMock));
     }
 
     function testHasRoleCheckRevertsWithoutRole() public {
-        uint32[] memory roles = new uint32[](1);
-        roles[0] = uint32(ROLE_ONE);
+        uint256[] memory roles = new uint256[](1);
+        roles[0] = ROLE_ONE;
         address userWithoutRole = makeAddr("userWithoutRole");
 
         // Should revert when user doesn't have the role
@@ -77,8 +58,8 @@ contract MandateUtilitiesTest is TestSetupMandate {
     }
 
     function testHasNotRoleCheckPassesWithoutRole() public {
-        uint32[] memory roles = new uint32[](1);
-        roles[0] = uint32(ROLE_THREE);
+        uint256[] memory roles = new uint256[](1);
+        roles[0] = uint256(ROLE_THREE);
         address userWithoutRole = makeAddr("userWithoutRole");
 
         // Should not revert when user doesn't have the role
@@ -86,8 +67,8 @@ contract MandateUtilitiesTest is TestSetupMandate {
     }
 
     function testHasNotRoleCheckRevertsWithRole() public {
-        uint32[] memory roles = new uint32[](1);
-        roles[0] = uint32(ROLE_ONE);
+        uint256[] memory roles = new uint256[](1);
+        roles[0] = ROLE_ONE;
 
         // Should revert when alice has the role
         vm.expectRevert("Has role.");
@@ -102,7 +83,7 @@ contract MandateUtilitiesTest is TestSetupMandate {
         mandateCalldata = abi.encode(true);
         nonce = 123;
 
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         assertEq(actionId, uint256(keccak256(abi.encode(mandateId, mandateCalldata, nonce))));
     }
 
@@ -125,7 +106,7 @@ contract MandateUtilitiesTest is TestSetupMandate {
     //                  ARRAY UTILITIES                         //
     //////////////////////////////////////////////////////////////
 
-    function testArrayifyBoolsEmptyArrayPasses(uint256 numBools) public {
+    function testArrayifyBoolsEmptyArrayPasses(uint256 numBools) public pure {
         numBools = bound(numBools, 0, 1000);
         // Test with zero booleans
         bool[] memory result = MandateUtilities.arrayifyBools(numBools);

@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: MIT
 
 /// @notice An example implementation of a Mandate Package that adopts multiple mandates into the Powers protocol.
-/// @dev It is meant to be adopted through the AdoptMandates mandate, and then be executed to adopt multiple mandates in a single transaction.
+/// @dev It is meant to be adopted through the Mandates_Adopt mandate, and then be executed to adopt multiple mandates in a single transaction.
 /// @dev The mandate self-destructs after execution.
 ///
 /// @author 7Cedars
+
+// £todo: make this package more generic, allowing for any set of mandates to be adopted in a package.
+// make configParams accept raw mandate Initdatas. That is the easiest way to set it up.
+// But watch out : the mandateCounter needs to be passed correctly to the getNewMandates function.
+// maybe the approach below is the only possible one?
 
 pragma solidity 0.8.26;
 
@@ -23,10 +28,12 @@ contract MandatePackage is Mandate {
         emit Mandate__Deployed(abi.encode());
     }
 
-    function initializeMandate(uint16 index, string memory nameDescription, bytes memory inputParams, bytes memory config)
-        public
-        override
-    {
+    function initializeMandate(
+        uint16 index,
+        string memory nameDescription,
+        bytes memory inputParams,
+        bytes memory config
+    ) public override {
         inputParams = abi.encode();
         super.initializeMandate(index, nameDescription, inputParams, config);
     }
@@ -46,7 +53,7 @@ contract MandatePackage is Mandate {
         override
         returns (uint256 actionId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas)
     {
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         uint16 mandateCount = Powers(powers).mandateCounter();
         PowersTypes.MandateInitData[] memory smandateInitData = getNewMandates(sMandateAddresses, powers, mandateCount);
 
@@ -65,11 +72,16 @@ contract MandatePackage is Mandate {
 
     /// @notice Generates MandateInitData for a set of new mandates to be adopted.
     /// @param mandateAddresses The addresses of the mandates to be adopted.
-    /// @param powers The address of the Powers contract.
+    // / @param powers The address of the Powers contract.
     /// @return mandateInitData An array of MandateInitData structs for the new mandates.
     /// @dev the function follows the same pattern as TestConstitutions.sol
     /// this function can be overwritten to create different mandate packages.
-    function getNewMandates(address[] memory mandateAddresses, address powers, uint16 mandateCount)
+    function getNewMandates(
+        address[] memory mandateAddresses,
+        address,
+        /* powers */
+        uint16 mandateCount
+    )
         public
         view
         virtual

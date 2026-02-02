@@ -1,7 +1,7 @@
 import { Organization, MandateInitData, isDeployableContract, isFunctionCallDependency, DeployableContract } from "./types";
 import { powersAbi, safeL2Abi, safeProxyFactoryAbi } from "@/context/abi";  
 import { Abi, encodeAbiParameters, encodeFunctionData, parseAbiParameters, keccak256, encodePacked, toFunctionSelector } from "viem";
-import { getMandateAddress, daysToBlocks, ADMIN_ROLE, PUBLIC_ROLE, createConditions, createMandateInitData, minutesToBlocks } from "./helpers";
+import { getInitialisedAddress, daysToBlocks, ADMIN_ROLE, PUBLIC_ROLE, createConditions, createMandateInitData, minutesToBlocks } from "./helpers";
 import nominees from "@/context/builds/Nominees.json";
 import { getConstants } from "@/context/constants";
 import { sepolia, arbitrumSepolia, optimismSepolia, mantleSepoliaTestnet, foundry } from "@wagmi/core/chains";
@@ -76,7 +76,7 @@ export const OptimisticExecution: Organization = {
     mandateCounter++;
     mandateInitData.push({
       nameDescription: "Initial Setup: Assign role labels (Members, Executives) and revokes itself after execution",
-      targetMandate: getMandateAddress("PresetSingleAction", deployedMandates),
+      targetMandate: getInitialisedAddress("PresetSingleAction", deployedMandates),
       config: encodeAbiParameters(
         [
           { name: 'targets', type: 'address[]' },
@@ -123,7 +123,7 @@ export const OptimisticExecution: Organization = {
     mandateCounter++;
     mandateInitData.push({
       nameDescription: "Veto Actions: Funders can veto actions",
-      targetMandate: getMandateAddress("StatementOfIntent", deployedMandates),
+      targetMandate: getInitialisedAddress("StatementOfIntent", deployedMandates),
       config: executeActionConfig,
       conditions: createConditions({
         allowedRole: 1n, // Members
@@ -138,7 +138,7 @@ export const OptimisticExecution: Organization = {
     mandateCounter++;
     mandateInitData.push({
       nameDescription: "Execute an action: Members propose adopting new mandates",
-      targetMandate: getMandateAddress("OpenAction", deployedMandates),
+      targetMandate: getInitialisedAddress("OpenAction", deployedMandates),
       config: `0x`,
       conditions: createConditions({
         allowedRole: 2n, // Executives
@@ -155,7 +155,7 @@ export const OptimisticExecution: Organization = {
     mandateCounter++;
     mandateInitData.push({
       nameDescription: "Admin can assign any role: For this demo, the admin can assign any role to an account.",
-      targetMandate: getMandateAddress("BespokeActionSimple", deployedMandates),
+      targetMandate: getInitialisedAddress("BespokeActionSimple", deployedMandates),
       config: encodeAbiParameters(
       parseAbiParameters('address powers, bytes4 FunctionSelector, string[] Params'),
         [
@@ -173,7 +173,7 @@ export const OptimisticExecution: Organization = {
     mandateCounter++;
     mandateInitData.push({
       nameDescription: "A delegate can revoke a role: For this demo, any delegate can revoke previously assigned roles.",
-      targetMandate: getMandateAddress("BespokeActionSimple", deployedMandates),
+      targetMandate: getInitialisedAddress("BespokeActionSimple", deployedMandates),
       config: encodeAbiParameters(
       parseAbiParameters('address powers, bytes4 FunctionSelector, string[] Params'),
         [

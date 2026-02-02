@@ -15,49 +15,36 @@ pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { Nominees } from "../../helpers/Nominees.sol";
 import { ERC20Votes } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 contract DelegateTokenSelect is Mandate {
-    struct Data {
-        address powersContract;
+    struct Mem {
         address votesToken;
         address nomineesContract;
         uint256 roleId;
         uint256 maxRoleHolders;
+        uint256 amountRoleHolders;
+        address[] currentRoleHolders;
+        address[] nominees;
+        uint256 numNominees;
+        address[] rankedNominees;
+        uint256 tempVotes;
+        address tempNominee;
+        uint256[] delegatedVotes;
+        address[] elected;
+        uint256 totalOperations;
+        uint256 operationIndex;
+        uint256 i;
+        uint256 j;
     }
-
-    mapping(bytes32 mandateHash => Data data) internal _data;
 
     /// @notice Constructor for DelegateTokenSelect mandate
     constructor() {
         bytes memory configParams =
             abi.encode("address VotesToken", "address NomineesContract", "uint256 RoleId", "uint256 MaxRoleHolders");
         emit Mandate__Deployed(configParams);
-    }
-
-    function initializeMandate(uint16 index, string memory nameDescription, bytes memory inputParams, bytes memory config)
-        public
-        override
-    {
-        (address votesToken_, address nomineesContract_, uint256 roleId_, uint256 maxRoleHolders_) =
-            abi.decode(config, (address, address, uint256, uint256));
-
-        bytes32 mandateHash = MandateUtilities.hashMandate(msg.sender, index);
-
-        _data[mandateHash] = Data({
-            powersContract: msg.sender,
-            votesToken: votesToken_,
-            nomineesContract: nomineesContract_,
-            roleId: roleId_,
-            maxRoleHolders: maxRoleHolders_
-        });
-
-        // No input parameters needed for this mandate
-        inputParams = abi.encode();
-
-        super.initializeMandate(index, nameDescription, inputParams, config);
     }
 
     /// @notice Execute the mandate by revoking current role holders and assigning top token holders
@@ -75,97 +62,90 @@ contract DelegateTokenSelect is Mandate {
         override
         returns (uint256 actionId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas)
     {
-        bytes32 mandateHash = MandateUtilities.hashMandate(powers, mandateId);
-        Data memory data = _data[mandateHash];
-
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        Mem memory mem;
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
+        (mem.votesToken, mem.nomineesContract, mem.roleId, mem.maxRoleHolders) =
+            abi.decode(getConfig(powers, mandateId), (address, address, uint256, uint256));
 
         // Step 1: Get current role holders from Powers
-        uint256 amountRoleHolders = Powers(payable(data.powersContract)).getAmountRoleHolders(data.roleId);
+        mem.amountRoleHolders = IPowers(payable(powers)).getAmountRoleHolders(mem.roleId);
 
-        address[] memory currentRoleHolders = new address[](amountRoleHolders);
-        for (uint256 i = 0; i < amountRoleHolders; i++) {
-            currentRoleHolders[i] = Powers(payable(data.powersContract)).getRoleHolderAtIndex(data.roleId, i);
+        mem.currentRoleHolders = new address[](mem.amountRoleHolders);
+        for (mem.i = 0; mem.i < mem.amountRoleHolders; mem.i++) {
+            mem.currentRoleHolders[mem.i] = IPowers(payable(powers)).getRoleHolderAtIndex(mem.roleId, mem.i);
         }
 
         // Step 2: Get nominees
-        address[] memory nominees = Nominees(data.nomineesContract).getNominees();
-        uint256 numNominees = nominees.length;
+        mem.nominees = Nominees(mem.nomineesContract).getNominees();
+        mem.numNominees = mem.nominees.length;
 
-        // Step 3: Determine elected nominees
-        address[] memory elected;
-        
         // Gas optimization: If all nominees will be elected, skip ranking
-        if (numNominees <= data.maxRoleHolders) {
+        if (mem.numNominees <= mem.maxRoleHolders) {
             // All nominees get elected, no need to rank by delegated tokens
-            elected = nominees;
+            mem.elected = mem.nominees;
         } else {
             // Need to rank by delegated tokens and select top maxRoleHolders
-            address[] memory rankedNominees = new address[](numNominees);
-            uint256[] memory delegatedVotes = new uint256[](numNominees);
+            mem.rankedNominees = new address[](mem.numNominees);
+            mem.delegatedVotes = new uint256[](mem.numNominees);
 
             // Get delegated votes for each nominee
-            for (uint256 i = 0; i < numNominees; i++) {
-                rankedNominees[i] = nominees[i];
-                delegatedVotes[i] = ERC20Votes(data.votesToken).getVotes(nominees[i]);
+            for (mem.i = 0; mem.i < mem.numNominees; mem.i++) {
+                mem.rankedNominees[mem.i] = mem.nominees[mem.i];
+                mem.delegatedVotes[mem.i] = ERC20Votes(mem.votesToken).getVotes(mem.nominees[mem.i]);
             }
 
             // Sort nominees by delegated votes (bubble sort - descending)
-            for (uint256 i = 0; i < numNominees - 1; i++) {
-                for (uint256 j = 0; j < numNominees - i - 1; j++) {
-                    if (delegatedVotes[j] < delegatedVotes[j + 1]) {
+            for (mem.i = 0; mem.i < mem.numNominees - 1; mem.i++) {
+                for (uint256 j = 0; j < mem.numNominees - mem.i - 1; j++) {
+                    if (mem.delegatedVotes[j] < mem.delegatedVotes[j + 1]) {
                         // Swap votes
-                        uint256 tempVotes = delegatedVotes[j];
-                        delegatedVotes[j] = delegatedVotes[j + 1];
-                        delegatedVotes[j + 1] = tempVotes;
+                        mem.tempVotes = mem.delegatedVotes[j];
+                        mem.delegatedVotes[j] = mem.delegatedVotes[j + 1];
+                        mem.delegatedVotes[j + 1] = mem.tempVotes;
                         // Swap nominees
-                        address tempNominee = rankedNominees[j];
-                        rankedNominees[j] = rankedNominees[j + 1];
-                        rankedNominees[j + 1] = tempNominee;
+                        mem.tempNominee = mem.rankedNominees[j];
+                        mem.rankedNominees[j] = mem.rankedNominees[j + 1];
+                        mem.rankedNominees[j + 1] = mem.tempNominee;
                     }
                 }
             }
 
             // Select top maxRoleHolders candidates
-            elected = new address[](data.maxRoleHolders);
-            for (uint256 i = 0; i < data.maxRoleHolders; i++) {
-                elected[i] = rankedNominees[i];
+            mem.elected = new address[](mem.maxRoleHolders);
+            for (mem.i = 0; mem.i < mem.maxRoleHolders; mem.i++) {
+                mem.elected[mem.i] = mem.rankedNominees[mem.i];
             }
         }
 
         // Step 4: Calculate total number of operations needed
-        uint256 totalOperations = amountRoleHolders + elected.length;
+        mem.totalOperations = mem.amountRoleHolders + mem.elected.length;
 
-        if (totalOperations == 0) {
+        if (mem.totalOperations == 0) {
             // No operations needed, but we still need to create an empty array
             (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
             return (actionId, targets, values, calldatas);
         }
 
-        (targets, values, calldatas) = MandateUtilities.createEmptyArrays(totalOperations);
+        (targets, values, calldatas) = MandateUtilities.createEmptyArrays(mem.totalOperations);
 
-        uint256 operationIndex = 0;
+        mem.operationIndex = 0;
 
         // Step 5: Revoke roles from all current holders
-        for (uint256 i = 0; i < currentRoleHolders.length; i++) {
-            targets[operationIndex] = data.powersContract;
-            calldatas[operationIndex] =
-                abi.encodeWithSelector(Powers.revokeRole.selector, data.roleId, currentRoleHolders[i]);
-            operationIndex++;
+        for (mem.i = 0; mem.i < mem.currentRoleHolders.length; mem.i++) {
+            targets[mem.operationIndex] = powers;
+            calldatas[mem.operationIndex] =
+                abi.encodeWithSelector(IPowers.revokeRole.selector, mem.roleId, mem.currentRoleHolders[mem.i]);
+            mem.operationIndex++;
         }
 
         // Step 6: Assign roles to newly elected accounts
-        for (uint256 i = 0; i < elected.length; i++) {
-            targets[operationIndex] = data.powersContract;
-            calldatas[operationIndex] = abi.encodeWithSelector(Powers.assignRole.selector, data.roleId, elected[i]);
-            operationIndex++;
+        for (mem.i = 0; mem.i < mem.elected.length; mem.i++) {
+            targets[mem.operationIndex] = powers;
+            calldatas[mem.operationIndex] =
+                abi.encodeWithSelector(IPowers.assignRole.selector, mem.roleId, mem.elected[mem.i]);
+            mem.operationIndex++;
         }
 
         return (actionId, targets, values, calldatas);
-    }
-
-    /// @notice Get the stored data for a mandate
-    function getData(bytes32 mandateHash) public view returns (Data memory) {
-        return _data[mandateHash];
     }
 }

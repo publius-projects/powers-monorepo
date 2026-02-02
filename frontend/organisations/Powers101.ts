@@ -1,7 +1,7 @@
 import { Organization } from "./types";
 import { powersAbi } from "@/context/abi";
 import { Abi, encodeAbiParameters, encodeFunctionData } from "viem";
-import { minutesToBlocks, ADMIN_ROLE, PUBLIC_ROLE, createConditions, getMandateAddress } from "./helpers";
+import { minutesToBlocks, ADMIN_ROLE, PUBLIC_ROLE, createConditions, getInitialisedAddress } from "./helpers";
 import { MandateInitData } from "./types";
 import { sepolia, arbitrumSepolia, optimismSepolia, mantleSepoliaTestnet, foundry } from "@wagmi/core/chains";
  
@@ -59,7 +59,7 @@ export const Powers101: Organization = {
 
     mandateInitData.push({
       nameDescription: "Initial Setup: Assign role labels (Members, Delegates) and revoke itself after execution",
-      targetMandate: getMandateAddress("PresetSingleAction", deployedMandates),
+      targetMandate: getInitialisedAddress("PresetSingleAction", deployedMandates),
       config: encodeAbiParameters(
         [
           { name: 'targets', type: 'address[]' },
@@ -109,7 +109,7 @@ export const Powers101: Organization = {
     // Mandate 2: Statement of Intent
     mandateInitData.push({
       nameDescription: "Statement Of Intent: Members can initiate an action through a Statement of Intent that Delegates can later execute",
-      targetMandate: getMandateAddress("StatementOfIntent", deployedMandates),
+      targetMandate: getInitialisedAddress("StatementOfIntent", deployedMandates),
       config: statementOfIntentConfig,
       conditions: createConditions({
         allowedRole: 1n,
@@ -122,7 +122,7 @@ export const Powers101: Organization = {
     // Mandate 3: Veto an action
     mandateInitData.push({
       nameDescription: "Veto Action: Admin can veto actions proposed by the community",
-      targetMandate: getMandateAddress("StatementOfIntent", deployedMandates),
+      targetMandate: getInitialisedAddress("StatementOfIntent", deployedMandates),
       config: statementOfIntentConfig,
       conditions: createConditions({
         allowedRole: ADMIN_ROLE,
@@ -133,7 +133,7 @@ export const Powers101: Organization = {
     // Mandate 4: Execute an action
     mandateInitData.push({
       nameDescription: "Execute Action: Delegates approve and execute actions proposed by the community",
-      targetMandate: getMandateAddress("OpenAction", deployedMandates),
+      targetMandate: getInitialisedAddress("OpenAction", deployedMandates),
       config: "0x",
       conditions: createConditions({
         allowedRole: 2n,
@@ -153,7 +153,7 @@ export const Powers101: Organization = {
     // Mandate 5: Self select as community member
     mandateInitData.push({
       nameDescription: "Join as Member: Anyone can self-select to become a community member",
-      targetMandate: getMandateAddress("SelfSelect", deployedMandates),
+      targetMandate: getInitialisedAddress("SelfSelect", deployedMandates),
       config: encodeAbiParameters(
         [{ name: 'roleId', type: 'uint256' }],
         [1n]
@@ -167,7 +167,7 @@ export const Powers101: Organization = {
     // Mandate 6: Self select as delegate
     mandateInitData.push({
       nameDescription: "Become Delegate: Community members can self-select to become a Delegate",
-      targetMandate: getMandateAddress("SelfSelect", deployedMandates),
+      targetMandate: getInitialisedAddress("SelfSelect", deployedMandates),
       config: encodeAbiParameters(
         [{ name: 'roleId', type: 'uint256' }],
         [2n]

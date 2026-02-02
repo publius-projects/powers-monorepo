@@ -20,7 +20,7 @@ export function SectionApplications() {
         </div>
 
         {/* info blocks */}
-        <section className="w-full flex flex-wrap gap-6 max-w-6xl justify-center items-stretch overflow-y-auto max-h-[60vh] pb-6">   
+        <section className="w-full flex flex-wrap gap-6 max-w-6xl justify-center items-stretch overflow-y-auto max-h-[70vh] pb-6">   
               {powersApplications.map((useCase, index) => (
                     <div className="w-80 flex flex-col border border-slate-300 rounded-lg bg-slate-50 shadow-md hover:shadow-lg transition-shadow duration-200" key={index}>  
                       <div className="w-full font-bold text-slate-700 p-4 border-b border-slate-300 bg-slate-100 rounded-t-lg">

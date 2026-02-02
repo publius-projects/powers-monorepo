@@ -1,12 +1,11 @@
-// // SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.26;
 
 // /// @notice A mandate that analyzes addresses using AI via cross-chain communication
 // /// @dev This mandate sends msg.sender to AiCCIPProxy for AI analysis and assigns roles based on results
 // /// @author 7Cedars
 
 // // Note: Data validation is hardly present at this stage. It's a PoC..
-
-// pragma solidity ^0.8.26;
 
 // import { Mandate } from "../../Mandate.sol";
 // import { IMandate } from "../../interfaces/IMandate.sol";
@@ -116,7 +115,7 @@
 //     /// @param nameDescription Name of the mandate
 //     /// @param inputParams Input parameters (none for this mandate)
 //     /// @param conditions Conditions for the mandate
-//     /// @param config Configuration data containing aiCCIPProxy address
+//     /// @param config Configurations data containing aiCCIPProxy address
 //     function initializeMandate(
 //         uint16 index,
 //         string memory nameDescription,
@@ -161,7 +160,7 @@
 //         if (s_aiCCIPProxy == address(0)) {
 //             revert AiCCIPProxyNotSet();
 //         }
-//         actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+//         actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
 
 //         (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
 

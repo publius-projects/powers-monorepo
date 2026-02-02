@@ -131,7 +131,7 @@ export const isValidAddress = (address: string): boolean => {
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 };
 
-export const getMandateAddress = (name: string, deployedMandates: Record<string, `0x${string}`>): `0x${string}` => {
+export const getInitialisedAddress = (name: string, deployedMandates: Record<string, `0x${string}`>): `0x${string}` => {
   // console.log("Getting mandate address for:", { name, deployedMandates });
 
   const mandate = deployedMandates[name];

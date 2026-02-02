@@ -19,15 +19,14 @@ type InputProps = {
 }
 
 export function DynamicInput({dataType, varName, values, onChange, index}: InputProps) {
-  const [inputArray, setInputArray] = useState<InputType[]>(values instanceof Array ? values : [values || ""])
+  const [inputArray, setInputArray] = useState<InputType[]>(values instanceof Array ? values : [values ?? ""])
   const [itemsArray, setItemsArray] = useState<number[]>([0])
   const action = useActionStore()
-  const inputValue = values instanceof Array ? values[index] : values
 
   // Sync local state with global action store
   useEffect(() => {
     if (action.paramValues && action.paramValues.length > 0) {
-      const newValues = values instanceof Array ? values : [values || ""]
+      const newValues = values instanceof Array ? values : [values ?? ""]
       setInputArray(newValues)
       setItemsArray([...Array(newValues.length).keys()])
     }
@@ -78,7 +77,7 @@ export function DynamicInput({dataType, varName, values, onChange, index}: Input
 
     if (expand) {
       const newItemsArray = [...Array(itemsArray.length + 1).keys()]
-      const newInputArray = new Array<InputType>(newItemsArray.length) 
+      const newInputArray = [...inputArray, ""]
       setItemsArray(newItemsArray) 
       setInputArray(newInputArray)
       // Update global action store
@@ -141,13 +140,13 @@ export function DynamicInput({dataType, varName, values, onChange, index}: Input
                       type="checkbox" 
                       name={`input${item}`} 
                       id={`input${item}`}
-                      value={inputValue === true ? "false" : "true"} 
-                      checked = {inputValue === true}
+                      value={inputArray[item] === true ? "false" : "true"} 
+                      checked = {inputArray[item] === true}
                       className="h-4 w-4 text-slate-500 focus:ring-slate-300" 
                       onChange={(event) => handleChange({event, item})}
                     />
                     <span className="text-xs font-mono text-slate-500">
-                      {inputValue === true ? "true" : "false"}
+                      {inputArray[item] === true ? "true" : "false"}
                     </span>
                   </div>
                 </div>

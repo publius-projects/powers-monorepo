@@ -3,13 +3,18 @@ pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
-import { Powers } from "../../Powers.sol";
 import { IPowers } from "../../interfaces/IPowers.sol";
 
 contract AssignExternalRole is Mandate {
-    // State variables
-    address private s_externalPowersAddress;
-    uint256 private s_roleId;
+    struct Mem {
+        address account;
+        address externalPowersAddress;
+        uint256 roleId;
+        uint48 hasRoleInChild;
+        uint48 hasRoleInParent;
+        bool A;
+        bool B;
+    }
 
     constructor() {
         bytes memory configParams = abi.encode("address externalPowers", "uint256 roleId");
@@ -20,11 +25,8 @@ contract AssignExternalRole is Mandate {
         public
         override
     {
-        // Decode and store configuration parameters
-        (s_externalPowersAddress, s_roleId) = abi.decode(config, (address, uint256));
-
         // Define the input parameters for the UI
-        bytes memory inputParams = abi.encodePacked(abi.encode("address account"));
+        bytes memory inputParams = abi.encode("address account");
         super.initializeMandate(index, nameDescription, inputParams, config);
     }
 
@@ -40,32 +42,33 @@ contract AssignExternalRole is Mandate {
         override
         returns (uint256 actionId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas)
     {
-        // Decode input parameter
-        (address account) = abi.decode(mandateCalldata, (address));
+        Mem memory mem;
+        (mem.account) = abi.decode(mandateCalldata, (address));
+        (mem.externalPowersAddress, mem.roleId) = abi.decode(getConfig(powers, mandateId), (address, uint256));
 
         // A: Check if the account has the role in the Child contract (current Powers contract)
-        uint48 hasRoleInChild = Powers(powers).hasRoleSince(account, s_roleId);
-        bool A = hasRoleInChild > 0;
+        mem.hasRoleInChild = IPowers(powers).hasRoleSince(mem.account, mem.roleId);
+        mem.A = mem.hasRoleInChild > 0;
 
         // B: Check if the account has the role in the Parent contract (external Powers contract)
-        uint48 hasRoleInParent = Powers(s_externalPowersAddress).hasRoleSince(account, s_roleId);
-        bool B = hasRoleInParent > 0;
+        mem.hasRoleInParent = IPowers(mem.externalPowersAddress).hasRoleSince(mem.account, mem.roleId);
+        mem.B = mem.hasRoleInParent > 0;
 
         // Prepare the action ID
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
 
         // Handle the four scenarios
-        if (A && !B) {
+        if (mem.A && !mem.B) {
             // A == true and B == false: revoke role in child contract
             (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
             targets[0] = powers;
-            calldatas[0] = abi.encodeWithSelector(IPowers.revokeRole.selector, s_roleId, account);
-        } else if (!A && B) {
+            calldatas[0] = abi.encodeWithSelector(IPowers.revokeRole.selector, mem.roleId, mem.account);
+        } else if (!mem.A && mem.B) {
             // B == true and A == false: assign role in child contract
             (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
             targets[0] = powers;
-            calldatas[0] = abi.encodeWithSelector(IPowers.assignRole.selector, s_roleId, account);
-        } else if (!A && !B) {
+            calldatas[0] = abi.encodeWithSelector(IPowers.assignRole.selector, mem.roleId, mem.account);
+        } else if (!mem.A && !mem.B) {
             // A == false and B == false: revert
             revert("Account does not have role at parent");
         } else {

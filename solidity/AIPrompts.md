@@ -13,7 +13,7 @@ Thank you very much!
 [ the ref needs to be broadcast/DeployMandates/31337/run-latest.json]
 Can you check the @run-latest.json for chains 31337, 421614, 11155111 and 11155420 and update the LAW_NAMES and LAW_ADDRESSES accordingly in @constants.ts ? You can the necessary data in "returns" in the file.  
 
-[ the ref needs to be broadcast/DeployMocks/31337/run-latest.json]
+[ the ref needs to be broadcast/InitialiseHelpers/31337/run-latest.json]
 Can you check the @run-latest.json for chains 31337, 421614, 11155111 and 11155420 and update the MOCK_NAMES and MOCK_ADDRESSES accordingly in @constants.ts ? You can the necessary data in "returns" in the file.  
 
 ## Update Docs after deployment new mandates.  
@@ -23,7 +23,7 @@ Can you check the @run-latest.json for chains 421614, 11155111 and 11155420 plea
 In the run-latest.json files, there is a section "returns". For each mandate mentioned there, can you go to the gitbook documentation, search for the documentation on this mandate, and update the deployment table in the 'Current Deployments' section? Thank you! 
 
 ## Update refs in metadata json to mock contracts and treasuries.  
-[ the ref needs to be broadcast/DeployMocks/421614/run-latest.json]
+[ the ref needs to be broadcast/InitialiseHelpers/421614/run-latest.json]
 Can you check the @run-latest.json for chain 421614 please? We will use this file to update all the .json files in @/orgMetadatas.
 
 There is a section "returns" in run-latest.json. Use this data to do the following: 

@@ -1,11 +1,10 @@
-// // SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.26;
 
-// // @notice A base contract that executes a bespoke action.
-// // TBI: Basic logic sho
-// //
-// // @author 7Cedars,
-
-// pragma solidity 0.8.26;
+// @notice A base contract that executes a bespoke action.
+// TBI: Basic logic sho
+//
+// @author 7Cedars,
 
 // import { Mandate } from "../../Mandate.sol";
 // import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
@@ -107,7 +106,7 @@
 //             bytes memory stateChange
 //         )
 //     {
-//         actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+//         actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
 //         (string memory proposalId, string memory choice,,,,) =
 //             abi.decode(mandateCalldata, (string, string, address[], uint256[], bytes[], string));
 

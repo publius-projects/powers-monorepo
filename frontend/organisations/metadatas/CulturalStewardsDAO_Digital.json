@@ -1,0 +1,23 @@
+{
+  "icon": "",
+  "banner": "https://aqua-famous-sailfish-288.mypinata.cloud/ipfs/bafybeideomrrzq4goct7we74barpvwte7qvbaljrj3azlwiyzzjku6wsou",
+  "description": 
+    "Manages code repositories, commits, and digital representation of the organisation and its sub-DAOs. The parent DAO holds some veto powers over this DAO.",
+  "website": "",
+  "codeOfConduct": "", 
+  "disputeResolution": "", 
+  "communicationChannels": {
+      "discord": "",
+      "telegram": "",
+      "x": "",
+      "paragraph": "",
+      "youtube": "",
+      "facebook": "",
+      "github": "https://github.com/7Cedars/powers/blob/develop/solidity/script/deployOrganisations/CulturalStewardsDAO.s.sol",
+      "forum": "",
+      "documentation": "https://docs.google.com/document/d/1sZo0f_Jbu3HIw6KUop-Kcgvu1tSnVU8wpihRw3XqU9I"
+  },
+  "parentContracts": [ ],
+  "childContracts": [ ],
+  "attributes": [ ]
+}

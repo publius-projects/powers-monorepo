@@ -8,18 +8,19 @@
 pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 
 // import "forge-std/Test.sol"; // for testing only. remove before deployment.
 
 contract RoleByRoles is Mandate {
-    struct Data {
+    struct Mem {
+        address account;
+        bool hasAnyOfNeededRoles;
+        bool alreadyHasNewRole;
         uint256 newRoleId;
         uint256[] roleIdsNeeded;
     }
-
-    mapping(bytes32 mandateHash => Data data) public data;
 
     /// @notice Constructor for RoleByRoles mandate
     constructor() {
@@ -27,16 +28,13 @@ contract RoleByRoles is Mandate {
         emit Mandate__Deployed(configParams);
     }
 
-    function initializeMandate(uint16 index, string memory nameDescription, bytes memory inputParams, bytes memory config)
-        public
-        override
-    {
-        (uint256 newRoleId_, uint256[] memory roleIdsNeeded_) = abi.decode(config, (uint256, uint256[]));
-        bytes32 mandateHash = MandateUtilities.hashMandate(msg.sender, index);
-        data[mandateHash] = Data({ newRoleId: newRoleId_, roleIdsNeeded: roleIdsNeeded_ });
-
+    function initializeMandate(
+        uint16 index,
+        string memory nameDescription,
+        bytes memory inputParams,
+        bytes memory config
+    ) public override {
         inputParams = abi.encode("address Account");
-
         super.initializeMandate(index, nameDescription, inputParams, config);
     }
 
@@ -54,39 +52,36 @@ contract RoleByRoles is Mandate {
         override
         returns (uint256 actionId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas)
     {
+        Mem memory mem;
+
         // step 1: decode the calldata & create hashes
-        (address account) = abi.decode(mandateCalldata, (address));
-        bytes32 mandateHash = MandateUtilities.hashMandate(powers, mandateId);
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        (mem.account) = abi.decode(mandateCalldata, (address));
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
+        (mem.newRoleId, mem.roleIdsNeeded) = abi.decode(getConfig(powers, mandateId), (uint256, uint256[]));
 
         // step 2: check if the account has any of the needed roles, and if it already has the new role
-        Data memory data_ = data[mandateHash];
-        bool hasAnyOfNeededRoles = false;
-        for (uint256 i = 0; i < data_.roleIdsNeeded.length; i++) {
-            if (Powers(payable(powers)).hasRoleSince(account, data_.roleIdsNeeded[i]) > 0) {
-                hasAnyOfNeededRoles = true;
+        mem.hasAnyOfNeededRoles = false;
+        for (uint256 i = 0; i < mem.roleIdsNeeded.length; i++) {
+            if (IPowers(payable(powers)).hasRoleSince(mem.account, mem.roleIdsNeeded[i]) > 0) {
+                mem.hasAnyOfNeededRoles = true;
                 break;
             }
         }
-        bool alreadyHasNewRole = Powers(payable(powers)).hasRoleSince(account, data_.newRoleId) > 0;
+        mem.alreadyHasNewRole = IPowers(payable(powers)).hasRoleSince(mem.account, mem.newRoleId) > 0;
 
         // step 3: create empty arrays
         (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
 
         // step 4: set the targets, values and calldatas according to the outcomes at step 2
-        if (hasAnyOfNeededRoles && !alreadyHasNewRole) {
+        if (mem.hasAnyOfNeededRoles && !mem.alreadyHasNewRole) {
             targets[0] = powers;
-            calldatas[0] = abi.encodeWithSelector(Powers.assignRole.selector, data_.newRoleId, account);
+            calldatas[0] = abi.encodeWithSelector(IPowers.assignRole.selector, mem.newRoleId, mem.account);
         }
-        if (!hasAnyOfNeededRoles && alreadyHasNewRole) {
+        if (!mem.hasAnyOfNeededRoles && mem.alreadyHasNewRole) {
             targets[0] = powers;
-            calldatas[0] = abi.encodeWithSelector(Powers.revokeRole.selector, data_.newRoleId, account);
+            calldatas[0] = abi.encodeWithSelector(IPowers.revokeRole.selector, mem.newRoleId, mem.account);
         }
 
         return (actionId, targets, values, calldatas);
-    }
-
-    function getData(bytes32 mandateHash) public view returns (Data memory) {
-        return data[mandateHash];
     }
 }

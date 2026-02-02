@@ -83,7 +83,7 @@ The script follows the same fundamental logic as the frontend:
 ::::steps
 
 #### Deploy Dependencies
-The script first deploys any necessary mock contracts or dependencies. In `DeployTestOrgs.s.sol`, this is handled by `DeployMocks.s.sol`.
+The script first deploys any necessary mock contracts or dependencies. In `DeployTestOrgs.s.sol`, this is handled by `InitialiseHelpers.s.sol`.
 
 #### Deploy Mandate Contracts
 It deploys the individual `Mandate` contracts that will be used by the organisation. This is handled by `InitialisePowers.s.sol`.

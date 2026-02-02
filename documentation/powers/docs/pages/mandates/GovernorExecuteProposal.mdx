@@ -1,6 +1,6 @@
-# GovernorExecuteProposal
+# Governor_ExecuteProposal
 
-GovernorExecuteProposal is an executive mandate that enables the execution of governance proposals on a configured Governor contract. It provides a mechanism to execute proposals that have succeeded in the governance process.
+Governor_ExecuteProposal is an executive mandate that enables the execution of governance proposals on a configured Governor contract. It provides a mechanism to execute proposals that have succeeded in the governance process.
 
 ## Overview
 
@@ -13,7 +13,7 @@ This mandate provides a mechanism to:
 
 ## Configuration
 
-When adopting a GovernorExecuteProposal instance, one parameter must be provided:
+When adopting a Governor_ExecuteProposal instance, one parameter must be provided:
 
 1. `governorContract` (address): The address of the Governor contract to execute proposals on
 
@@ -98,18 +98,18 @@ function handleRequest(
 ### Error Conditions
 
 1. **Configuration Errors**
-   - "GovernorExecuteProposal: Governor contract not configured"
+   - "Governor_ExecuteProposal: Governor contract not configured"
    - Invalid governor contract address
 
 2. **Parameter Errors**
-   - "GovernorExecuteProposal: No targets provided"
-   - "GovernorExecuteProposal: Targets and values length mismatch"
-   - "GovernorExecuteProposal: Targets and calldatas length mismatch"
-   - "GovernorExecuteProposal: Description cannot be empty"
+   - "Governor_ExecuteProposal: No targets provided"
+   - "Governor_ExecuteProposal: Targets and values length mismatch"
+   - "Governor_ExecuteProposal: Targets and calldatas length mismatch"
+   - "Governor_ExecuteProposal: Description cannot be empty"
 
 3. **Proposal Errors**
-   - "GovernorExecuteProposal: Proposal not found"
-   - "GovernorExecuteProposal: Proposal not succeeded"
+   - "Governor_ExecuteProposal: Proposal not found"
+   - "Governor_ExecuteProposal: Proposal not succeeded"
    - Invalid proposal state
 
 4. **Validation Errors**

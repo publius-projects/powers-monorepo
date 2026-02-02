@@ -52,14 +52,14 @@ contract Powers is EIP712, IPowers, Context {
 
     uint256 public immutable MAX_CALLDATA_LENGTH;
     uint256 public immutable MAX_RETURN_DATA_LENGTH;
-    uint256 public immutable MAX_EXECUTIONsLENGTH;
+    uint256 public immutable MAX_EXECUTIONS_LENGTH;
 
     // NB! this is a gotcha: mandates start counting a 1, NOT 0!. 0 is used as a default 'false' value.
     uint16 public mandateCounter = 1; // number of mandates that have been initiated throughout the life of the organisation.
     string public name; // name of the DAO.
     string public uri; // a uri to metadata of the DAO. // note can be altered
     address payable private treasury; // address to the treasury of the organisation.
-    bool private _constituteExecuted; // has the constitute function been called before?
+    bool private _constituteClosed; // Is the constitute phase closed? Note: no actions can be started when the constitute phase is open.
 
     //////////////////////////////////////////////////////////////
     //                          MODIFIERS                       //
@@ -70,8 +70,17 @@ contract Powers is EIP712, IPowers, Context {
         _;
     }
 
-    function _onlyPowers() internal {
+    function _onlyPowers() internal view {
         if (_msgSender() != address(this)) revert Powers__OnlyPowers();
+    }
+
+    modifier onlyAdmin() {
+        _onlyAdmin();
+        _;
+    }
+
+    function _onlyAdmin() internal view {
+        if (_msgSender() != getRoleHolderAtIndex(ADMIN_ROLE, 0)) revert Powers__OnlyAdmin();
     }
 
     /// @notice A modifier that sets a function to only be callable by the {Powers} contract.
@@ -80,7 +89,7 @@ contract Powers is EIP712, IPowers, Context {
         _;
     }
 
-    function _onlyAdoptedMandate(uint16 mandateId) internal {
+    function _onlyAdoptedMandate(uint16 mandateId) internal view {
         if (mandates[mandateId].active == false) revert Powers__MandateNotActive();
     }
 
@@ -100,20 +109,57 @@ contract Powers is EIP712, IPowers, Context {
         uint256 maxCallDataLength_,
         uint256 maxReturnDataLength_,
         uint256 maxExecutionsLength_
+        // add here the init data for initial mandates?
     ) EIP712(name_, version()) {
         if (bytes(name_).length == 0) revert Powers__InvalidName();
-        name = name_;
-        uri = uri_;
         if (maxCallDataLength_ == 0) revert Powers__InvalidMaxCallDataLength();
         if (maxReturnDataLength_ == 0) revert Powers__InvalidReturnCallDataLength();
         if (maxExecutionsLength_ == 0) revert Powers__InvalidMaxExecutionsLength();
-        MAX_CALLDATA_LENGTH = maxCallDataLength_;
-        MAX_RETURN_DATA_LENGTH = maxReturnDataLength_;
-        MAX_EXECUTIONsLENGTH = maxExecutionsLength_;
 
         _setRole(ADMIN_ROLE, _msgSender(), true); // the account that initiates a Powerscontract is set to its admin.
+        name = name_;
+        uri = uri_;
+        MAX_CALLDATA_LENGTH = maxCallDataLength_;
+        MAX_RETURN_DATA_LENGTH = maxReturnDataLength_;
+        MAX_EXECUTIONS_LENGTH = maxExecutionsLength_;
 
         emit Powers__Initialized(address(this), name, uri);
+    }
+
+    //////////////////////////////////////////////////////////////
+    //                  CONSTITUTE LOGIC                        //
+    //////////////////////////////////////////////////////////////
+    /// @inheritdoc IPowers
+    function constitute(MandateInitData[] memory constituentMandates) external onlyAdmin {
+        if (_constituteClosed) revert Powers__ConstituteClosed();
+        
+        //  set mandates as active.
+        for (uint256 i = 0; i < constituentMandates.length; i++) {
+            // note: ignore empty slots in MandateInitData array.
+            if (constituentMandates[i].targetMandate != address(0)) {
+                _adoptMandate(constituentMandates[i]);
+            }
+        }
+    }
+
+    /// @inheritdoc IPowers
+    function closeConstitute() external onlyAdmin() { 
+        _closeConstitute(_msgSender());
+    }
+
+    /// @inheritdoc IPowers
+    function closeConstitute(address newAdmin) external onlyAdmin() { 
+        _closeConstitute(newAdmin);
+    }
+
+    function _closeConstitute(address newAdmin) internal { 
+        // if newAdmin is different from current admin, set new admin...
+        if (_msgSender() != newAdmin) {
+            _setRole(ADMIN_ROLE, _msgSender(), false);
+            _setRole(ADMIN_ROLE, newAdmin, true);
+        }
+
+        _constituteClosed = true;
     }
 
     //////////////////////////////////////////////////////////////
@@ -126,7 +172,9 @@ contract Powers is EIP712, IPowers, Context {
         onlyAdoptedMandate(mandateId)
         returns (uint256 actionId)
     {
-        actionId = Checks.hashActionId(mandateId, mandateCalldata, nonce);
+        if (!_constituteClosed) revert Powers__ConstituteOpen();
+
+        actionId = Checks.computeActionId(mandateId, mandateCalldata, nonce);
         AdoptedMandate memory mandate = mandates[mandateId];
 
         // check 0 is calldata length is too long
@@ -195,7 +243,7 @@ contract Powers is EIP712, IPowers, Context {
         if (targets.length != values.length || targets.length != calldatas.length) revert Powers__InvalidCallData();
 
         // check 6: check array length is too long
-        if (targets.length > MAX_EXECUTIONsLENGTH) revert Powers__ExecutionArrayTooLong();
+        if (targets.length > MAX_EXECUTIONS_LENGTH) revert Powers__ExecutionArrayTooLong();
 
         // check 7: for each target, check if calldata does not exceed MAX_CALLDATA_LENGTH + targets have not been blacklisted.
         for (uint256 i = 0; i < targets.length; ++i) {
@@ -209,7 +257,9 @@ contract Powers is EIP712, IPowers, Context {
         // execute targets[], values[], calldatas[] received from mandate.
         for (uint256 i = 0; i < targets.length; ++i) {
             (bool success, bytes memory returndata) = targets[i].call{ value: values[i] }(calldatas[i]);
-            Address.verifyCallResult(success, returndata);
+            if (!success) {
+                revert Powers__MandateFulfillCallFailed();
+            }
             if (returndata.length <= MAX_RETURN_DATA_LENGTH) {
                 _actions[actionId].returnDatas.push(returndata);
             } else {
@@ -217,10 +267,10 @@ contract Powers is EIP712, IPowers, Context {
             }
         }
 
-        // emit event.
-        emit ActionExecuted(mandateId, actionId, targets, values, calldatas);
+        // emit event. -- commented out to save gas, can be re-enabled if needed.
+        // emit ActionFulfilled(mandateId, actionId, targets, values, calldatas);
 
-        // register latestFulfillment at mandate.
+        // register latestFulfillment at mandate. -- is there anyway to do this more efficiently?
         mandates[mandateId].latestFulfillment = uint48(block.number);
     }
 
@@ -230,6 +280,8 @@ contract Powers is EIP712, IPowers, Context {
         onlyAdoptedMandate(mandateId)
         returns (uint256 actionId)
     {
+        if (!_constituteClosed) revert Powers__ConstituteOpen();
+        
         AdoptedMandate memory mandate = mandates[mandateId];
 
         // check 1: is targetMandate is an active mandate?
@@ -250,19 +302,21 @@ contract Powers is EIP712, IPowers, Context {
         return actionId;
     }
 
-    /// @notice Internal propose mechanism. Can be overridden to add more logic on proposedAction creation.
+    /// @notice Internal propose mechanism.
     ///
     /// @dev The mechanism checks for the length of targets and calldatas.
     ///
     /// Emits a {SeperatedPowersEvents::proposedActionCreated} event.
-    function _propose(address caller, uint16 mandateId, bytes calldata mandateCalldata, uint256 nonce, string memory uriAction)
-        internal
-        virtual
-        returns (uint256 actionId)
-    {
+    function _propose(
+        address caller,
+        uint16 mandateId,
+        bytes calldata mandateCalldata,
+        uint256 nonce,
+        string memory uriAction
+    ) internal virtual returns (uint256 actionId) {
         // (uint8 quorum,, uint32 votingPeriod,,,,,) = Mandate(targetMandate).conditions();
         Conditions memory conditions = getConditions(mandateId);
-        actionId = Checks.hashActionId(mandateId, mandateCalldata, nonce);
+        actionId = Checks.computeActionId(mandateId, mandateCalldata, nonce);
 
         // check 1: does target mandate need proposedAction vote to pass?
         if (conditions.quorum == 0) revert Powers__NoVoteNeeded();
@@ -271,6 +325,7 @@ contract Powers is EIP712, IPowers, Context {
         if (_actions[actionId].voteStart != 0) revert Powers__UnexpectedActionState();
 
         // register actionId at mandate.
+        // £check: is this necessary?
         mandates[mandateId].actionIds.push(actionId);
 
         // if checks pass: create proposedAction
@@ -304,7 +359,7 @@ contract Powers is EIP712, IPowers, Context {
         onlyAdoptedMandate(mandateId)
         returns (uint256)
     {
-        uint256 actionId = Checks.hashActionId(mandateId, mandateCalldata, nonce);
+        uint256 actionId = Checks.computeActionId(mandateId, mandateCalldata, nonce);
 
         // check: is caller the caller of the proposedAction?
         if (_msgSender() != _actions[actionId].caller) revert Powers__NotProposerAction();
@@ -315,8 +370,12 @@ contract Powers is EIP712, IPowers, Context {
     /// @notice Internal cancel mechanism with minimal restrictions. A proposedAction can be cancelled in any state other than
     /// Cancelled or Executed. Once cancelled a proposedAction cannot be re-submitted.
     /// Emits a {SeperatedPowersEvents::proposedActionCanceled} event.
-    function _cancel(uint16 mandateId, bytes calldata mandateCalldata, uint256 nonce) internal virtual returns (uint256) {
-        uint256 actionId = Checks.hashActionId(mandateId, mandateCalldata, nonce);
+    function _cancel(uint16 mandateId, bytes calldata mandateCalldata, uint256 nonce)
+        internal
+        virtual
+        returns (uint256)
+    {
+        uint256 actionId = Checks.computeActionId(mandateId, mandateCalldata, nonce);
 
         // check 1: does action exist?
         if (_actions[actionId].proposedAt == 0) revert Powers__ActionNotProposed();
@@ -372,28 +431,10 @@ contract Powers is EIP712, IPowers, Context {
     //                  ROLE AND LAW ADMIN                      //
     //////////////////////////////////////////////////////////////
     /// @inheritdoc IPowers
-    function constitute(MandateInitData[] memory constituentMandates) external {
-        // check 1: only admin can call this function
-        if (roles[ADMIN_ROLE].members[_msgSender()] == 0) revert Powers__NotAdmin();
-
-        // check 2: this function can only be called once.
-        if (_constituteExecuted) revert Powers__ConstitutionAlreadyExecuted();
-
-        // if checks pass, set _constituentMandatesExecuted to true...
-        _constituteExecuted = true;
-
-        // ...and set mandates as active.
-        for (uint256 i = 0; i < constituentMandates.length; i++) {
-            // note: ignore empty slots in MandateInitData array.
-            if (constituentMandates[i].targetMandate != address(0)) {
-                _adoptMandate(constituentMandates[i]);
-            }
-        }
-    }
-
-    /// @inheritdoc IPowers
-    function adoptMandate(MandateInitData memory mandateInitData) external onlyPowers returns (uint256 mandateId) {
+    function adoptMandate(MandateInitData memory mandateInitData) external onlyPowers returns (uint16 mandateId) {
         mandateId = _adoptMandate(mandateInitData);
+        // emit event.
+        emit MandateAdopted(mandateCounter - 1);
 
         return mandateId;
     }
@@ -411,7 +452,7 @@ contract Powers is EIP712, IPowers, Context {
     /// @param mandateInitData data of the mandate.
     ///
     /// Emits a {SeperatedPowersEvents::MandateAdopted} event.
-    function _adoptMandate(MandateInitData memory mandateInitData) internal virtual returns (uint256 mandateId) {
+    function _adoptMandate(MandateInitData memory mandateInitData) internal virtual returns (uint16 mandateId) {
         // check if added address is indeed a mandate. Note that this will also revert with address(0).
         if (!ERC165Checker.supportsInterface(mandateInitData.targetMandate, type(IMandate).interfaceId)) {
             revert Powers__IncorrectInterface(mandateInitData.targetMandate);
@@ -431,10 +472,8 @@ contract Powers is EIP712, IPowers, Context {
         mandates[mandateCounter].conditions = mandateInitData.conditions;
         mandateCounter++;
 
-        Mandate(mandateInitData.targetMandate).initializeMandate(mandateCounter - 1, mandateInitData.nameDescription, "", mandateInitData.config);
-
-        // emit event.
-        emit MandateAdopted(mandateCounter - 1);
+        Mandate(mandateInitData.targetMandate)
+            .initializeMandate(mandateCounter - 1, mandateInitData.nameDescription, "", mandateInitData.config);
 
         return mandateCounter - 1;
     }
@@ -596,7 +635,7 @@ contract Powers is EIP712, IPowers, Context {
     //////////////////////////////////////////////////////////////
     /// @notice saves the version of the Powersimplementation.
     function version() public pure returns (string memory) {
-        return "0.4";
+        return "0.5";
     }
 
     /// @inheritdoc IPowers
@@ -737,12 +776,21 @@ contract Powers is EIP712, IPowers, Context {
     }
 
     /// @inheritdoc IPowers
-    function getAdoptedMandate(uint16 mandateId) external view returns (address mandate, bytes32 mandateHash, bool active) {
+    function getAdoptedMandate(uint16 mandateId)
+        external
+        view
+        returns (address mandate, bytes32 mandateHash, bool active)
+    {
         mandate = mandates[mandateId].targetMandate;
         active = mandates[mandateId].active;
         mandateHash = keccak256(abi.encode(address(this), mandateId));
 
         return (mandate, mandateHash, active);
+    }
+
+    /// @inheritdoc IPowers
+    function getMandateCounter() external view returns (uint16) {
+        return mandateCounter;
     }
 
     /// @inheritdoc IPowers
@@ -776,27 +824,5 @@ contract Powers is EIP712, IPowers, Context {
     /// @inheritdoc IPowers
     function isBlacklisted(address account) public view returns (bool) {
         return _blacklist[account];
-    }
-
-    //////////////////////////////////////////////////////////////
-    //                       COMPLIANCE                         //
-    //////////////////////////////////////////////////////////////
-    /// @notice implements ERC721Receiver
-    function onERC721Received(address, address, uint256, bytes memory) public virtual returns (bytes4) {
-        return this.onERC721Received.selector;
-    }
-
-    /// @notice implements ERC1155Receiver
-    function onERC1155Received(address, address, uint256, uint256, bytes memory) public virtual returns (bytes4) {
-        return this.onERC1155Received.selector;
-    }
-
-    /// @notice implements ERC1155BatchReceiver
-    function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory, bytes memory)
-        public
-        virtual
-        returns (bytes4)
-    {
-        return this.onERC1155BatchReceived.selector;
     }
 }

@@ -25,23 +25,11 @@ library MandateUtilities {
         }
     }
 
-    /// @notice Verifies if an address owns any tokens from a specific NFT contract
-    /// @dev Checks the balance of the given address in the specified ERC721 contract
-    /// @param caller Address to check token ownership for
-    /// @param nftCheckAddress Address of the ERC721 contract
-    /// @return hasToken True if the caller owns at least one token
-    function nftCheck(address caller, address nftCheckAddress) external view returns (bool hasToken) {
-        hasToken = ERC721(nftCheckAddress).balanceOf(caller) > 0;
-        if (!hasToken) {
-            revert("Does not own token.");
-        }
-    }
-
     /// @notice Verifies if an address has all specified roles
     /// @dev Checks each role against the Powers contract's role system
     /// @param caller Address to check roles for
     /// @param roles Array of role IDs to check
-    function hasRoleCheck(address caller, uint32[] memory roles, address powers) external view {
+    function hasRoleCheck(address caller, uint256[] memory roles, address powers) external view {
         for (uint32 i = 0; i < roles.length; i++) {
             uint48 since = Powers(payable(powers)).hasRoleSince(caller, roles[i]);
             if (since == 0) {
@@ -54,7 +42,7 @@ library MandateUtilities {
     /// @dev Checks each role against the Powers contract's role system
     /// @param caller Address to check roles for
     /// @param roles Array of role IDs to check
-    function hasNotRoleCheck(address caller, uint32[] memory roles, address powers) external view {
+    function hasNotRoleCheck(address caller, uint256[] memory roles, address powers) external view {
         for (uint32 i = 0; i < roles.length; i++) {
             uint48 since = Powers(payable(powers)).hasRoleSince(caller, roles[i]);
             if (since != 0) {
@@ -72,7 +60,7 @@ library MandateUtilities {
     /// @param mandateCalldata Encoded function call data
     /// @param nonce The nonce for the action
     /// @return actionId Unique identifier for the action
-    function hashActionId(uint16 mandateId, bytes memory mandateCalldata, uint256 nonce)
+    function computeActionId(uint16 mandateId, bytes memory mandateCalldata, uint256 nonce)
         public
         pure
         returns (uint256 actionId)
@@ -156,4 +144,5 @@ library MandateUtilities {
         }
         revert("Invalid hex character");
     }
+ 
 }

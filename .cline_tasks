@@ -1,0 +1,4 @@
+- [ ] Analyze changes in `solidity/script/deployOrganisations/CulturalStewardsDAO.s.sol` around lines 1556-1694.
+- [ ] Analyze `test_JoinPrimeDAO` in `solidity/test/integration/organisations/CulturalStewardsDAO.t.sol` and run it to confirm failure.
+- [ ] Refactor `test_JoinPrimeDAO` to fix the failure, mocking the Physical DAO creation/steps as needed.
+- [ ] Verify the fix by running the test.

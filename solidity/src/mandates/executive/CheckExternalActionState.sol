@@ -7,12 +7,12 @@ import { PowersTypes } from "../../interfaces/PowersTypes.sol";
 import { IPowers } from "../../interfaces/IPowers.sol";
 
 contract CheckExternalActionState is Mandate {
-    /// @dev Configuration for this mandate adoption.
-    struct ConfigData {
+    struct Mem {
+        bytes configBytes;
         address parentPowers;
-        uint16 mandateId;
+        uint16 configMandateId;
+        uint256 remoteActionId;
     }
-    mapping(bytes32 mandateHash => ConfigData data) public mandateConfig;
 
     constructor() {
         bytes memory configParams = abi.encode("address parentPowers", "uint16 mandateId", "string[] inputParams");
@@ -23,12 +23,7 @@ contract CheckExternalActionState is Mandate {
         public
         override
     {
-        (address parentPowers_, uint16 mandateId_, string[] memory inputParams_) =
-            abi.decode(config, (address, uint16, string[])); // validate config
-
-        bytes32 mandateHash = MandateUtilities.hashMandate(msg.sender, index);
-        mandateConfig[mandateHash] = ConfigData({ parentPowers: parentPowers_, mandateId: mandateId_ });
-
+        (,, string[] memory inputParams_) = abi.decode(config, (address, uint16, string[]));
         super.initializeMandate(index, nameDescription, abi.encode(inputParams_), config);
     }
 
@@ -44,11 +39,13 @@ contract CheckExternalActionState is Mandate {
         override
         returns (uint256 actionId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas)
     {
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
-        ConfigData memory config = mandateConfig[MandateUtilities.hashMandate(powers, mandateId)];
-        uint256 remoteActionId = MandateUtilities.hashActionId(config.mandateId, mandateCalldata, nonce);
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
+        Mem memory mem;
+        mem.configBytes = getConfig(powers, mandateId);
+        (mem.parentPowers, mem.configMandateId,) = abi.decode(mem.configBytes, (address, uint16, string[]));
 
-        PowersTypes.ActionState state = IPowers(config.parentPowers).getActionState(remoteActionId);
+        mem.remoteActionId = MandateUtilities.computeActionId(mem.configMandateId, mandateCalldata, nonce);
+        PowersTypes.ActionState state = IPowers(mem.parentPowers).getActionState(mem.remoteActionId);
         if (state != PowersTypes.ActionState.Fulfilled) {
             revert("Action not fulfilled");
         }

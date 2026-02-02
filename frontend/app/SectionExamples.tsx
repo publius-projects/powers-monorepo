@@ -3,7 +3,7 @@
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getEnabledOrganizations } from "@/organisations";
+import { DeployedExamples } from "@/organisations/DeployedExamples";
 import Image from "next/image";
 
 export function SectionExamples() {
@@ -11,9 +11,7 @@ export function SectionExamples() {
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
 
   // Get all organizations that have example deployments  
-  const allOrganizations = getEnabledOrganizations(true); // Pass true to include localhost-only orgs
-  
-  const exampleOrganizations = allOrganizations.filter(org => org.exampleDeployment);
+  const exampleOrganizations = DeployedExamples;
 
   // If no examples, don't render the section
   if (exampleOrganizations.length === 0) {
@@ -21,11 +19,11 @@ export function SectionExamples() {
   }
 
   const currentExample = exampleOrganizations[currentExampleIndex];
-  const isComingSoon = currentExample.exampleDeployment?.address === '0x0000000000000000000000000000000000000000';
+  const isComingSoon = currentExample.address === '0x0000000000000000000000000000000000000000';
 
   const handleViewExample = () => {
-    if (currentExample.exampleDeployment && !isComingSoon) {
-      router.push(`/protocol/${currentExample.exampleDeployment.chainId}/${currentExample.exampleDeployment.address}`);
+    if (currentExample.address && !isComingSoon) {
+      router.push(`/protocol/${currentExample.chainId}/${currentExample.address}`);
     }
   };
 
@@ -65,7 +63,7 @@ export function SectionExamples() {
               </button>
               
               <div className="flex flex-col items-center">
-                <h3 className="text-xl font-semibold text-slate-800 text-center">{currentExample.metadata.title}</h3>
+                <h3 className="text-xl font-semibold text-slate-800 text-center">{currentExample.title}</h3>
                 <div className="flex gap-1 mt-2">
                   {exampleOrganizations.map((_, index) => (
                     <div
@@ -90,12 +88,12 @@ export function SectionExamples() {
             {/* Content */}
             <div className="w-full py-6 px-6 flex flex-col overflow-y-auto flex-1">
               {/* Image Display */}
-              {currentExample.metadata.banner && (
+              {currentExample.banner && (
                 <div className="mb-4 flex justify-center">
                   <div className="relative w-full h-48 sm:h-64">
                     <Image
-                      src={currentExample.metadata.banner} 
-                      alt={`${currentExample.metadata.title} example`}
+                      src={currentExample.banner} 
+                      alt={`${currentExample.title} example`}
                       fill
                       className="rounded-lg object-cover"
                       onError={(e) => {
@@ -108,7 +106,7 @@ export function SectionExamples() {
               
               <div className="mb-4">
                 <p className="text-slate-600 text-sm leading-relaxed">
-                  {currentExample.metadata.description}
+                  {currentExample.description}
                 </p>
               </div>
 

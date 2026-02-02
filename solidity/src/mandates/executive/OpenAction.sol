@@ -25,10 +25,12 @@ contract OpenAction is Mandate {
         emit Mandate__Deployed("");
     }
 
-    function initializeMandate(uint16 index, string memory nameDescription, bytes memory inputParams, bytes memory config)
-        public
-        override
-    {
+    function initializeMandate(
+        uint16 index,
+        string memory nameDescription,
+        bytes memory inputParams,
+        bytes memory config
+    ) public override {
         // Set UI-exposed input parameters: targets, values, calldatas
         inputParams = abi.encode("address[] targets", "uint256[] values", "bytes[] calldatas");
         super.initializeMandate(index, nameDescription, inputParams, config);
@@ -48,7 +50,7 @@ contract OpenAction is Mandate {
         override
         returns (uint256 actionId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas)
     {
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         // note: no check on decoded call data. If needed, this can be added.
         (targets, values, calldatas) = abi.decode(mandateCalldata, (address[], uint256[], bytes[]));
         return (actionId, targets, values, calldatas);

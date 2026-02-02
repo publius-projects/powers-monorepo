@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 /// @notice An example implementation of a Mandate Package that adopts multiple mandates into the Powers protocol.
-/// @dev It is meant to be adopted through the AdoptMandates mandate, and then be executed to adopt multiple mandates in a single transaction.
+/// @dev It is meant to be adopted through the Mandates_Adopt mandate, and then be executed to adopt multiple mandates in a single transaction.
 /// @dev The mandate self-destructs after execution.
 ///
 /// @author 7Cedars
@@ -29,7 +29,7 @@ contract PowerLabs_Frontend is Mandate {
     uint16 public constant NUMBER_OF_CALLS = 7; // total number of calls in handleRequest
     uint48 public immutable BLOCKS_PER_HOUR;
 
-    // in this case mandateAddresses should be [statementOfIntent, SafeExecTransaction, PresetSingleAction, SafeAllowanceAction]
+    // in this case mandateAddresses should be [statementOfIntent, Safe_ExecTransaction, PresetActions_Single]
     constructor(uint48 BLOCKS_PER_HOUR_, address[] memory mandateDependencies, address allowanceModuleAddress_) {
         BLOCKS_PER_HOUR = BLOCKS_PER_HOUR_;
         mandateAddresses = mandateDependencies;
@@ -38,10 +38,12 @@ contract PowerLabs_Frontend is Mandate {
         emit Mandate__Deployed(abi.encode());
     }
 
-    function initializeMandate(uint16 index, string memory nameDescription, bytes memory inputParams, bytes memory config)
-        public
-        override
-    {
+    function initializeMandate(
+        uint16 index,
+        string memory nameDescription,
+        bytes memory inputParams,
+        bytes memory config
+    ) public override {
         inputParams = abi.encode("address SafeProxy");
         super.initializeMandate(index, nameDescription, inputParams, config);
     }
@@ -63,7 +65,7 @@ contract PowerLabs_Frontend is Mandate {
     {
         Mem memory mem;
 
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         mem.mandateCount = Powers(powers).mandateCounter();
         // (mem.safeProxy) = abi.decode(mandateCalldata, (address));
         mem.signature = abi.encodePacked(

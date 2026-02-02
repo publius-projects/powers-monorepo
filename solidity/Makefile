@@ -284,59 +284,36 @@ update-builds:
 # 		Deploy Commands  	  # 
 ###############################
 
-ARB_SEPOLIA_TEST_ARGS := --fork-url $(ARB_SEPOLIA_RPC_URL)
+# Deployment arguments for different networks
+ANVIL_DEPLOY_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY_0) --broadcast --ffi -vv
+SEPOLIA_DEPLOY_ARGS := --rpc-url $(SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 11155111 --verify --ffi -vv
+ARB_SEPOLIA_DEPLOY_ARGS := --rpc-url $(ARB_SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 421614 --verify --ffi -vv 
+OPT_SEPOLIA_DEPLOY_ARGS := --rpc-url $(OPT_SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 11155420 --verify --ffi -vv
 
-ANVIL_ARGS_0 := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY_0) --broadcast --ffi -vv
-SEPOLIA_DEPLOY_ARGS := --rpc-url $(SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 11155111 --verify --ffi -vvvv 
-ARB_SEPOLIA_DEPLOY_ARGS := --rpc-url $(ARB_SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 421614 --verify --ffi -vvvv
-OPT_SEPOLIA_DEPLOY_ARGS := --rpc-url $(OPT_SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 11155420 --verify --ffi -vvvv
-OPT_SEPOLIA_DEPLOY_ARGS2  := --rpc-url $(SEPOLIA_RPC_URL) --account dev_3 --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 11155420 --verify -vvvv
-OPT_DEPLOY_ARGS := --rpc-url $(OPT_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(OPTISCAN_API_KEY) --verifier etherscan --chain 10 --verify -vvvv
-MANTLE_SEPOLIA_DEPLOY_ARGS := --rpc-url $(MANTLE_SEPOLIA_RPC_URL) --account dev_3 --sender ${DEV2_ADDRESS} --broadcast --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier etherscan --chain 5003 --verify -vvvv
+# create forked anvil chain. 
+# included in .env are SEPOLIA_RPC_URL, ARB_SEPOLIA_RPC_URL, OPT_SEPOLIA_RPC_URL
+fork-anvil :
+	anvil --fork-url $(OPT_SEPOLIA_RPC_URL) --block-time 1 --chain-id 31337   
 
-anvil-test :; forge test $(ANVIL_ARGS_0)
-arb-sepolia-forked-test :; forge test ${ARB_SEPOLIA_TEST_ARGS}
+deploy-allowance-module :; forge script script/DeployAllowanceModule.s.sol:DeployAllowanceModule $(OPT_SEPOLIA_DEPLOY_ARGS) 
 
-deploy-allo-anvil:
-	@echo "Deploying Allo..."
-	forge script script/DeployAllo.s.sol:DeployAllo $(ANVIL_ARGS_0) 
+# Deploy an organisation to a single chain. 
+# Adjust the ANVIL_DEPLOY_ARGS, SEPOLIA_DEPLOY_ARGS, OPT_SEPOLIA_DEPLOY_ARGS, ARB_SEPOLIA_DEPLOY_ARGS variables above to change network and deployment settings.
+# Adjust the script path and contract name below to change which organisation is deployed.
+# NOTE: all mandates and helper contracts will be deployed as part of the organisation deployment script. 
+deploy-organisation : 
+	@echo "Deploying organisation..."
+	forge script script/deployOrganisations/TestRig.s.sol:TestRig $(ANVIL_DEPLOY_ARGS)
 
-# anvil local 
-initialise-anvil :; forge script script/InitialisePowers.s.sol:InitialisePowers $(ANVIL_ARGS_0) 
-initialise-safe-allowance-anvil :; forge script script/InitialiseSafe.s.sol:InitialiseSafe $(ANVIL_ARGS_0) 
-deploy-mocks-anvil :; forge script script/DeployMocks.s.sol:DeployMocks $(ANVIL_ARGS_0) 
+initialise-powers :
+	@echo "Initialising Powers contract..."
+	forge script script/InitialisePowers.s.sol:InitialisePowers $(SEPOLIA_DEPLOY_ARGS)
 
-
-initialise-sepolia :; forge script script/InitialisePowers.s.sol:InitialisePowers $(SEPOLIA_DEPLOY_ARGS)
-initialise-op-sepolia :; forge script script/InitialisePowers.s.sol:InitialisePowers $(OPT_SEPOLIA_DEPLOY_ARGS)
-initialise-arb-sepolia :; forge script script/InitialisePowers.s.sol:InitialisePowers $(ARB_SEPOLIA_DEPLOY_ARGS)
-# initialise-base-sepolia :; forge script script/InitialisePowers.s.sol:InitialisePowers $(MANTLE_SEPOLIA_DEPLOY_ARGS)
-# initialise-zksync-sepolia :; forge script script/InitialisePowers.s.sol:InitialisePowers $(MANTLE_SEPOLIA_DEPLOY_ARGS)
-
-deploy-mocks-sepolia :; forge script script/DeployMocks.s.sol:DeployMocks $(SEPOLIA_DEPLOY_ARGS)
-deploy-mocks-op-sepolia :; forge script script/DeployMocks.s.sol:DeployMocks $(OPT_SEPOLIA_DEPLOY_ARGS)
-deploy-mocks-arb-sepolia :; forge script script/DeployMocks.s.sol:DeployMocks $(ARB_SEPOLIA_DEPLOY_ARGS)
-
+# Verify Contracts
 # sepoliaVerifyContract :; forge verify-contract --etherscan-api-key $(ETHERSCAN_API_KEY) --chain 11155111 --verifier etherscan 0x05c0379565ef0ebb1bD21C0Ab463ca5CE5211D3A src/Powers.sol:Powers --watch
 optSepoliaVerifyContract :; forge verify-contract --etherscan-api-key $(ETHERSCAN_API_KEY) --chain 11155420 --compiler-version 0.8.26 --num-of-optimizations 600 --verifier etherscan 0x6f8c6ac58a467836D85548Bf2Fef473D5efcFeA4 src/helpers/TreasuryPools.sol:TreasuryPools --watch
 arbSepoliaVerifyContract :; forge verify-contract --etherscan-api-key $(ETHERSCAN_API_KEY) --chain 421614 --compiler-version 0.8.26 --num-of-optimizations 600 --verifier etherscan 0xb1fe867eE7919887EB381c4626bdbAe003969683 src/helpers/TreasuryPools.sol:TreasuryPools --watch
 
-# Deploy Safe with Allowance Module
-deploy-safe-allowance-op-sepolia :; forge script script/InitialiseSafe.s.sol:InitialiseSafe --sig "run(address)" 0x9a59c253957b09f1d80289febe1eb65442f937c2 $(OPT_SEPOLIA_DEPLOY_ARGS)
-deploy-safe-allowance-sepolia :; forge script script/InitialiseSafe.s.sol:InitialiseSafe --sig "run(address)" 0x9a59c253957b09f1d80289febe1eb65442f937c2 $(SEPOLIA_DEPLOY_ARGS)
-
-deploy-allowance-module-op-sepolia :; forge script script/DeployAllowanceModule.s.sol:DeployAllowanceModule $(OPT_SEPOLIA_DEPLOY_ARGS) 
-deploy-allowance-module-arb-sepolia :; forge script script/DeployAllowanceModule.s.sol:DeployAllowanceModule $(ARB_SEPOLIA_DEPLOY_ARGS) 
-
 deploy-mandatePackages-sepolia :; forge script script/DeployMandatePackages.s.sol:DeployMandatePackages $(SEPOLIA_DEPLOY_ARGS)
 deploy-mandatePackages-op-sepolia :; forge script script/DeployMandatePackages.s.sol:DeployMandatePackages $(OPT_SEPOLIA_DEPLOY_ARGS)
 deploy-mandatePackages-arb-sepolia :; forge script script/DeployMandatePackages.s.sol:DeployMandatePackages $(ARB_SEPOLIA_DEPLOY_ARGS)
-
-# Create forked anvil test chain. 
-fork-sepolia-anvil :
-	@echo "Starting Anvil forked from Sepolia..."
-	anvil --fork-url $(SEPOLIA_RPC_URL) --block-time 12 --chain-id 31337
-
-fork-op-sepolia-anvil :
-	@echo "Starting Anvil forked from Optimism Sepolia..."
-	anvil --fork-url $(OPT_SEPOLIA_RPC_URL) --block-time 1 --chain-id 31337

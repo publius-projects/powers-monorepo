@@ -7,46 +7,74 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 // protocol
 import { Powers } from "../src/Powers.sol";
+import { Mandate } from "../src/Mandate.sol";
 import { PowersErrors } from "../src/interfaces/PowersErrors.sol";
 import { PowersTypes } from "../src/interfaces/PowersTypes.sol";
 import { PowersEvents } from "../src/interfaces/PowersEvents.sol";
-import { HelperConfig } from "../script/HelperConfig.s.sol";
-import { TestConstitutions } from "./TestConstitutions.sol";
-
-// external contracts
-import { SoulboundErc721 } from "../src/helpers/SoulboundErc721.sol";
-import { Grant } from "../src/helpers/Grant.sol";
-import { OpenElection } from "../src/helpers/OpenElection.sol";
-import { TreasurySimple } from "../src/helpers/TreasurySimple.sol";
-import { TreasuryPools } from "../src/helpers/TreasuryPools.sol";
-import { FlagActions } from "../src/helpers/FlagActions.sol";
-import { Nominees } from "../src/helpers/Nominees.sol";
-
-// mocks
-import { Erc20DelegateElection } from "@mocks/Erc20DelegateElection.sol";
-import { PowersMock } from "./mocks/PowersMock.sol";
-import { SimpleErc20Votes } from "./mocks/SimpleErc20Votes.sol";
-import { Erc20Taxed } from "./mocks/Erc20Taxed.sol";
+import { Configurations } from "../script/Configurations.s.sol";
+import { TestConstitutions } from "./TestConstitutions.sol"; 
+import { console2 } from "forge-std/console2.sol";
 
 // deploy scripts
-import { DeployMocks } from "../script/DeployMocks.s.sol";
 import { InitialisePowers } from "../script/InitialisePowers.s.sol";
+import { PowersMock } from "@mocks/PowersMock.sol";
+import { SimpleErc20Votes } from "@mocks/SimpleErc20Votes.sol";
+
+// organisations
+import { Powers101 } from "../script/deployOrganisations/Powers101.s.sol";
+import { ElectionListsDAO } from "../script/deployOrganisations/ElectionListsDAO.s.sol";
+import { CulturalStewardsDAO } from "../script/deployOrganisations/CulturalStewardsDAO.s.sol";
+
+// helpers
+import { Nominees } from "@src/helpers/Nominees.sol";
+import { ElectionList } from "@src/helpers/ElectionList.sol";
+import { Erc20DelegateElection } from "@mocks/Erc20DelegateElection.sol";
+import { FlagActions } from "@src/helpers/FlagActions.sol";
+import { SimpleGovernor } from "@mocks/SimpleGovernor.sol";
+import { SimpleErc20Votes } from "@mocks/SimpleErc20Votes.sol";
+import { Erc20Taxed } from "@mocks/Erc20Taxed.sol";
+import { SimpleErc20Votes } from "@mocks/SimpleErc20Votes.sol";
+import { SimpleErc1155 } from "@mocks/SimpleErc1155.sol";
+import { ReturnDataMock } from "@mocks/ReturnDataMock.sol";
+import { AllowedTokens } from "@src/helpers/AllowedTokens.sol";
+import { PowersFactory } from "@src/helpers/PowersFactory.sol";
+import { Soulbound1155 } from "@src/helpers/Soulbound1155.sol";
+import { ElectionList } from "@src/helpers/ElectionList.sol";
 
 abstract contract TestVariables is PowersErrors, PowersTypes, PowersEvents {
     // protocol and mocks
     Powers powers;
-    HelperConfig helperConfig;
+    Configurations helperConfig;
     PowersMock daoMock;
-    DeployMocks deployMocks;
+    PowersMock daoMockChild1;
+    PowersMock daoMockChild2;
+    ElectionListsDAO openElections;
     InitialisePowers initialisePowers;
     string[] mandateNames;
     address[] mandateAddresses;
-    string[] mockNames;
-    address[] mockAddresses;
     TestConstitutions testConstitutions;
-    HelperConfig.NetworkConfig config;
+    Configurations.NetworkConfig config;
     PowersTypes.Conditions conditions;
+    address powersAddress;
     address[] mandates;
+
+    FlagActions flagActions;
+    SimpleErc20Votes simpleErc20Votes;
+    Erc20Taxed erc20Taxed;
+    SimpleErc1155 simpleErc1155;
+    ReturnDataMock returnDataMock;
+    Nominees nominees;
+    ElectionList openElection;
+    Erc20DelegateElection erc20DelegateElection;
+    SimpleGovernor simpleGovernor;
+    AllowedTokens allowedTokens;
+    PowersFactory powersFactory;
+    Soulbound1155 soulbound1155;
+    ElectionList electionList;
+
+    uint256 sepoliaFork;
+    uint256 optSepoliaFork;
+    uint256 arbSepoliaFork;
 
     // vote options
     uint8 constant AGAINST = 0;
@@ -56,6 +84,9 @@ abstract contract TestVariables is PowersErrors, PowersTypes, PowersEvents {
     address[] targets;
     uint256[] values;
     bytes[] calldatas;
+    bytes callData;
+    bytes data;
+    uint256 length;
     bytes stateChange;
     bytes mandateCalldata;
     bytes mandateCalldataNominate;
@@ -64,30 +95,55 @@ abstract contract TestVariables is PowersErrors, PowersTypes, PowersEvents {
     string description;
     bytes inputParams;
     uint256 nonce;
+    address helper;
+    address safeTreasury;
+    bytes localConfig;
+
     bool active;
+    bool supportsInterface;
     uint256 actionId;
+    uint256 expectedActionId;
     uint16 mandateId;
+    uint256 actionId1;
+    uint256 actionId2;
+    uint256 actionId3;
     bytes32 mandateHash;
     address newMandate;
     uint16 mandateCounter;
     address tokenAddress;
+    uint256 mintAmount;
+    uint256 nftToMint;
+    uint256 tokenId;
     address testToken;
     address testToken2;
     bytes32 firstGrantCalldata;
     bytes32 secondGrantCalldata;
     uint16 firstGrantId;
     uint16 secondGrantId;
+    uint256 balanceBefore;
+    uint256 balanceAfter;
     uint16 roleId;
     address account;
     uint16[] mandateIds;
     address[] accounts;
     address requester;
     address executor;
+    string longLabel;
+    string longString;
+    string retrievedName;
+    bytes retrievedConfig;
+    bytes retrievedParams;
 
     address nominee1;
     address nominee2;
+    address newMember;
+    uint256 membersBefore;
+    uint256 membersAfter;
+    uint256 amountRoleHolders;
+    address recipient;
+    address sender;
 
-    address[] nominees;
+    address[] nomineesAddresses;
     uint256 roleCount;
     uint256 againstVote;
     uint256 forVote;
@@ -105,6 +161,7 @@ abstract contract TestVariables is PowersErrors, PowersTypes, PowersEvents {
     bool voteSucceeded;
     bytes configBytes;
     bytes inputParamsBytes;
+    address blacklistedAccount;
 
     // roles
     uint256 constant ADMIN_ROLE = 0;
@@ -144,8 +201,13 @@ abstract contract TestVariables is PowersErrors, PowersTypes, PowersEvents {
 
     // Common test variables to reduce stack usage
     // uint256[] milestoneDisbursements;
-    uint256[] milestoneDisbursements1;
+    uint256[] milestoneDisbursements;
     uint256[] milestoneDisbursements2;
+    uint256[] milestoneBlocks;
+    uint256[] milestoneBlocks2;
+    uint256[] milestoneAmounts;
+    uint256[] milestoneAmounts2;
+    address[] tokens;
     address[] targetsIn;
     uint256[] valuesIn;
     bytes[] calldatasIn;
@@ -155,11 +217,12 @@ abstract contract TestVariables is PowersErrors, PowersTypes, PowersEvents {
     address[] targets2;
     uint256[] values2;
     bytes[] calldatas2;
+    string uri;
+    string uri2;
     string uriProposal;
     string uriProposal1;
     string uriProposal2;
     string supportUri;
-    Grant.Milestone milestone;
     uint256[] actionIds;
     string[] testStrings;
 
@@ -185,7 +248,9 @@ abstract contract TestHelperFunctions is Test, TestVariables {
         return keccak256(abi.encode(targetMandate, mandateId));
     }
 
-    function distributeERC20VoteTokens(address[] memory accountsWithVotes, uint256 randomiser) public {
+    function distributeERC20VoteTokens(address[] memory accountsWithVotes, uint256 randomiser, address simpleErc20Votes)
+        public
+    {
         uint256 currentRandomiser;
         for (i = 0; i < accountsWithVotes.length; i++) {
             if (currentRandomiser < 10) {
@@ -195,34 +260,34 @@ abstract contract TestHelperFunctions is Test, TestVariables {
             }
             uint256 amount = (currentRandomiser % 10_000) + 1;
             vm.startPrank(accountsWithVotes[i]);
-            SimpleErc20Votes(mockAddresses[0]).mintVotes(amount);
-            SimpleErc20Votes(mockAddresses[0]).delegate(accountsWithVotes[i]); // delegate votes to themselves
+            SimpleErc20Votes(simpleErc20Votes).mint(amount);
+            SimpleErc20Votes(simpleErc20Votes).delegate(accountsWithVotes[i]); // delegate votes to themselves
             vm.stopPrank();
         }
     }
 
-    function distributeNfts(
-        address powersContract,
-        address erc721MockLocal,
-        address[] memory accounts,
-        uint256 randomiser,
-        uint256 density
-    ) public {
-        uint256 currentRandomiser;
-        randomiser = bound(randomiser, 10, 100 * 10 ** 18);
-        for (i = 0; i < accounts.length; i++) {
-            if (currentRandomiser < 10) {
-                currentRandomiser = randomiser;
-            } else {
-                currentRandomiser = currentRandomiser / 10;
-            }
-            bool getNft = (currentRandomiser % 100) < density;
-            if (getNft) {
-                vm.prank(powersContract);
-                SoulboundErc721(erc721MockLocal).mintNft(randomiser + i, accounts[i]);
-            }
-        }
-    }
+    // function distributeNfts(
+    //     address powersContract,
+    //     address erc721MockLocal,
+    //     address[] memory accounts,
+    //     uint256 randomiser,
+    //     uint256 density
+    // ) public {
+    //     uint256 currentRandomiser;
+    //     randomiser = bound(randomiser, 10, 100 * 10 ** 18);
+    //     for (i = 0; i < accounts.length; i++) {
+    //         if (currentRandomiser < 10) {
+    //             currentRandomiser = randomiser;
+    //         } else {
+    //             currentRandomiser = currentRandomiser / 10;
+    //         }
+    //         bool getNft = (currentRandomiser % 100) < density;
+    //         if (getNft) {
+    //             vm.prank(powersContract);
+    //             SoulboundErc721(erc721MockLocal).mintNft(randomiser + i, accounts[i]);
+    //         }
+    //     }
+    // }
 
     function voteOnProposal(
         address payable dao,
@@ -271,11 +336,29 @@ abstract contract TestHelperFunctions is Test, TestVariables {
         }
         return address(0);
     }
+
+    function findMandateIdInOrg(string memory description, Powers org) public view returns (uint16) {
+        uint16 counter = org.mandateCounter();
+        for (uint16 i = 1; i < counter; i++) {
+            (address mandateAddress, , ) = org.getAdoptedMandate(i);
+            string memory mandateDesc = Mandate(mandateAddress).getNameDescription(address(org), i);
+            if (Strings.equal(mandateDesc, description)) {
+                return i;
+            }
+        }
+        revert("Mandate not found");
+    }
 }
 
 abstract contract BaseSetup is TestVariables, TestHelperFunctions {
     function setUp() public virtual {
         vm.roll(block.number + 10);
+
+        // forks
+        sepoliaFork = vm.createFork(vm.envString("SEPOLIA_RPC_URL"));
+        optSepoliaFork = vm.createFork(vm.envString("OPT_SEPOLIA_RPC_URL"));
+        arbSepoliaFork = vm.createFork(vm.envString("ARB_SEPOLIA_RPC_URL"));
+
         setUpVariables();
         // run mandates deploy script here.
     }
@@ -319,30 +402,19 @@ abstract contract BaseSetup is TestVariables, TestHelperFunctions {
 
         // deploy mock powers
         daoMock = new PowersMock();
+        daoMockChild1 = new PowersMock();
+        daoMockChild2 = new PowersMock();
 
         // deploy external contracts
-        deployMocks = new DeployMocks();
         initialisePowers = new InitialisePowers();
-        (mockNames, mockAddresses) = deployMocks.run();
-        (mandateNames, mandateAddresses) = initialisePowers.getDeployedMandates();
-        HelperConfig helperConfig = new HelperConfig();
-        config = helperConfig.getConfigByChainId(block.chainid);
-
-        // transfer ownership to daoMock
-        vm.startPrank(SoulboundErc721(mockAddresses[2]).owner());
-        Erc20Taxed(mockAddresses[1]).transferOwnership(address(daoMock));
-        SoulboundErc721(mockAddresses[2]).transferOwnership(address(daoMock));
-        TreasuryPools(payable(mockAddresses[12])).transferOwnership(address(daoMock));
-        TreasurySimple(payable(mockAddresses[11])).transferOwnership(address(daoMock));
-        FlagActions(mockAddresses[6]).transferOwnership(address(daoMock));
-        Grant(mockAddresses[7]).transferOwnership(address(daoMock));
-        Nominees(mockAddresses[8]).transferOwnership(address(daoMock));
-        OpenElection(mockAddresses[9]).transferOwnership(address(daoMock));
-        Erc20DelegateElection(mockAddresses[10]).transferOwnership(address(daoMock));
-        vm.stopPrank();
+        (mandateNames, mandateAddresses) = initialisePowers.getDeployed();
+        Configurations helperConfig = new Configurations();
+        config = helperConfig.getConfig();
 
         // deploy constitutions mock
-        testConstitutions = new TestConstitutions();
+        vm.startPrank(address(daoMock));
+        testConstitutions = new TestConstitutions(mandateNames, mandateAddresses);
+        vm.stopPrank();
     }
 }
 
@@ -355,12 +427,15 @@ abstract contract TestSetupPowers is BaseSetup {
         super.setUpVariables();
 
         // initiate constitution
-        (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.powersTestConstitution(
-            mandateNames, mandateAddresses, mockNames, mockAddresses, payable(address(daoMock))
-        );
+        (PowersTypes.MandateInitData[] memory mandateInitData_) =
+            testConstitutions.powersTestConstitution(address(daoMock));
+
+        console2.log("Mandate Init Data Length:");
+        console2.logUint(mandateInitData_.length);
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ADMIN_ROLE, alice);
@@ -376,13 +451,40 @@ abstract contract TestSetupMandate is BaseSetup {
     function setUpVariables() public override {
         super.setUpVariables();
 
+        vm.prank(address(daoMock));
+        simpleErc1155 = new SimpleErc1155();
+
         // initiate constitution
-        (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.mandateTestConstitution(
-            mandateNames, mandateAddresses, mockNames, mockAddresses, payable(address(daoMock))
-        );
+        (PowersTypes.MandateInitData[] memory mandateInitData_) =
+            testConstitutions.mandateTestConstitution(address(daoMock), address(simpleErc1155));
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
+
+        vm.startPrank(address(daoMock));
+        daoMock.assignRole(ROLE_ONE, alice);
+        daoMock.assignRole(ROLE_ONE, bob);
+        daoMock.assignRole(ROLE_TWO, charlotte);
+        daoMock.assignRole(ROLE_TWO, david);
+        vm.stopPrank();
+    }
+}
+
+//////////////////////////////////////////////////////////////////////
+//                      UNIT TESTS MANDATES                         //
+//////////////////////////////////////////////////////////////////////
+
+abstract contract TestSetupAsync is BaseSetup {
+    function setUpVariables() public override {
+        super.setUpVariables();
+
+        // initiate multi constitution
+        (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.asyncTestConstitution();
+
+        // constitute daoMock.
+        daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -397,22 +499,27 @@ abstract contract TestSetupElectoral is BaseSetup {
     function setUpVariables() public override {
         super.setUpVariables();
 
-        // Setup OpenElection: add nominees and open election BEFORE constitution
-        uint16 electionMandatateId = daoMock.mandateCounter();
-
         vm.startPrank(address(daoMock));
-        OpenElection(mockAddresses[9]).nominate(alice, true);
-        OpenElection(mockAddresses[9]).nominate(bob, true);
-        OpenElection(mockAddresses[9]).openElection(100, electionMandatateId);
+        nominees = new Nominees();
+        openElection = new ElectionList();
+        erc20Taxed = new Erc20Taxed();
+        erc20DelegateElection = new Erc20DelegateElection(address(erc20Taxed));
+        flagActions = new FlagActions();
         vm.stopPrank();
 
         // initiate electoral constitution
         (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.electoralTestConstitution(
-            mandateNames, mandateAddresses, mockNames, mockAddresses, payable(address(daoMock))
+            address(daoMock),
+            address(nominees),
+            address(openElection),
+            address(erc20DelegateElection),
+            address(erc20Taxed),
+            address(flagActions)
         );
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -427,13 +534,19 @@ abstract contract TestSetupExecutive is BaseSetup {
     function setUpVariables() public override {
         super.setUpVariables();
 
+        vm.startPrank(address(daoMock));
+        simpleErc1155 = new SimpleErc1155();
+        returnDataMock = new ReturnDataMock();
+        vm.stopPrank();
+
         // initiate executive constitution
         (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.executiveTestConstitution(
-            mandateNames, mandateAddresses, mockNames, mockAddresses, payable(address(daoMock))
+            address(daoMock), address(simpleErc1155), address(returnDataMock)
         );
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -444,17 +557,133 @@ abstract contract TestSetupExecutive is BaseSetup {
     }
 }
 
-abstract contract TestSetupMulti is BaseSetup {
+abstract contract TestSetupIntegrations is BaseSetup {
+    function setUpVariables() public override { 
+        // vm.skip(true);
+        vm.selectFork(optSepoliaFork); // options: sepoliaFork, optSepoliaFork, arbSepoliaFork
+
+        super.setUpVariables();
+
+        vm.startPrank(address(daoMock));
+        simpleErc20Votes = new SimpleErc20Votes();
+        simpleGovernor = new SimpleGovernor(address(simpleErc20Votes));
+        allowedTokens = new AllowedTokens();
+        soulbound1155 = new Soulbound1155("this is a test uri");
+        electionList = new ElectionList();
+        powersFactory = new PowersFactory(
+            config.maxCallDataLength,
+            config.maxReturnDataLength,
+            config.maxExecutionsLength
+        );
+        powersFactory.addMandates(testConstitutions.powersTestConstitution(address(daoMock)));
+        erc20Taxed = new Erc20Taxed();
+        vm.stopPrank();
+
+        // initiate multi constitution
+        (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.integrationsTestConstitution(
+            address(daoMock),
+            address(simpleGovernor),
+            address(powersFactory),
+            address(soulbound1155),
+            address(electionList),
+            address(erc20Taxed)
+        );
+        // (PowersTypes.MandateInitData[] memory mandateInitData2_) =
+        //     testConstitutions.integrationsTestConstitution2(address(daoMock), address(allowedTokens));
+
+        // constitute daoMock.
+        daoMock.constitute(mandateInitData_);
+        // daoMockChild1.constitute(mandateInitData2_);
+        daoMock.closeConstitute();
+
+        vm.startPrank(address(daoMock));
+        daoMock.assignRole(ROLE_ONE, alice);
+        daoMock.assignRole(ROLE_ONE, bob);
+        daoMock.assignRole(ROLE_TWO, charlotte);
+        daoMock.assignRole(ROLE_TWO, david);
+        daoMock.assignRole(42, alice);
+        vm.stopPrank();
+
+        vm.startPrank(address(daoMockChild1));
+        daoMockChild1.assignRole(ROLE_ONE, alice);
+        daoMockChild1.assignRole(ROLE_ONE, bob);
+        daoMockChild1.assignRole(ROLE_TWO, charlotte);
+        daoMockChild1.assignRole(ROLE_TWO, david);
+        daoMockChild1.assignRole(42, alice);
+        vm.stopPrank();
+    }
+}
+
+/////////////////////////////////////////////////////////////////////
+//                INTEGRATION FLOWS TEST SETUPS                    //
+/////////////////////////////////////////////////////////////////////
+/// ELECTORAL FLOWS ///
+abstract contract TestSetupDelegateTokenFlow is BaseSetup {
+    function setUpVariables() public override {
+        super.setUpVariables();
+
+        vm.startPrank(address(daoMock));
+        nominees = new Nominees();
+        openElection = new ElectionList();
+        simpleErc20Votes = new SimpleErc20Votes();
+        vm.stopPrank();
+
+        // initiate multi constitution
+        (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.delegateToken_IntegrationTestConstitution(
+            address(nominees), address(openElection), address(simpleErc20Votes)
+        );
+
+        // constitute daoMock.
+        daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
+
+        vm.startPrank(address(daoMock));
+        daoMock.assignRole(ROLE_ONE, alice);
+        daoMock.assignRole(ROLE_ONE, bob);
+        daoMock.assignRole(ROLE_TWO, charlotte);
+        daoMock.assignRole(ROLE_TWO, david);
+        vm.stopPrank();
+    }
+}
+
+abstract contract TestSetupElectionListFlow is BaseSetup {
+    function setUpVariables() public override {
+        super.setUpVariables();
+
+        vm.prank(address(daoMock));
+        openElection = new ElectionList();
+
+        // initiate multi constitution
+        (PowersTypes.MandateInitData[] memory mandateInitData_) =
+            testConstitutions.openElection_IntegrationTestConstitution(address(openElection));
+
+        // constitute daoMock.
+        daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
+
+        vm.startPrank(address(daoMock));
+        daoMock.assignRole(ROLE_ONE, alice);
+        daoMock.assignRole(ROLE_ONE, bob);
+        daoMock.assignRole(ROLE_ONE, frank);
+        daoMock.assignRole(ROLE_ONE, gary);
+        daoMock.assignRole(ROLE_ONE, helen);
+        daoMock.assignRole(ROLE_TWO, charlotte);
+        daoMock.assignRole(ROLE_TWO, david);
+        vm.stopPrank();
+    }
+}
+
+abstract contract TestSetupRoleByTransactionFlow is BaseSetup {
     function setUpVariables() public override {
         super.setUpVariables();
 
         // initiate multi constitution
-        (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.multiTestConstitution(
-            mandateNames, mandateAddresses, mockNames, mockAddresses, payable(address(daoMock))
-        );
+        (PowersTypes.MandateInitData[] memory mandateInitData_) =
+            testConstitutions.roleByTransaction_IntegrationTestConstitution(address(daoMock));
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
 
         vm.startPrank(address(daoMock));
         daoMock.assignRole(ROLE_ONE, alice);
@@ -465,131 +694,227 @@ abstract contract TestSetupMulti is BaseSetup {
     }
 }
 
-/// NB ASYNC LAWS UNIT TESTING TO BE IMPLEMENTED
+abstract contract TestSetupAssignExternalRoleParentFlow is BaseSetup {
+    function setUpVariables() public override {
+        super.setUpVariables();
 
-// abstract contract TestSetupAsync is BaseSetup {
-//     function setUpVariables() public override {
-//         super.setUpVariables();
+        // initiate multi constitution
+        (PowersTypes.MandateInitData[] memory mandateInitData_) =
+            testConstitutions.assignExternalRole_parent_IntegrationTestConstitution(address(daoMock));
+        (PowersTypes.MandateInitData[] memory mandateInitData1_) = testConstitutions.assignExternalRole_child_IntegrationTestConstitution(
+            address(daoMockChild1), address(daoMock)
+        );
 
-//         // transfer ownership of erc721Mock to daoMock
-//         vm.startPrank(SoulboundErc721(mockAddresses[2]).owner());
-//         SoulboundErc721(mockAddresses[2]).transferOwnership(address(daoMock));
-//         vm.stopPrank();
+        // constitute daoMock.
+        daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
+        daoMockChild1.constitute(mandateInitData1_);
+        daoMockChild1.closeConstitute();
 
-//         // initiate constitution
-//         (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.utilitiesTestConstitution(
-//             mandateNames, mandateAddresses, mockNames, mockAddresses, payable(address(daoMock))
-//         );
+        vm.startPrank(address(daoMock));
+        daoMock.assignRole(ROLE_ONE, alice);
+        daoMock.assignRole(ROLE_ONE, bob);
+        daoMock.assignRole(ROLE_TWO, charlotte);
+        daoMock.assignRole(ROLE_TWO, david);
+        vm.stopPrank();
 
-//         // constitute daoMock.
-//         daoMock.constitute(mandateInitData_);
+        // role designations in child dao?
+    }
+}
 
-//         // assign initial roles for testing
-//         vm.startPrank(address(daoMock));
-//         daoMock.assignRole(ROLE_ONE, alice);
-//         daoMock.assignRole(ROLE_ONE, bob);
-//         daoMock.assignRole(ROLE_TWO, charlotte);
-//         daoMock.assignRole(ROLE_TWO, david);
-//         vm.stopPrank();
-//     }
-// }
+/// EXECUTIVE FLOWS ///
+abstract contract TestSetupOpenActionFlow is BaseSetup {
+    function setUpVariables() public override {
+        super.setUpVariables();
+
+        // initiate multi constitution
+        (PowersTypes.MandateInitData[] memory mandateInitData_) =
+            testConstitutions.openAction_IntegrationTestConstitution();
+
+        // constitute daoMock.
+        daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
+
+        vm.startPrank(address(daoMock));
+        daoMock.assignRole(ROLE_ONE, alice);
+        daoMock.assignRole(ROLE_ONE, bob);
+        daoMock.assignRole(ROLE_TWO, charlotte);
+        daoMock.assignRole(ROLE_TWO, david);
+        vm.stopPrank();
+    }
+}
+
+abstract contract TestSetupCheckExternalActionStateFlow is BaseSetup {
+    function setUpVariables() public override {
+        super.setUpVariables();
+
+        // initiate multi constitution
+        (PowersTypes.MandateInitData[] memory mandateInitData_) =
+            testConstitutions.checkExternalActionState_Parent_IntegrationTestConstitution(address(daoMock));
+        (PowersTypes.MandateInitData[] memory mandateInitData1_) = testConstitutions.checkExternalActionState_Child_IntegrationTestConstitution(
+            address(daoMockChild1), address(daoMock)
+        );
+
+        // constitute daoMock.
+        daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
+        daoMockChild1.constitute(mandateInitData1_);
+        daoMockChild1.closeConstitute();
+
+        vm.startPrank(address(daoMock));
+        daoMock.assignRole(ROLE_ONE, alice);
+        daoMock.assignRole(ROLE_ONE, bob);
+        daoMock.assignRole(ROLE_TWO, charlotte);
+        daoMock.assignRole(ROLE_TWO, david);
+        vm.stopPrank();
+
+        // role designations in child dao?
+    }
+}
+
+/// INTEGRATIONS FLOWS ///
+abstract contract TestSetupGovernorProtocolFlow is BaseSetup {
+    function setUpVariables() public override {
+        super.setUpVariables();
+
+        vm.startPrank(address(daoMock));
+        simpleErc20Votes = new SimpleErc20Votes();
+        simpleGovernor = new SimpleGovernor(address(simpleErc20Votes));
+        vm.stopPrank();
+
+        // initiate multi constitution
+        (PowersTypes.MandateInitData[] memory mandateInitData_) =
+            testConstitutions.governorProtocol_IntegrationTestConstitution(address(simpleGovernor));
+
+        // constitute daoMock.
+        daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
+
+        vm.startPrank(address(daoMock));
+        daoMock.assignRole(ROLE_ONE, alice);
+        daoMock.assignRole(ROLE_ONE, bob);
+        daoMock.assignRole(ROLE_TWO, charlotte);
+        daoMock.assignRole(ROLE_TWO, david);
+        vm.stopPrank();
+    }
+}
+
+// £todo: this setup needs fixing.
+abstract contract TestSetupSafeProtocolFlow is BaseSetup {
+    function setUpVariables() public override {
+        vm.skip(false);
+        vm.selectFork(arbSepoliaFork); // options: sepoliaFork, optSepoliaFork, arbSepoliaFork
+        super.setUpVariables();
+
+        // initiate multi constitution
+        (PowersTypes.MandateInitData[] memory mandateInitData_) =
+            testConstitutions.safeProtocol_Parent_IntegrationTestConstitution(config.safeAllowanceModule);
+
+        // constitute daoMock.
+        daoMock.constitute(mandateInitData_);
+        daoMock.closeConstitute();
+
+        vm.startPrank(address(daoMock));
+        daoMock.assignRole(ROLE_ONE, alice);
+        daoMock.assignRole(ROLE_ONE, bob);
+        daoMock.assignRole(ROLE_TWO, charlotte);
+        daoMock.assignRole(ROLE_TWO, david);
+        vm.stopPrank();
+
+        // role designations in child dao?
+        vm.startPrank(address(daoMockChild1));
+        daoMockChild1.assignRole(ROLE_ONE, alice);
+        daoMockChild1.assignRole(ROLE_ONE, bob);
+        daoMockChild1.assignRole(ROLE_TWO, charlotte);
+        daoMockChild1.assignRole(ROLE_TWO, david);
+        vm.stopPrank();
+    }
+}
 
 /////////////////////////////////////////////////////////////////////
-//                 TEST SETUPS ORGANISATIONS                       //
+//            INTEGRATION ORGANISATION TEST SETUPS                 //
 /////////////////////////////////////////////////////////////////////
-
+// Powers 101 Setup
 abstract contract TestSetupPowers101 is BaseSetup {
     function setUpVariables() public override {
+        // Note: this test runs the full initalisation scripts. It takes a while to run.
+        // But it is needed to be able to test the full deployment flow of an organisation.
+        vm.skip(true);
+
         super.setUpVariables();
 
-        // initiate multi constitution
-        (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.powers101Constitution(
-            mandateNames, mandateAddresses, mockNames, mockAddresses, payable(address(daoMock))
-        );
-
-        // constitute daoMock.
-        daoMock.constitute(mandateInitData_);
+        Powers101 powers101 = new Powers101();
+        daoMock = PowersMock(payable(address(powers101.run())));
 
         vm.startPrank(address(daoMock));
-        daoMock.assignRole(ADMIN_ROLE, alice);
+        daoMock.assignRole(ROLE_ONE, alice);
         daoMock.assignRole(ROLE_ONE, bob);
-        daoMock.assignRole(ROLE_ONE, charlotte);
-        daoMock.assignRole(ROLE_ONE, david);
-        daoMock.assignRole(ROLE_ONE, eve);
         daoMock.assignRole(ROLE_TWO, charlotte);
         daoMock.assignRole(ROLE_TWO, david);
-        daoMock.assignRole(ROLE_TWO, eve);
-        daoMock.assignRole(ROLE_TWO, frank);
         vm.stopPrank();
     }
 }
 
-abstract contract TestSetupPowerLabsSafes is BaseSetup {
+// Open Elections Setup
+abstract contract TestSetupElectionListsDAO is BaseSetup {
     function setUpVariables() public override {
-        // Check if the Safe Allowance module address is populated. If not, skip the test.
-        if (address(0xAA46724893dedD72658219405185Fb0Fc91e091C).code.length == 0) {
-            vm.skip(true);
-            return;
-        }
+        // Note: this test runs the full initalisation scripts. It takes a while to run.
+        // But it is needed to be able to test the full deployment flow of an organisation.
+        vm.skip(false);
+
         super.setUpVariables();
 
-        // initiate multi constitution
-        (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.powerLabsSafesConstitution(
-            mandateNames, mandateAddresses, mockNames, mockAddresses, payable(address(daoMock))
-        );
-
-        // constitute daoMock.
-        daoMock.constitute(mandateInitData_);
+        ElectionListsDAO openElections = new ElectionListsDAO();
+        (powers, openElection) = openElections.run();
+        daoMock = PowersMock(payable(address(powers)));
 
         vm.startPrank(address(daoMock));
-        daoMock.assignRole(ADMIN_ROLE, alice);
+        daoMock.assignRole(ROLE_ONE, alice);
         daoMock.assignRole(ROLE_ONE, bob);
-        daoMock.assignRole(ROLE_ONE, charlotte);
-        daoMock.assignRole(ROLE_ONE, david);
-        daoMock.assignRole(ROLE_ONE, eve);
-        vm.stopPrank();
-    }
-}
-
-abstract contract TestSetupPowerLabsChild is BaseSetup {
-    function setUpVariables() public override {
-        // Check if the Safe Allowance module address is populated. If not, skip the test.
-        if (address(0xAA46724893dedD72658219405185Fb0Fc91e091C).code.length == 0) {
-            vm.skip(true);
-            return;
-        }
-        super.setUpVariables();
-
-        // initiate multi constitution
-        (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.powerLabsSafesConstitution(
-            mandateNames, mandateAddresses, mockNames, mockAddresses, payable(address(daoMock))
-        );
-
-        // constitute daoMock.
-        daoMock.constitute(mandateInitData_);
-
-        vm.startPrank(address(daoMock));
-        daoMock.assignRole(ADMIN_ROLE, alice);
-        daoMock.assignRole(ROLE_ONE, bob);
-        daoMock.assignRole(ROLE_ONE, charlotte);
-        daoMock.assignRole(ROLE_ONE, david);
-        daoMock.assignRole(ROLE_ONE, eve);
+        daoMock.assignRole(ROLE_ONE, frank);
+        daoMock.assignRole(ROLE_ONE, gary);
+        daoMock.assignRole(ROLE_ONE, helen);
         daoMock.assignRole(ROLE_TWO, charlotte);
         daoMock.assignRole(ROLE_TWO, david);
-        daoMock.assignRole(ROLE_TWO, eve);
-        daoMock.assignRole(ROLE_TWO, frank);
         vm.stopPrank();
     }
 }
 
+// Cultural Stewards DAO Setup
+abstract contract TestSetupCulturalStewardsDAO is BaseSetup {
+    function setUpVariables() public override {
+        // Note: this test runs the full initalisation scripts. It takes a while to run.
+        // But it is needed to be able to test the full deployment flow of an organisation.
+        vm.skip(false);
+        vm.selectFork(sepoliaFork);
+
+        super.setUpVariables();
+
+        ElectionListsDAO openElections = new ElectionListsDAO();
+        (powers, openElection) = openElections.run();
+        daoMock = PowersMock(payable(address(powers)));
+
+        vm.startPrank(address(daoMock));
+        daoMock.assignRole(ROLE_ONE, alice);
+        daoMock.assignRole(ROLE_ONE, bob);
+        daoMock.assignRole(ROLE_ONE, frank);
+        daoMock.assignRole(ROLE_ONE, gary);
+        daoMock.assignRole(ROLE_ONE, helen);
+        daoMock.assignRole(ROLE_TWO, charlotte);
+        daoMock.assignRole(ROLE_TWO, david);
+        vm.stopPrank();
+    }
+}
+
+/////////////////////////////////////////////////////////////////////
+//                      HELPER TEST SETUPS                         //
+/////////////////////////////////////////////////////////////////////
 abstract contract TestSetupHelpers is BaseSetup {
     function setUpVariables() public override {
         super.setUpVariables();
 
         // initiate helpers constitution
-        (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.helpersTestConstitution(
-            mandateNames, mandateAddresses, mockNames, mockAddresses, payable(address(daoMock))
-        );
+        (PowersTypes.MandateInitData[] memory mandateInitData_) = testConstitutions.helpersTestConstitution();
 
         // constitute daoMock.
         daoMock.constitute(mandateInitData_);

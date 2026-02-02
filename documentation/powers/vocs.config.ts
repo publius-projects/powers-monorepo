@@ -176,12 +176,12 @@ export default defineConfig({
               link: '/to-do', 
             },
             { 
-              text: 'GovernorCreateProposal', 
-              link: '/mandates/GovernorCreateProposal', 
+              text: 'Governor_CreateProposal', 
+              link: '/mandates/Governor_CreateProposal', 
             },
             { 
-              text: 'GovernorExecuteProposal', 
-              link: '/mandates/GovernorExecuteProposal', 
+              text: 'Governor_ExecuteProposal', 
+              link: '/mandates/Governor_ExecuteProposal', 
             },
             { 
               text: 'TreasuryPoolGovernance', 

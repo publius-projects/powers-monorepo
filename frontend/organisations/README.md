@@ -108,7 +108,7 @@ export const MyDAO: Organization = {
     // Define your mandates here
     mandateInitData.push({
       nameDescription: "My First Mandate",
-      targetMandate: getMandateAddress("SomeMandate", chainId),
+      targetMandate: getInitialisedAddress("SomeMandate", chainId),
       config: "0x",
       conditions: createConditions({
         allowedRole: 0n
@@ -188,7 +188,7 @@ See `PowerLabs.ts` for complete implementation details.
 ### Mandate Address Helpers
 
 ```typescript
-const getMandateAddress = (mandateName: string, chainId: number): `0x${string}` => {
+const getInitialisedAddress = (mandateName: string, chainId: number): `0x${string}` => {
   const constants = getConstants(chainId);
   const address = constants.LAW_ADDRESSES[constants.LAW_NAMES.indexOf(mandateName)];
   if (!address) {

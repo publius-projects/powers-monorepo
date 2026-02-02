@@ -22,29 +22,28 @@
 /// @author 7Cedars
 pragma solidity 0.8.26;
 
-import { Mandate } from "../../Mandate.sol";
-import { Powers } from "../../Powers.sol";
+import { Mandate } from "../../Mandate.sol"; 
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 import { Erc20Taxed } from "@mocks/Erc20Taxed.sol";
 
 // import "forge-std/Test.sol"; // only for testing
 
 contract TaxSelect is Mandate {
-    struct Data {
-        address erc20Taxed;
-        uint256 thresholdTaxPaid;
-        uint256 roleIdToSet;
-    }
-
     struct Mem {
-        bytes32 mandateHash;
+        // address erc20Taxed;
+        // uint256 thresholdTaxPaid;
+        // uint256 roleIdToSet;
+        bytes configBytes;
+        address account;
         uint48 epochDuration;
         uint48 currentEpoch;
         bool hasRole;
         uint256 taxPaid;
+        address erc20TaxedMock;
+        uint256 thresholdTaxPaid;
+        uint256 roleIdToSet;
     }
-
-    mapping(bytes32 mandateHash => Data) internal data;
 
     /// @notice Constructor for TaxSelect mandate
     constructor() {
@@ -57,19 +56,13 @@ contract TaxSelect is Mandate {
     /// @param index The index of the mandate in the DAO
     /// @param nameDescription The description of the mandate
     /// @param config The configuration parameters (erc20Taxed, thresholdTaxPaid, roleIdToSet)
-    function initializeMandate(uint16 index, string memory nameDescription, bytes memory inputParams, bytes memory config)
-        public
-        override
-    {
-        (address erc20Taxed_, uint256 thresholdTaxPaid_, uint256 roleIdToSet_) =
-            abi.decode(config, (address, uint256, uint256));
-        bytes32 mandateHash = MandateUtilities.hashMandate(msg.sender, index);
-        data[mandateHash].erc20Taxed = erc20Taxed_;
-        data[mandateHash].thresholdTaxPaid = thresholdTaxPaid_;
-        data[mandateHash].roleIdToSet = roleIdToSet_;
-
+    function initializeMandate(
+        uint16 index,
+        string memory nameDescription,
+        bytes memory inputParams,
+        bytes memory config
+    ) public override {
         inputParams = abi.encode("address Account");
-
         super.initializeMandate(index, nameDescription, inputParams, config);
     }
 
@@ -98,13 +91,15 @@ contract TaxSelect is Mandate {
         returns (uint256 actionId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas)
     {
         Mem memory mem;
-        mem.mandateHash = MandateUtilities.hashMandate(powers, mandateId);
+        mem.configBytes = getConfig(powers, mandateId);
         // step 0: create actionId & decode the calldata
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
-        (address account) = abi.decode(mandateCalldata, (address));
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
+        (mem.account) = abi.decode(mandateCalldata, (address));
+        (mem.erc20TaxedMock, mem.thresholdTaxPaid, mem.roleIdToSet) =
+            abi.decode(getConfig(powers, mandateId), (address, uint256, uint256)); // silence solc warning
 
         // step 1: retrieve data
-        mem.epochDuration = Erc20Taxed(data[mem.mandateHash].erc20Taxed).EPOCH_DURATION();
+        mem.epochDuration = Erc20Taxed(mem.erc20TaxedMock).EPOCH_DURATION();
         mem.currentEpoch = uint48(block.number) / mem.epochDuration;
 
         if (mem.currentEpoch == 0) {
@@ -112,29 +107,24 @@ contract TaxSelect is Mandate {
         }
 
         // step 2: retrieve data on tax paid and role
-        mem.hasRole = Powers(payable(powers)).hasRoleSince(account, data[mem.mandateHash].roleIdToSet) > 0;
+        mem.hasRole = IPowers(payable(powers)).hasRoleSince(mem.account, mem.roleIdToSet) > 0;
         // console.log("mem.hasRole", mem.hasRole);
-        mem.taxPaid =
-            Erc20Taxed(data[mem.mandateHash].erc20Taxed).getTaxLogs(uint48(block.number) - mem.epochDuration, account);
+        mem.taxPaid = Erc20Taxed(mem.erc20TaxedMock).getTaxLogs(uint48(block.number) - mem.epochDuration, mem.account);
         // console.log("mem.taxPaid", mem.taxPaid);
 
         (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
         targets[0] = powers;
 
         // step 3: create arrays
-        if (mem.hasRole && mem.taxPaid < data[mem.mandateHash].thresholdTaxPaid) {
+        if (mem.hasRole && mem.taxPaid < mem.thresholdTaxPaid) {
             // console.log("revoking role");
-            calldatas[0] = abi.encodeWithSelector(Powers.revokeRole.selector, data[mem.mandateHash].roleIdToSet, account);
-        } else if (!mem.hasRole && mem.taxPaid >= data[mem.mandateHash].thresholdTaxPaid) {
+            calldatas[0] = abi.encodeWithSelector(IPowers.revokeRole.selector, mem.roleIdToSet, mem.account);
+        } else if (!mem.hasRole && mem.taxPaid >= mem.thresholdTaxPaid) {
             // console.log("assigning role");
-            calldatas[0] = abi.encodeWithSelector(Powers.assignRole.selector, data[mem.mandateHash].roleIdToSet, account);
+            calldatas[0] = abi.encodeWithSelector(IPowers.assignRole.selector, mem.roleIdToSet, mem.account);
         }
 
         // step 4: return data
         return (actionId, targets, values, calldatas);
-    }
-
-    function getData(bytes32 mandateHash) public view returns (Data memory) {
-        return data[mandateHash];
     }
 }

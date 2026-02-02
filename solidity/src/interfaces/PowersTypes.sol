@@ -21,7 +21,7 @@ interface PowersTypes {
         address targetMandate;
         Conditions conditions;
         bool active;
-        uint256[] actionIds;
+        uint256[] actionIds; 
         uint48 latestFulfillment;
     }
 

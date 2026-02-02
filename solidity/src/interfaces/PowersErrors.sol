@@ -8,6 +8,12 @@ interface PowersErrors {
     /// @notice Emitted when an action has already been initiated.
     error Powers__ActionAlreadyInitiated();
 
+    /// @notice Emitted when the constitute phase is closed.
+    error Powers__ConstituteClosed();
+
+    /// @notice Emitted when the constitute phase is still open.
+    error Powers__ConstituteOpen();
+
     /// @notice Emitted when an action has been cancelled.
     error Powers__ActionCancelled();
 
@@ -16,6 +22,9 @@ interface PowersErrors {
 
     /// @notice Emitted when a callData is invalid.
     error Powers__InvalidCallData();
+
+    /// @notice Emitted when an invalid address is used.
+    error Powers__InvalidAddress();
 
     /// @notice Emitted when a mandate is not active.
     error Powers__MandateNotActive();
@@ -74,6 +83,9 @@ interface PowersErrors {
     /// @notice Emitted when an array is too long.
     error Powers__ExecutionArrayTooLong();
 
+    /// @notice Emitted when a mandate fulfill call fails.
+    error Powers__MandateFulfillCallFailed();
+
     /// @notice Emitted when an action does not exist.
     error Powers__ActionNotProposed();
 
@@ -90,7 +102,7 @@ interface PowersErrors {
     error Powers__NotProposerAction();
 
     /// @notice Emitted when the caller is not the admin.
-    error Powers__NotAdmin();
+    error Powers__OnlyAdmin();
 
     /// @notice Emitted when an external contract is blacklisted.
     error Powers__ExternalContractBlacklisted();

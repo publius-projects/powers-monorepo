@@ -8,27 +8,14 @@
 pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 
 contract SelfSelect is Mandate {
-    mapping(bytes32 mandateHash => uint256 roleId) public roleIds;
-
     /// @notice Constructor for SelfSelect mandate
     constructor() {
         bytes memory configParams = abi.encode("uint256 RoleId");
         emit Mandate__Deployed(configParams);
-    }
-
-    function initializeMandate(uint16 index, string memory nameDescription, bytes memory inputParams, bytes memory config)
-        public
-        override
-    {
-        uint256 roleId_ = abi.decode(config, (uint256));
-        roleIds[MandateUtilities.hashMandate(msg.sender, index)] = roleId_;
-
-        inputParams = abi.encode();
-        super.initializeMandate(index, nameDescription, inputParams, config);
     }
 
     /// @notice Build a call to assign the configured role to the caller if not already held
@@ -37,22 +24,28 @@ contract SelfSelect is Mandate {
     /// @param mandateId The mandate identifier
     /// @param mandateCalldata Not used for this mandate
     /// @param nonce Unique nonce to build the action id
-    function handleRequest(address caller, address powers, uint16 mandateId, bytes memory mandateCalldata, uint256 nonce)
+    function handleRequest(
+        address caller,
+        address powers,
+        uint16 mandateId,
+        bytes memory mandateCalldata,
+        uint256 nonce
+    )
         public
         view
         override
         returns (uint256 actionId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas)
     {
         (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
-        bytes32 mandateHash = MandateUtilities.hashMandate(powers, mandateId);
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
+        uint256 roleId = abi.decode(getConfig(powers, mandateId), (uint256));
 
-        if (Powers(payable(powers)).hasRoleSince(caller, roleIds[mandateHash]) != 0) {
+        if (IPowers(payable(powers)).hasRoleSince(caller, roleId) != 0) {
             revert("Account already has role.");
         }
 
         targets[0] = powers;
-        calldatas[0] = abi.encodeWithSelector(Powers.assignRole.selector, roleIds[mandateHash], caller); // selector = assignRole
+        calldatas[0] = abi.encodeWithSelector(IPowers.assignRole.selector, roleId, caller); // selector = assignRole
 
         return (actionId, targets, values, calldatas);
     }

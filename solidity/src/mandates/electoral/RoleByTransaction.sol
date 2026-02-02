@@ -7,27 +7,21 @@
 pragma solidity 0.8.26;
 
 import { Mandate } from "../../Mandate.sol";
-import { Powers } from "../../Powers.sol";
+import { IPowers } from "../../interfaces/IPowers.sol";
 import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 
 // import "forge-std/Test.sol"; // for testing only. remove before deployment.
 
 contract RoleByTransaction is Mandate {
-    struct Data {
-        uint256 newRoleId;
-        address token;
-        uint256 thresholdAmount;
-        address safeProxy;
-    }
-
     struct Mem {
         address token;
         uint256 amount;
+        uint256 thresholdAmount;
         uint256 newRoleId;
         address safeProxy;
+        address account;
+        bool success;
     }
-
-    mapping(bytes32 mandateHash => Data data) public data;
 
     /// @notice Constructor for RoleByRoles mandate
     constructor() {
@@ -36,26 +30,27 @@ contract RoleByTransaction is Mandate {
         emit Mandate__Deployed(configParams);
     }
 
-    function initializeMandate(uint16 index, string memory nameDescription, bytes memory inputParams, bytes memory config)
-        public
-        override
-    {   
-        Mem memory mem;
-
-        (mem.token, mem.amount, mem.newRoleId, mem.safeProxy) =
-            abi.decode(config, (address, uint256, uint256, address));
-        bytes32 mandateHash = MandateUtilities.hashMandate(msg.sender, index);
-        if (mem.token == address(0)) {
-            revert ("Native token transfers not supported");
-        }
-        data[mandateHash] = Data({ token: mem.token, thresholdAmount: mem.amount, newRoleId: mem.newRoleId, safeProxy: mem.safeProxy });
+    function initializeMandate(
+        uint16 index,
+        string memory nameDescription,
+        bytes memory inputParams,
+        bytes memory config
+    ) public override {
+        (address token,,,) = abi.decode(config, (address, uint256, uint256, address));
+        if (token == address(0)) revert("Native token transfers not supported");
 
         inputParams = abi.encode("uint256 Amount");
-
         super.initializeMandate(index, nameDescription, inputParams, config);
     }
 
-    function handleRequest(address caller, address powers, uint16 mandateId, bytes memory mandateCalldata, uint256 nonce)
+    function handleRequest(
+        address caller,
+        address,
+        /*powers*/
+        uint16 mandateId,
+        bytes memory mandateCalldata,
+        uint256 nonce
+    )
         public
         view
         virtual
@@ -63,8 +58,7 @@ contract RoleByTransaction is Mandate {
         returns (uint256 actionId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas)
     {
         // step 1: decode the calldata & create hashes
-        (uint256 amount) = abi.decode(mandateCalldata, (uint256));
-        actionId = MandateUtilities.hashActionId(mandateId, mandateCalldata, nonce);
+        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
 
         calldatas = new bytes[](2);
         calldatas[0] = mandateCalldata;
@@ -78,33 +72,32 @@ contract RoleByTransaction is Mandate {
         uint256[] memory values,
         bytes[] memory calldatas
     ) internal override {
-        bytes32 mandateHash = MandateUtilities.hashMandate(msg.sender, mandateId);
-        Data memory data_ = data[mandateHash];
-        uint256 amount = abi.decode(calldatas[0], (uint256));
-        address account = abi.decode(calldatas[1], (address));
-        bool success;
+        Mem memory mem;
+        (mem.token, mem.thresholdAmount, mem.newRoleId, mem.safeProxy) =
+            abi.decode(getConfig(msg.sender, mandateId), (address, uint256, uint256, address));
+        mem.amount = abi.decode(calldatas[0], (uint256));
+        mem.account = abi.decode(calldatas[1], (address));
+        mem.success;
 
-        require(amount >= data_.thresholdAmount, "Amount below threshold");
+        require(mem.amount >= mem.thresholdAmount, "Amount below threshold");
 
-        if (data_.token == address(0)) {
-            (success,) = data_.safeProxy.call{ value: amount }("");
+        if (mem.token == address(0)) {
+            (mem.success,) = mem.safeProxy.call{ value: mem.amount }("");
         } else {
-            (success,) = data_.token
+            (mem.success,) = mem.token
                 .call(
-                    abi.encodeWithSignature("transferFrom(address,address,uint256)", account, data_.safeProxy, amount)
+                    abi.encodeWithSignature(
+                        "transferFrom(address,address,uint256)", mem.account, mem.safeProxy, mem.amount
+                    )
                 );
         }
-        require(success, "Transaction failed");
+        require(mem.success, "Transaction failed");
 
         (targets, values, calldatas) = MandateUtilities.createEmptyArrays(1);
         targets[0] = msg.sender;
-        calldatas[0] = abi.encodeWithSelector(Powers.assignRole.selector, data_.newRoleId, account);
+        calldatas[0] = abi.encodeWithSelector(IPowers.assignRole.selector, mem.newRoleId, mem.account);
 
         // step 2: execute the role assignment if the amount threshold is met
         _replyPowers(mandateId, actionId, targets, values, calldatas);
-    }
-
-    function getData(bytes32 mandateHash) public view returns (Data memory) {
-        return data[mandateHash];
     }
 }

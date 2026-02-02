@@ -14,7 +14,7 @@ interface IMandate is IERC165 {
     //////////////////////////////////////////////////////////////
 
     /// @notice Emitted when a mandate is deployed
-    /// @param configParams Configuration parameters for the mandate
+    /// @param configParams Configurations parameters for the mandate
     event Mandate__Deployed(bytes configParams);
 
     /// @notice Emitted when a mandate is initialized
@@ -33,9 +33,13 @@ interface IMandate is IERC165 {
     /// @param index Index of the mandate
     /// @param nameDescription Name of the mandate
     /// @param inputParams Input parameters for the mandate
-    /// @param config Configuration parameters for the mandate
-    function initializeMandate(uint16 index, string memory nameDescription, bytes memory inputParams, bytes memory config)
-        external;
+    /// @param config Configurations parameters for the mandate
+    function initializeMandate(
+        uint16 index,
+        string memory nameDescription,
+        bytes memory inputParams,
+        bytes memory config
+    ) external;
 
     /// @notice Executes the mandate's logic after validation
     /// @dev Called by the Powers protocol during action execution
@@ -58,7 +62,13 @@ interface IMandate is IERC165 {
     /// @return targets Target contract addresses for calls
     /// @return values ETH values to send with calls
     /// @return calldatas Encoded function calls
-    function handleRequest(address caller, address powers, uint16 mandateId, bytes memory mandateCalldata, uint256 nonce)
+    function handleRequest(
+        address caller,
+        address powers,
+        uint16 mandateId,
+        bytes memory mandateCalldata,
+        uint256 nonce
+    )
         external
         view
         returns (uint256 actionId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas);
