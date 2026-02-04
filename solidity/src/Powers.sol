@@ -1,5 +1,13 @@
 // SPDX-License-Identifier: MIT
-
+/*
+  _____   ____  __          __ ______  _____    _____ 
+ |  __ \ / __ \ \ \        / /|  ____||  __ \  / ____|
+ | |__) | |  | | \ \  /\  / / | |__   | |__) || (___  
+ |  ___/| |  | |  \ \/  \/ /  |  __|  |  _  /  \___ \ 
+ | |    | |__| |   \  /\  /   | |____ | | \ \  ____) |
+ |_|     \____/     \/  \/    |______||_|  \_\|_____/ 
+                                                      
+*/
 /// @title Powers Protocol v.0.4
 /// @notice Powers is a Role Based Governance Protocol. It provides a modular, flexible,  DAOs.
 ///
@@ -40,26 +48,42 @@ contract Powers is EIP712, IPowers, Context {
     //////////////////////////////////////////////////////////////
     //                           STORAGE                        //
     /////////////////////////////////////////////////////////////
-    mapping(uint256 actionId => Action) internal _actions; // mapping actionId to Action struct
-    mapping(uint16 mandateId => AdoptedMandate) internal mandates; //mapping mandate address to Mandate struct
-    mapping(uint256 roleId => Role) internal roles; // mapping roleId to Role struct)
-    mapping(address account => bool blacklisted) internal _blacklist; // mapping accounts to blacklisted status
+    /// @dev Mapping from actionId to Action struct
+    mapping(uint256 actionId => Action) internal _actions;
+    /// @dev Mapping from mandateId to AdoptedMandate struct
+    mapping(uint16 mandateId => AdoptedMandate) internal mandates;
+    /// @dev Mapping from roleId to Role struct
+    mapping(uint256 roleId => Role) internal roles;
+    /// @dev Mapping from account to blacklisted status
+    mapping(address account => bool blacklisted) internal _blacklist;
 
     // two roles are preset: ADMIN_ROLE == 0 and PUBLIC_ROLE == type(uint256).max.
-    uint256 public constant ADMIN_ROLE = type(uint256).min; // == 0
-    uint256 public constant PUBLIC_ROLE = type(uint256).max; // == a lot
-    uint256 public constant DENOMINATOR = 100; // == 100%
+    /// @notice Role identifier for the admin role
+    uint256 public constant ADMIN_ROLE = type(uint256).min;
+    /// @notice Role identifier for the public role (everyone)
+    uint256 public constant PUBLIC_ROLE = type(uint256).max;
+    /// @notice Denominator used for percentage calculations (100%)
+    uint256 public constant DENOMINATOR = 100;
 
+    /// @notice Maximum length of calldata for a mandate action
     uint256 public immutable MAX_CALLDATA_LENGTH;
+    /// @notice Maximum length of return data stored from execution
     uint256 public immutable MAX_RETURN_DATA_LENGTH;
+    /// @notice Maximum number of execution targets per action
     uint256 public immutable MAX_EXECUTIONS_LENGTH;
 
     // NB! this is a gotcha: mandates start counting a 1, NOT 0!. 0 is used as a default 'false' value.
-    uint16 public mandateCounter = 1; // number of mandates that have been initiated throughout the life of the organisation.
-    string public name; // name of the DAO.
-    string public uri; // a uri to metadata of the DAO. // note can be altered
-    address payable private treasury; // address to the treasury of the organisation.
-    bool private _constituteClosed; // Is the constitute phase closed? Note: no actions can be started when the constitute phase is open.
+    /// @notice Number of mandates that have been initiated throughout the life of the organisation
+    uint16 public mandateCounter = 1;
+    /// @notice Name of the DAO
+    string public name;
+    /// @notice URI to metadata of the DAO
+    /// @dev Can be altered
+    string public uri;
+    /// @notice Address to the treasury of the organisation
+    address payable private treasury;
+    /// @dev Is the constitute phase closed? Note: no actions can be started when the constitute phase is open.
+    bool private _constituteClosed;
 
     //////////////////////////////////////////////////////////////
     //                          MODIFIERS                       //
@@ -70,25 +94,29 @@ contract Powers is EIP712, IPowers, Context {
         _;
     }
 
+    /// @dev Internal check for onlyPowers modifier.
     function _onlyPowers() internal view {
         if (_msgSender() != address(this)) revert Powers__OnlyPowers();
     }
 
+    /// @notice Modifier to restrict access to the admin role.
     modifier onlyAdmin() {
         _onlyAdmin();
         _;
     }
 
+    /// @dev Internal check for onlyAdmin modifier.
     function _onlyAdmin() internal view {
         if (_msgSender() != getRoleHolderAtIndex(ADMIN_ROLE, 0)) revert Powers__OnlyAdmin();
     }
 
-    /// @notice A modifier that sets a function to only be callable by the {Powers} contract.
+    /// @notice A modifier that sets a function to only be callable by an active mandate.
     modifier onlyAdoptedMandate(uint16 mandateId) {
         _onlyAdoptedMandate(mandateId);
         _;
     }
 
+    /// @dev Internal check for onlyAdoptedMandate modifier.
     function _onlyAdoptedMandate(uint16 mandateId) internal view {
         if (mandates[mandateId].active == false) revert Powers__MandateNotActive();
     }
@@ -152,7 +180,9 @@ contract Powers is EIP712, IPowers, Context {
         _closeConstitute(newAdmin);
     }
 
-    function _closeConstitute(address newAdmin) internal { 
+    /// @dev Internal function to close constitution phase.
+    /// @param newAdmin Address of the new admin.
+    function _closeConstitute(address newAdmin) internal {
         // if newAdmin is different from current admin, set new admin...
         if (_msgSender() != newAdmin) {
             _setRole(ADMIN_ROLE, _msgSender(), false);
@@ -303,10 +333,15 @@ contract Powers is EIP712, IPowers, Context {
     }
 
     /// @notice Internal propose mechanism.
-    ///
     /// @dev The mechanism checks for the length of targets and calldatas.
+    /// @param caller The address of the caller proposing the action.
+    /// @param mandateId The ID of the mandate being proposed for.
+    /// @param mandateCalldata The calldata for the mandate execution.
+    /// @param nonce A unique nonce for the proposal.
+    /// @param uriAction URI with metadata about the action.
+    /// @return actionId The generated ID of the proposed action.
     ///
-    /// Emits a {SeperatedPowersEvents::proposedActionCreated} event.
+    /// Emits a {PowersEvents::ProposedActionCreated} event.
     function _propose(
         address caller,
         uint16 mandateId,
@@ -318,10 +353,10 @@ contract Powers is EIP712, IPowers, Context {
         Conditions memory conditions = getConditions(mandateId);
         actionId = Checks.computeActionId(mandateId, mandateCalldata, nonce);
 
-        // check 1: does target mandate need proposedAction vote to pass?
+        // check 1: does target mandate need proposal vote to pass?
         if (conditions.quorum == 0) revert Powers__NoVoteNeeded();
 
-        // check 2: do we have a proposedAction with the same targetMandate and mandateCalldata?
+        // check 2: do we have a proposal with the same targetMandate and mandateCalldata?
         if (_actions[actionId].voteStart != 0) revert Powers__UnexpectedActionState();
 
         // register actionId at mandate.
@@ -367,9 +402,15 @@ contract Powers is EIP712, IPowers, Context {
         return _cancel(mandateId, mandateCalldata, nonce);
     }
 
-    /// @notice Internal cancel mechanism with minimal restrictions. A proposedAction can be cancelled in any state other than
-    /// Cancelled or Executed. Once cancelled a proposedAction cannot be re-submitted.
-    /// Emits a {SeperatedPowersEvents::proposedActionCanceled} event.
+    /// @notice Internal cancel mechanism with minimal restrictions.
+    /// @dev A proposal can be cancelled in any state other than Cancelled or Executed.
+    /// Once cancelled a proposal cannot be re-submitted.
+    /// @param mandateId The ID of the mandate.
+    /// @param mandateCalldata The calldata of the action.
+    /// @param nonce The nonce of the action.
+    /// @return actionId The ID of the cancelled action.
+    ///
+    /// Emits a {PowersEvents::ProposedActionCancelled} event.
     function _cancel(uint16 mandateId, bytes calldata mandateCalldata, uint256 nonce)
         internal
         virtual
@@ -405,11 +446,15 @@ contract Powers is EIP712, IPowers, Context {
     }
 
     /// @notice Internal vote casting mechanism.
-    /// Check that the proposedAction is active, and that account is has access to targetMandate.
+    /// @dev Check that the proposal is active, and that account has access to targetMandate.
+    /// @param actionId The ID of the action being voted on.
+    /// @param account The address casting the vote.
+    /// @param support The support value (0=Against, 1=For, 2=Abstain).
+    /// @param reason The reason for the vote.
     ///
-    /// Emits a {SeperatedPowersEvents::VoteCast} event.
+    /// Emits a {PowersEvents::VoteCast} event.
     function _castVote(uint256 actionId, address account, uint8 support, string memory reason) internal virtual {
-        // Check that the proposedAction is active, that it has not been paused, cancelled or ended yet.
+        // Check that the proposal is active, that it has not been paused, cancelled or ended yet.
         if (getActionState(actionId) != ActionState.Active) {
             revert Powers__ProposedActionNotActive();
         }
@@ -447,11 +492,11 @@ contract Powers is EIP712, IPowers, Context {
         emit MandateRevoked(mandateId);
     }
 
-    /// @notice internal function to set a mandate or revoke it.
+    /// @notice Internal function to set a mandate or revoke it.
+    /// @param mandateInitData Data of the mandate to adopt.
+    /// @return mandateId The ID of the newly adopted mandate.
     ///
-    /// @param mandateInitData data of the mandate.
-    ///
-    /// Emits a {SeperatedPowersEvents::MandateAdopted} event.
+    /// Emits a {PowersEvents::MandateAdopted} event.
     function _adoptMandate(MandateInitData memory mandateInitData) internal virtual returns (uint16 mandateId) {
         // check if added address is indeed a mandate. Note that this will also revert with address(0).
         if (!ERC165Checker.supportsInterface(mandateInitData.targetMandate, type(IMandate).interfaceId)) {
@@ -502,10 +547,13 @@ contract Powers is EIP712, IPowers, Context {
 
     /// @notice Internal version of {setRole} without access control.
     /// @dev This function is used to set a role for a given account. Public role is locked as everyone has it.
-    /// @dev Note that it does allow Admin role to be assigned and revoked.
-    /// @dev Note that the function does not revert if trying to remove a role someone does not have, or add a role someone already has.
+    /// Note that it does allow Admin role to be assigned and revoked.
+    /// Note that the function does not revert if trying to remove a role someone does not have, or add a role someone already has.
+    /// @param roleId The ID of the role to set.
+    /// @param account The address to assign/revoke the role for.
+    /// @param access True to grant role, false to revoke.
     ///
-    /// Emits a {SeperatedPowersEvents::RolSet} event.
+    /// Emits a {PowersEvents::RoleSet} event.
     function _setRole(uint256 roleId, address account, bool access) internal virtual {
         // check 1: Public role is locked.
         if (roleId == PUBLIC_ROLE) revert Powers__CannotSetPublicRole();
@@ -556,10 +604,9 @@ contract Powers is EIP712, IPowers, Context {
     //////////////////////////////////////////////////////////////
     //               INTERNAL HELPER FUNCTIONS                  //
     //////////////////////////////////////////////////////////////
-    /// @notice internal function {quorumReached} that checks if the quorum for a given proposedAction has been reached.
-    ///
-    /// @param actionId id of the proposedAction.
-    ///
+    /// @notice Internal function to check if the quorum for a given proposal has been reached.
+    /// @param actionId The ID of the proposal.
+    /// @return True if quorum is reached, false otherwise.
     function _quorumReached(uint256 actionId) internal view virtual returns (bool) {
         // retrieve quorum and allowedRole from mandate.
         Action storage proposedAction = _actions[actionId];
@@ -572,11 +619,9 @@ contract Powers is EIP712, IPowers, Context {
                     <= (proposedAction.forVotes + proposedAction.abstainVotes) * DENOMINATOR);
     }
 
-    // @notice internal function {_hasBeenRequested} that checks if a given action has been requested.
-    ///
-    /// @param actionId id of the action.
-    ///
-    /// @return bool true if the action has been requested, false otherwise.
+    /// @notice Internal function to check if a given action has been requested.
+    /// @param actionId The ID of the action.
+    /// @return True if the action has been requested or fulfilled, false otherwise.
     function _hasBeenRequested(uint256 actionId) internal view virtual returns (bool) {
         ActionState state = getActionState(actionId);
         if (state == ActionState.Requested || state == ActionState.Fulfilled) {
@@ -585,9 +630,9 @@ contract Powers is EIP712, IPowers, Context {
         return false;
     }
 
-    /// @notice internal function {voteSucceeded} that checks if a vote for a given proposedAction has succeeded.
-    ///
-    /// @param actionId id of the proposedAction.
+    /// @notice Internal function to check if a vote for a given proposal has succeeded.
+    /// @param actionId The ID of the proposal.
+    /// @return True if the vote succeeded, false otherwise.
     function _voteSucceeded(uint256 actionId) internal view virtual returns (bool) {
         // retrieve quorum and success threshold from mandate.
         Action storage proposedAction = _actions[actionId];
@@ -598,10 +643,12 @@ contract Powers is EIP712, IPowers, Context {
         return conditions.quorum == 0 || amountMembers * conditions.succeedAt <= proposedAction.forVotes * DENOMINATOR;
     }
 
-    /// @notice internal function {countVote} that counts against, FOR, and abstain votes for a given proposedAction.
-    ///
+    /// @notice Internal function to count against, for, and abstain votes for a given proposal.
     /// @dev In this module, the support follows the `VoteType` enum (from Governor Bravo).
-    /// @dev It does not check if account has roleId referenced in actionId. This has to be done by {Powers.castVote} function.
+    /// It does not check if account has roleId referenced in actionId. This has to be done by {Powers.castVote} function.
+    /// @param actionId The ID of the proposal.
+    /// @param account The address casting the vote.
+    /// @param support The support value (0=Against, 1=For, 2=Abstain).
     function _countVote(uint256 actionId, address account, uint8 support) internal virtual {
         Action storage proposedAction = _actions[actionId];
 
@@ -620,12 +667,10 @@ contract Powers is EIP712, IPowers, Context {
         }
     }
 
-    /// @notice internal function {countMembersRole} that counts the number of members in a given role.
+    /// @notice Internal function that counts the number of members in a given role.
     /// @dev If needed, this function can be overridden with bespoke logic.
-    ///
-    /// @param roleId id of the role.
-    ///
-    /// @return amountMembers number of members in the role.
+    /// @param roleId The ID of the role.
+    /// @return amountMembers Number of members in the role.
     function _countMembersRole(uint256 roleId) internal view virtual returns (uint256 amountMembers) {
         return roles[roleId].membersArray.length;
     }
@@ -633,7 +678,7 @@ contract Powers is EIP712, IPowers, Context {
     //////////////////////////////////////////////////////////////
     //                 VIEW / GETTER FUNCTIONS                  //
     //////////////////////////////////////////////////////////////
-    /// @notice saves the version of the Powersimplementation.
+    /// @inheritdoc IPowers
     function version() public pure returns (string memory) {
         return "0.5";
     }
@@ -660,6 +705,7 @@ contract Powers is EIP712, IPowers, Context {
         return roles[roleId].membersArray.length;
     }
 
+    /// @inheritdoc IPowers
     function getRoleHolderAtIndex(uint256 roleId, uint256 index) public view returns (address account) {
         if (index >= getAmountRoleHolders(roleId)) {
             revert Powers__InvalidIndex();
@@ -667,6 +713,7 @@ contract Powers is EIP712, IPowers, Context {
         return roles[roleId].membersArray[index].account;
     }
 
+    /// @inheritdoc IPowers
     function getRoleLabel(uint256 roleId) public view returns (string memory label) {
         return roles[roleId].label;
     }
@@ -728,6 +775,7 @@ contract Powers is EIP712, IPowers, Context {
         );
     }
 
+    /// @inheritdoc IPowers
     function getActionVoteData(uint256 actionId)
         public
         view
@@ -753,10 +801,12 @@ contract Powers is EIP712, IPowers, Context {
         );
     }
 
+    /// @inheritdoc IPowers
     function getActionCalldata(uint256 actionId) public view virtual returns (bytes memory callData) {
         return _actions[actionId].mandateCalldata;
     }
 
+    /// @inheritdoc IPowers
     function getActionReturnData(uint256 actionId, uint256 index)
         public
         view
@@ -766,6 +816,7 @@ contract Powers is EIP712, IPowers, Context {
         return _actions[actionId].returnDatas[index];
     }
 
+    /// @inheritdoc IPowers
     function getActionUri(uint256 actionId) public view virtual returns (string memory _uri) {
         _uri = _actions[actionId].uri;
     }

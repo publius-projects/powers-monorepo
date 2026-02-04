@@ -596,9 +596,10 @@ contract ConstituteTest is TestSetupPowers {
             conditions: conditions
         });
 
-        vm.prank(alice);
+        vm.startPrank(alice);
         daoMockTest.constitute(mandateInitData);
         daoMockTest.closeConstitute();
+        vm.stopPrank();
 
         vm.expectRevert(Powers__ConstituteClosed.selector);
         vm.prank(alice);

@@ -84,8 +84,6 @@ contract ElectionList_Vote is Mandate {
     {
         Mem memory mem;
 
-        // Decode the vote data
-        (mem.vote) = abi.decode(mandateCalldata, (bool[]));
         actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         (mem.openElectionContract, mem.maxVotes, mem.electionId) =
             abi.decode(getConfig(powers, mandateId), (address, uint256, uint256));
@@ -96,9 +94,18 @@ contract ElectionList_Vote is Mandate {
             revert("Election is not open.");
         }
 
-        // Validate vote length matches nominees length
-        if (mem.vote.length != mem.nominees.length) {
+        // Manual decoding of calldata which consists of multiple bools (ABI encoded as 32-byte words)
+        if (mandateCalldata.length != mem.nominees.length * 32) {
             revert("Invalid vote length.");
+        }
+
+        mem.vote = new bool[](mem.nominees.length);
+        for (uint256 i = 0; i < mem.nominees.length; i++) {
+            bool val;
+            assembly {
+                val := mload(add(add(mandateCalldata, 32), mul(i, 32)))
+            }
+            mem.vote[i] = val;
         }
 
         // Check if the voter has voted for more than one nominee

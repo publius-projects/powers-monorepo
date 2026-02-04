@@ -61,7 +61,7 @@ contract PowersFactory is IPowersFactory, Ownable {
     } 
 
     /// @notice Deploys a new Powers contract and constitutes it with the stored mandates.
-    /// @dev The factory owner becomes the initial owner of the deployed Powers contract.
+    /// @dev The newly deployed Powers contract becomes the admin of the deployed Powers contract.
     /// @param name The name of the Powers contract.
     /// @param uri The URI for the Powers contract metadata.
     /// @return The address of the deployed Powers contract.
@@ -69,13 +69,13 @@ contract PowersFactory is IPowersFactory, Ownable {
         Powers powers = new Powers(name, uri, maxCallDataLength, maxReturnDataLength, maxExecutionsLength);
 
         powers.constitute(mandateInitData); // set the Powers address as the initial deployer and set as the admin!
-        powers.closeConstitute(msg.sender); 
+        powers.closeConstitute(address(powers)); // admin set to the address that called the factory.
 
         latestDeployment = address(powers);
 
         return address(powers);
     }
-
+    
     /// @notice Returns the address of the latest deployed Powers contract.
     /// @return The address of the latest deployment.
     function getLatestDeployment() external view returns (address) {

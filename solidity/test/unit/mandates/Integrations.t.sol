@@ -508,12 +508,8 @@ contract ElectionListIntegrationTest is TestSetupIntegrations {
         console2.log("Voting for Alice...");
 
         // Nominees: [alice]
-        // Vote for alice: [true]
-        votes = new bool[](1);
-        votes[0] = true;
-
         vm.prank(alice);
-        daoMock.request(voteMandateId, abi.encode(votes), nonce, "Vote for Alice");
+        daoMock.request(voteMandateId, abi.encode(true), nonce, "Vote for Alice");
 
         assertEq(ElectionList(electionListAddress).getVoteCount(electionId, alice), 1);
 
