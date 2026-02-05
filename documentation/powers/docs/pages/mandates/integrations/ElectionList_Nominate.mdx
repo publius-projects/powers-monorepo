@@ -1,0 +1,63 @@
+# ElectionList_Nominate
+
+ElectionList_Nominate is an integration mandate that allows users to self-nominate (or withdraw) from a specific election managed by the ElectionList contract.
+
+## Overview
+
+This mandate acts as the registration booth for an election. It interacts with the `ElectionList` helper contract to add or remove candidates. Unlike the generic `Nominate` mandate (which operates on a global or single-purpose Nominees list), this mandate is aware of specific election instances identified by their parameters.
+
+Usually, two separate instances of this mandate are deployed for an election system:
+1.  One configured to **Nominate** (shouldNominate = true).
+2.  One configured to **Revoke Nomination** (shouldNominate = false).
+
+## Configuration
+
+When adopting an ElectionList_Nominate instance, the following parameters are required:
+
+1.  `ElectionList` (address): The address of the ElectionList helper contract.
+2.  `shouldNominate` (bool): The mode of operation.
+    *   `true`: The mandate will nominate the caller.
+    *   `false`: The mandate will revoke the caller's nomination.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the inputs must identify the specific election:
+
+1.  `Title` (string): The title of the election.
+2.  `StartBlock` (uint48): The start block of the election.
+3.  `EndBlock` (uint48): The end block of the election.
+
+### Execution Flow
+
+1.  **Identification**
+    *   Computes the unique `electionId` hash from the inputs and the Powers address.
+
+2.  **Action**
+    *   **Nominate Mode:** Calls `nominate(electionId, caller)` on the ElectionList contract.
+    *   **Revoke Mode:** Calls `revokeNomination(electionId, caller)` on the ElectionList contract.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the ElectionList address and mode.
+-   Sets input parameters to `(string Title, uint48 StartBlock, uint48 EndBlock)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Computes the ID.
+-   Generates the appropriate call to the ElectionList.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

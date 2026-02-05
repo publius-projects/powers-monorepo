@@ -1,0 +1,86 @@
+import { Callout } from 'vocs/components'
+
+<Callout type="warning">
+  Bicameralism DAO is under development. The organisational specs and deployment addresses are subject to change.
+</Callout>
+
+# Bicameralism Specification
+
+**Latest deployments:** 
+
+| Network | Deployment |
+| :---- | :---- |
+| - | - |
+
+## **Organisational Structure & Context**
+
+### ***Vision & Mission***
+
+The Bicameralism DAO introduces a two-chamber governance structure designed to balance initiation and execution powers. It separates the power to propose actions from the power to execute them, ensuring that no single group has unilateral control over the organization's assets.
+
+- **Chamber 1 (Delegates)**: Responsible for initiating actions and proposals. They act as the originators of governance intent.
+- **Chamber 2 (Funders)**: Responsible for executing actions. They act as the check on the Delegates, ratifying and finalizing proposals.
+
+### ***Assets*** 
+
+The Bicameralism DAO does not control any assets, natively. It does not have a treasury assigned to it. However, it can manage external assets through its governance process, where Delegates can propose actions that involve asset management, and Funders can execute those actions if they are ratified. 
+
+### ***Actions*** 
+
+The Bicameralism DAO can take the following actions:
+
+*   **Delegates** can initiate proposals (Statement of Intent).
+*   **Funders** can execute proposals (Open Action), effectively ratifying them.
+*   **Delegates** can revoke roles from other accounts (check and balance).
+*   **Admin** can assign roles to any account.
+
+### ***Roles***
+
+<div class="table-roles">
+| Role Id | Role name | Selection criteria |
+| :---- | :---- | :---- |
+| 0 | Admin | Assigned at deployment. |
+| 1 | Delegates | Assigned by Admin. |
+| 2 | Funders | Assigned by Admin. |
+| … | Public | Everyone. |
+</div>
+
+### ***Executive Mandates***
+
+#### Action Lifecycle
+
+The governance process requires two steps: Delegates initiate a proposal, and Funders must subsequently ratify and execute it. This creates a check and balance on the distribution of funds.
+
+<div class="table-mandates">
+| Role | Name & Description | Base contract | User Input | Executable Output | Conditions |
+| :---- | :---- | :---- | :---- | :---- | :---- |
+| Delegates | Initiate action | StatementOfIntent.sol | "address[] targets, uint256[] values, bytes[] calldatas" | none | 51% success, 33% quorum, ~5 minute voting period |
+| Funders | Execute action | OpenAction.sol | None | Executes the proposed action | 51% success, 33% quorum, ~5 minute voting period. Requires "Initiate action" to be fulfilled. |
+</div>
+
+### ***Reform Mandates***
+
+#### Role Management
+
+The DAO includes mechanisms for assigning and revoking roles.
+
+<div class="table-mandates">
+| Role | Name & Description | Base contract | User Input | Executable Output | Conditions |
+| :---- | :---- | :---- | :---- | :---- | :---- |
+| Admin | Admin assign role | BespokeAction_Simple.sol | "uint256 roleId, address account" | Assigns role | None. |
+| Delegates | Delegate revoke role | BespokeAction_Simple.sol | "uint256 roleId, address account" | Revokes role | Requires "Admin assign role" to be fulfilled (as a reference mandate). |
+</div>
+
+## Description of Governance
+
+*   **Remit**: To manage a shared treasury through a bicameral process.
+*   **Separation of Powers**:
+    *   **Delegates**: Propose/Initiate.
+    *   **Funders**: Ratify/Execute.
+*   **Executive Paths**:
+    *   **Proposal Lifecycle**: Delegate Proposes -> Funder Executes.
+
+## Risk Assessment
+
+### Dependencies
+The system relies on the cooperation of both chambers. If Delegates refuse to propose, or Funders refuse to execute, governance can deadlock.

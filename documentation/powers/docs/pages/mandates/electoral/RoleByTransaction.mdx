@@ -1,0 +1,81 @@
+# RoleByTransaction
+
+RoleByTransaction is an electoral mandate that assigns a role to an account in exchange for a payment. It effectively creates a "pay-to-join" mechanism.
+
+## Overview
+
+This mandate allows users to acquire a specific role by transferring a required amount of tokens. It supports both ERC20 tokens and (in principle) native currency, though the current implementation is optimized for ERC20. When a user makes a successful payment equal to or greater than the threshold, the mandate automatically assigns them the configured role.
+
+## Configuration
+
+When adopting a RoleByTransaction instance, the following parameters are required:
+
+1.  `Token` (address): The address of the ERC20 token accepted for payment. (Note: Native token transfers (address(0)) are theoretically supported but may require specific configuration or be disabled in some versions).
+2.  `ThresholdAmount` (uint256): The minimum amount of tokens required to purchase the role.
+3.  `NewRoleId` (uint256): The role ID to be assigned upon successful payment.
+4.  `SafeProxy` (address): The address that will receive the payment (e.g., a treasury or safe).
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, two parameters must be provided:
+
+1.  `Amount` (uint256): The amount of tokens the user wishes to transfer. This must be greater than or equal to `ThresholdAmount`.
+2.  `account` (address): The address of the account that will receive the role (usually the caller, but could be another account if the caller pays on their behalf).
+
+*Note: The caller must have approved the Mandate contract to spend `Amount` of `Token` before calling this function.*
+
+### Execution Flow
+
+1.  **Validation**
+    *   Verifies that the provided `Amount` meets the `ThresholdAmount`.
+
+2.  **Transfer**
+    *   Executes a `transferFrom` call on the token contract, moving `Amount` from the `account` (or caller) to the `SafeProxy`.
+    *   Reverts if the transfer fails.
+
+3.  **Role Assignment**
+    *   If the transfer is successful, generates an `assignRole` call to grant `NewRoleId` to the `account`.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Initializes the token, threshold, role, and treasury.
+-   Sets input parameters to `(uint256 Amount)`. (Note: Implementation handles `account` as a second parameter internally or via context).
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Encodes the transfer logic.
+
+#### `_externalCall`
+```solidity
+function _externalCall(...) internal override
+```
+-   Performs the actual token transfer.
+-   Calls `_replyPowers` to trigger the role assignment.
+
+### Error Conditions
+
+1.  **Validation Errors**
+    *   "Native token transfers not supported": If configured with address(0).
+    *   "Amount below threshold": Payment is insufficient.
+    *   "Transaction failed": Token transfer failed (e.g., insufficient allowance or balance).
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

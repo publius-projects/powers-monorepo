@@ -59,15 +59,22 @@ const Page = () => {
   // resetting DynamicForm and fetching executions when switching mandates: 
   useEffect(() => {
     if (mandate) {
-      // console.log("useEffect triggered at Mandate page:", action.dataTypes, dataTypes)
-      const dissimilarTypes = action.dataTypes && action.dataTypes.length != 0 ? action.dataTypes.map((type, index) => type != mandate.params?.[index]?.dataType) : [true] 
-      console.log("useEffect triggered at Mandate page:", {dissimilarTypes, action, mandate})
+      const mandateParams = mandate.params || [];
+      const mandateDataTypes = mandateParams.map(param => param.dataType);
+      const actionDataTypes = action.dataTypes || [];
+
+      // Check if data types are different
+      const isDifferentLength = actionDataTypes.length !== mandateDataTypes.length;
+      const isDifferentContent = !isDifferentLength && actionDataTypes.some((type, index) => type !== mandateDataTypes[index]);
+      const shouldReset = isDifferentLength || isDifferentContent;
       
-      if (dissimilarTypes.find(type => type == true) || !action.dataTypes) {
+      console.log("useEffect triggered at Mandate page:", {shouldReset, action, mandate})
+      
+      if (shouldReset) {
         console.log("useEffect triggered at Mandate page, action.dataTypes != dataTypes")
         setAction({
           mandateId: mandate.index,
-          dataTypes: mandate.params?.map(param => param.dataType),
+          dataTypes: mandateDataTypes,
           paramValues: [],
           nonce: '0',
           callData: '0x0',

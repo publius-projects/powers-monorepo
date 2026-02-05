@@ -1,0 +1,50 @@
+# Mandates_Revoke
+
+Mandates_Revoke is an executive mandate that allows for the removal of existing mandates from the Powers protocol.
+
+## Overview
+
+This mandate provides a mechanism to prune governance functionality. It allows a proposal to batch revoke multiple mandates in a single action. This is useful for deprecating old features, removing temporary mandates, or cleaning up the governance system.
+
+## Configuration
+
+When adopting a Mandates_Revoke instance, no configuration parameters are required.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, one parameter must be provided:
+
+1.  `mandateIds` (uint16[]): An array of mandate IDs to be revoked.
+
+### Execution Flow
+
+1.  **Iterative Revocation**
+    *   Iterates through the provided `mandateIds` array.
+    *   Generates a call to `IPowers.revokeMandate` for each ID.
+
+2.  **Execution**
+    *   Returns the batch of revocation calls for execution.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Sets input parameters to `(uint16[] mandateIds)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public pure override returns (...)
+```
+-   Encodes the batch `revokeMandate` logic.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

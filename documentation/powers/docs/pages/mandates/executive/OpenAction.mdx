@@ -1,0 +1,53 @@
+# OpenAction
+
+OpenAction is an executive mandate that enables the execution of arbitrary function calls to any contract.
+
+## Overview
+
+This mandate provides the highest level of flexibility. It allows a proposal to execute any sequence of actions: multiple calls to multiple contracts, sending ETH, etc. It essentially exposes the full execution capability of the Powers contract to whatever role controls this mandate.
+
+**Warning:** Because it is unrestricted, this mandate should be granted only to highly trusted roles or governance processes (e.g., a DAO vote). If granted to a public or untrusted role, it compromises the entire protocol.
+
+## Configuration
+
+When adopting an OpenAction instance, no configuration parameters are required.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, three array parameters must be provided:
+
+1.  `targets` (address[]): An array of target contract addresses to call.
+2.  `values` (uint256[]): An array of ETH values (in wei) to send with each call.
+3.  `calldatas` (bytes[]): An array of encoded function call data for each target.
+
+All three arrays must have the same length.
+
+### Execution Flow
+
+1.  **Pass-through**
+    *   The mandate simply takes the decoded arrays and returns them directly to the Powers contract for execution.
+    *   No validation or modification of the payload occurs.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Sets input parameters to `(address[] targets, uint256[] values, bytes[] calldatas)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public pure override returns (...)
+```
+-   Decodes and returns the input arrays.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

@@ -50,7 +50,7 @@ export function DynamicInput({dataType, varName, values, onChange, index}: Input
     const currentInput = parseInput(event, dataType)
     if (currentInput == 'Incorrect input data') {
       setError({error: currentInput}) 
-    } else if(typeof onChange === 'function'){
+    } else if(typeof onChange === 'function') {
       setError({error: "no error"})
       const currentArray = [...inputArray] // Create a copy to avoid mutating state
       if (array) {  

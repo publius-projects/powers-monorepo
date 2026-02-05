@@ -1,0 +1,62 @@
+# ElectionList_Vote
+
+ElectionList_Vote is an integration mandate that allows users to cast votes in a specific election instance.
+
+## Overview
+
+This mandate is typically deployed dynamically (via `ElectionList_CreateVoteMandate`) for each new election. It serves as the interface for casting votes. By encapsulating the voting logic in a separate mandate, the system can enforce specific access controls (e.g., only `voterRoleId` can call it) and parameters (e.g., `maxVotes`) unique to that election event.
+
+## Configuration
+
+When adopting an ElectionList_Vote instance, the following parameters are required:
+
+1.  `ElectionListContract` (address): The address of the ElectionList helper contract.
+2.  `maxVotes` (uint256): The maximum number of nominees a voter can select in a single ballot.
+3.  `electionId` (uint256): The unique identifier of the election this mandate is bound to.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, one parameter must be provided:
+
+1.  `vote` (bool[]): An array of booleans corresponding to the list of nominees in the election.
+    *   `true`: Vote for this nominee.
+    *   `false`: Do not vote for this nominee.
+
+The length of the array must exactly match the number of nominees in the election.
+
+### Execution Flow
+
+1.  **Validation**
+    *   Checks if the election is still open.
+    *   Verifies that the `vote` array length matches the nominee count.
+    *   Counts the number of `true` votes and ensures it does not exceed `maxVotes`.
+
+2.  **Cast Vote**
+    *   Calls `vote(electionId, caller, vote)` on the `ElectionList` contract.
+    *   The `ElectionList` contract handles the recording of votes and prevention of double-voting.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the election context.
+-   Fetches the nominee list to generate a dynamic input description (e.g., listing nominee addresses).
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Performs validation.
+-   Generates the vote call.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

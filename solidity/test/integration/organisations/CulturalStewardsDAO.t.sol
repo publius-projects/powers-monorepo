@@ -826,6 +826,125 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         assertTrue(Powers(mem.ideasSubDAOAddress).hasRoleSince(mem.user, 2) != 0, "User should have Role 2 (Convener)");
     }
 
+    function test_IdeasSubDAO_MembershipAndModeration() public {
+        // --- Setup: Create Ideas sub-DAO ---
+        vm.startPrank(mem.admin);
+        mem.params = abi.encode("Ideas sub-DAO", "ipfs://ideas");
+        mem.nonce = 1;
+
+        // Initiate
+        mem.actionId = primaryDAO.propose(mem.initiateIdeasMandateId, mem.params, mem.nonce, "");
+        vm.stopPrank();
+
+        uint256 amountRole1Holders = primaryDAO.getAmountRoleHolders(1);
+        for (uint256 i = 0; i < amountRole1Holders; i++) {
+            address roleHolder = primaryDAO.getRoleHolderAtIndex(1, i);
+            vm.prank(roleHolder);
+            primaryDAO.castVote(mem.actionId, 1);
+        }
+
+        vm.roll(block.number + primaryDAO.getConditions(mem.initiateIdeasMandateId).votingPeriod + 1);
+        
+        vm.prank(mem.admin);
+        primaryDAO.request(mem.initiateIdeasMandateId, mem.params, mem.nonce, "");
+
+        // Create
+        vm.startPrank(mem.admin);
+        mem.actionId = primaryDAO.propose(mem.createIdeasMandateId, mem.params, mem.nonce, "");
+        primaryDAO.castVote(mem.actionId, 1);
+        
+        vm.roll(block.number + primaryDAO.getConditions(mem.createIdeasMandateId).votingPeriod + 1);
+        
+        mem.actionId = primaryDAO.request(mem.createIdeasMandateId, mem.params, mem.nonce, "");
+        mem.ideasSubDAOAddress = abi.decode(primaryDAO.getActionReturnData(mem.actionId, 0), (address));
+        console.log("Ideas sub-DAO created at: %s", mem.ideasSubDAOAddress);
+
+        // Assign Role 4 to the new DAO (in Primary DAO)
+        primaryDAO.request(mem.assignRoleMandateId, mem.params, mem.nonce, "");
+        vm.stopPrank();
+
+        Powers ideasDAO = Powers(mem.ideasSubDAOAddress);
+
+        // --- Step 1: Assign Moderator Role ---
+        address moderator = address(0xCAFE);
+        address applicant = address(0xDEAF);
+
+        uint16 assignModeratorId = findMandateIdInOrg("Assign Moderator Role: Conveners can assign the Moderator role to an account.", ideasDAO);
+        uint16 applyMembershipId = findMandateIdInOrg("Apply for Membership: Anyone can apply for membership to the DAO by submitting an application.", ideasDAO);
+        uint16 assignMembershipId = findMandateIdInOrg("Assess and Assign Membership: Moderators can assess applications and assign membership to applicants.", ideasDAO);
+        uint16 revokeMembershipId = findMandateIdInOrg("Revoke Membership: Moderators can revoke membership from members.", ideasDAO);
+        uint16 revokeModeratorId = findMandateIdInOrg("Revoke Moderator Role: Conveners can revoke the Moderator role from an account.", ideasDAO);
+
+        mem.params = abi.encode(moderator);
+        mem.nonce = 100;
+
+        vm.startPrank(cedars);
+        console.log("Assigning Moderator...");
+        
+        mem.actionId = ideasDAO.propose(assignModeratorId, mem.params, mem.nonce, "");
+        ideasDAO.castVote(mem.actionId, 1);
+        
+        uint32 votingPeriod = ideasDAO.getConditions(assignModeratorId).votingPeriod;
+        vm.roll(block.number + votingPeriod + 1);
+        
+        ideasDAO.request(assignModeratorId, mem.params, mem.nonce, "");
+        vm.stopPrank();
+
+        assertTrue(ideasDAO.hasRoleSince(moderator, 3) > 0, "Moderator should have Role 3");
+
+        // --- Step 2: Apply and Assign Membership ---
+        string memory appUri = "ipfs://application";
+        bytes memory appParams = abi.encode(applicant, appUri);
+        mem.nonce++;
+        
+        vm.startPrank(applicant);
+        console.log("Applying for Membership...");
+        ideasDAO.request(applyMembershipId, appParams, mem.nonce, "");
+        vm.stopPrank();
+
+        vm.startPrank(moderator);
+        console.log("Assigning Membership...");
+        ideasDAO.request(assignMembershipId, appParams, mem.nonce, "");
+        vm.stopPrank();
+
+        assertTrue(ideasDAO.hasRoleSince(applicant, 1) > 0, "Applicant should have Role 1 (Member)");
+
+        // --- Step 3: Revoke Membership ---
+        mem.nonce++;
+        bytes memory revokeParams = abi.encode(applicant);
+        
+        vm.startPrank(moderator);
+        console.log("Revoking Membership...");
+        mem.actionId = ideasDAO.propose(revokeMembershipId, revokeParams, mem.nonce, "");
+        ideasDAO.castVote(mem.actionId, 1);
+        
+        votingPeriod = ideasDAO.getConditions(revokeMembershipId).votingPeriod;
+        uint32 timelock = ideasDAO.getConditions(revokeMembershipId).timelock;
+        vm.roll(block.number + votingPeriod + timelock + 1);
+        
+        ideasDAO.request(revokeMembershipId, revokeParams, mem.nonce, "");
+        vm.stopPrank();
+
+        assertTrue(ideasDAO.hasRoleSince(applicant, 1) == 0, "Applicant should NOT have Role 1 anymore");
+
+        // --- Step 4: Revoke Moderator ---
+        mem.nonce++;
+        bytes memory revokeModParams = abi.encode(moderator);
+        
+        vm.startPrank(cedars);
+        console.log("Revoking Moderator...");
+        mem.actionId = ideasDAO.propose(revokeModeratorId, revokeModParams, mem.nonce, "");
+        ideasDAO.castVote(mem.actionId, 1);
+        
+        votingPeriod = ideasDAO.getConditions(revokeModeratorId).votingPeriod;
+        vm.roll(block.number + votingPeriod + 1);
+        
+        ideasDAO.request(revokeModeratorId, revokeModParams, mem.nonce, "");
+        vm.stopPrank();
+
+        assertTrue(ideasDAO.hasRoleSince(moderator, 3) == 0, "Moderator should NOT have Role 3 anymore");
+    }
+
     //////////////////////////////////////////////////////////////////////////////////
     //                             Helper Functions                                 //
     //////////////////////////////////////////////////////////////////////////////////  

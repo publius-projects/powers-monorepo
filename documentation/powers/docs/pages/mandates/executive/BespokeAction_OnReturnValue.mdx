@@ -1,0 +1,60 @@
+# BespokeAction_OnReturnValue
+
+BespokeAction_OnReturnValue is an executive mandate that chains actions together. It retrieves the return data from a previously executed mandate and uses it as a parameter for a new function call.
+
+## Overview
+
+This mandate enables sequential workflows where the output of one action is required as the input for the next. For example, deploying a contract and then immediately calling a function on its new address. It constructs a call by sandwiching the retrieved return data between two static parameter blocks.
+
+## Configuration
+
+When adopting a BespokeAction_OnReturnValue instance, the following parameters are required:
+
+1.  `TargetContract` (address): The address of the contract to call.
+2.  `FunctionSelector` (bytes4): The function selector to call.
+3.  `paramsBefore` (bytes): Encoded data to place *before* the return value.
+4.  `Params` (string[]): UI hints describing the input parameters (used to locate the parent action).
+5.  `parentMandateId` (uint16): The ID of the mandate whose action output will be used.
+6.  `paramsAfter` (bytes): Encoded data to place *after* the return value.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the input (`mandateCalldata`) must match the input used for the parent action. This is because the mandate locates the previous action's result by re-computing its Action ID, which is derived from the mandate ID, calldata, and nonce.
+
+### Execution Flow
+
+1.  **Data Retrieval**
+    *   Computes the `parentActionId` using the configured `parentMandateId` and the current `mandateCalldata` and `nonce`.
+    *   Queries the Powers contract to retrieve the `returnData` associated with that `parentActionId`.
+
+2.  **Parameter Assembly**
+    *   Concatenates the components: `FunctionSelector + paramsBefore + returnData + paramsAfter`.
+
+3.  **Execution**
+    *   Calls the `TargetContract` with the assembled data.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the chaining configuration.
+-   Sets input parameters.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Retrieves the return data.
+-   Assembles the new call.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

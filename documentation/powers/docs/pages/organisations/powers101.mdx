@@ -12,82 +12,101 @@ import { Callout } from 'vocs/components'
 
 # Powers 101 Specification
 
-## Organisational Structure & Context
+**Latest deployments:** 
 
-### *Vision & Mission*
+| Network | Deployment |
+| :---- | :---- |
+| Mainnet Sepolia | [https://www.powers-protocol.vercel.app/protocol/11155111/0x91150ae4f67612b045db64726ad07c91ddc95e22](https://www.powers-protocol.vercel.app/protocol/11155111/0x91150ae4f67612b045db64726ad07c91ddc95e22) |
+| Optimism Sepolia | [https://www.powers-protocol.vercel.app/protocol/11155420/0x5a1d19d1ab67a09c5c7d702f1bc39c4e7fe9b219](https://www.powers-protocol.vercel.app/protocol/11155420/0x5a1d19d1ab67a09c5c7d702f1bc39c4e7fe9b219) |
+| Arbitrum Sepolia | [https://www.powers-protocol.vercel.app/protocol/421614/0x78bf0af1ec344ca04fabb5d64f4c9883110ceac1](https://www.powers-protocol.vercel.app/protocol/421614/0x78bf0af1ec344ca04fabb5d64f4c9883110ceac1) |
+
+## **Organisational Structure & Context**
+
+### ***Vision & Mission***
 
 Powers 101 is a simple DAO designed to demonstrate the core concepts of the Powers protocol. It provides a basic governance structure with a separation of powers between delegates, members, and an admin, making it an ideal starting point for understanding how the protocol works.
 
-### *Treasury Management*
+### ***Treasury Management***
 
-The organization's actions (including treasury management) are managed through proposals initiated by members and executed by delegates. This model allows for a decentralized approach to treasury management, where the community can propose actions and the elected delegates are responsible for carrying them out. 
+The organization does not have a treasury assigned. 
 
-Note that for demonstration purposes, there are no checks on allocation of roles. 
+## **Powers 101**
 
-## Roles
+### ***Mission***
 
-<div class="table-mandates">
-| **Role Id** | **Role name** | **Selection criteria** |
-| :--- | :--- | :--- |
-| 0 | Admin | Admin role assigned at deployment. |
-| 1 | Members | Anyone can self-select to become a member. |
-| 2 | Delegates | Anyone can self-select to become a delegate. |
+To provide a simple, transparent, and educational platform for users to learn about decentralized governance.
+
+### ***Assets*** 
+
+Powers 101 controls the following assets:
+
+*   It utilizes an ERC20 token for delegate elections.
+
+### ***Actions*** 
+
+Powers 101 can take the following actions:
+
+*   Members can propose actions.
+*   The Admin can veto actions.
+*   Delegates can execute actions.
+*   The Public can nominate themselves and participate in delegate elections via token delegation.
+
+### ***Roles***
+
+<div class="table-roles">
+| Role Id | Role name | Selection criteria |
+| :---- | :---- | :---- |
+| 0 | Admin | Assigned at deployment. |
+| 1 | Members | Assigned by Admin. |
+| 2 | Delegates | Elected by Token Holders. |
 | … | Public | Everyone. |
-</div> 
+</div>
 
-## On-chain Mandates
+### ***Executive Mandates***
 
-### *Executive Mandates (executing actions)*
+#### Action Lifecycle
 
-<div class="table-mandates">
-| **Role** | **Name & Description** | **Base contract** | **User Input** | **Executable Output** | **Conditions** |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| Members | Propose Action | StatementOfIntent.sol | "address[] Targets", "uint256[] Values", "bytes[] Calldatas" | none | 51% success, 20% quorum, 5 minute voting period |
-| Admin | Veto Action | StatementOfIntent.sol | "address[] Targets", "uint256[] Values", "bytes[] Calldatas" | none | Proposal must exist |
-| Delegates | Execute Action | OpenAction.sol | (from proposal) | Executes the proposed action | 77% success, 50% quorum, 5 minute voting period, 3 minute delay, proposal must exist, not vetoed |
-</div> 
-
-### *Electoral Mandates (assigning roles)*
+The governance process follows a cycle where Members propose actions, the Admin has the power to veto them, and Delegates execute the approved proposals.
 
 <div class="table-mandates">
-| **Role** | **Name & Description** | **Base contract** | **User Input** | **Executable Output** | **Conditions** |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| Public | Become a Member | SelfSelect.sol | "uint256 roleId" | Assigns the caller the member role. | Public access, 25 block throttle. |
-| Public | Become a Delegate | SelfSelect.sol | "uint256 roleId" | Assigns the caller the delegate role. | Public access, 25 block throttle. |
-</div> 
+| Role | Name & Description | Base contract | User Input | Executable Output | Conditions |
+| :---- | :---- | :---- | :---- | :---- | :---- |
+| Members | Propose Action | StatementOfIntent.sol | "address[] Targets, uint256[] Values, bytes[] Calldatas" | none | 66% success, 20% quorum, 5 minute voting period |
+| Admin | Veto Action | StatementOfIntent.sol | (same as above) | none | Proposal must exist. |
+| Delegates | Execute Action | OpenAction.sol | (same as above) | Executes the proposed action | 66% success, 20% quorum, 5 minute voting period, proposal must exist, not vetoed |
+</div>
 
-### *Constitutional Mandates (adopting and revoking mandates)*
+### ***Electoral Mandates***
+
+#### Delegate Election
+
+Delegates are elected based on the amount of tokens delegated to them.
+
+<div class="table-mandates">
+| Role | Name & Description | Base contract | User Input | Executable Output | Conditions |
+| :---- | :---- | :---- | :---- | :---- | :---- |
+| Public | Nominate Me | BespokeAction_Simple.sol | "bool NominateMe" | Nomination logged | None. |
+| Public | Delegate Nominees | ElectionList_Tally.sol | None | Elects top 3 nominees to Delegate role | None. |
+</div>
+
+### ***Reform Mandates***
 
 There are no specific constitutional mandates defined in the Powers 101 organization. Mandate management is handled by the Admin role.
-
-## Off-chain Operations
-
-### *Dispute Resolution*
-
-Disputes regarding ambiguous mandate conditions or malicious actions by role-holders will be addressed through community discussion in the official communication channels, with final arbitration by the Admin role if consensus cannot be reached.
-
-### *Code of Conduct / Ethics*
-
-All participants are expected to act in good faith to further the mission of Powers 101. This includes respectful communication, constructive feedback, and responsible use of powers.
-
-### *Communication Channels*
-
-Official proposals, discussions, and announcements take place on the Powers 101 Discord server and community forum.
-
+ 
 ## Description of Governance
 
 Powers 101 is a decentralized organization designed to showcase the fundamental governance principles of the Powers protocol.
 
 * **Remit**: The primary function is to provide a simple, transparent, and educational platform for users to learn about decentralized governance.
-* **Roles**: Roles are straightforward: anyone can become a **Member**, members can nominate themselves to be **Delegates**, and an **Admin** role manages the system.
+* **Roles**: Roles are straightforward: **Members** propose, **Delegates** execute, and an **Admin** role manages the system.
 * **Executive Paths**:
   * **Proposal Lifecycle**: Members propose actions, the Admin can veto them, and Delegates execute approved proposals.
-* **Summary**: The governance structure of Powers 101 is a minimalist implementation of the Powers protocol, demonstrating a clear separation of powers and providing a hands-on learning experience for decentralized governance.
+* **Summary**: The governance structure of Powers 101 is a minimalist implementation of the Powers protocol, demonstrating a clear separation of powers.
 
 ## Risk Assessment 
 
 ### No checks on role assignment
-Risk description here. 
+Note that for demonstration purposes, there are no checks on allocation of roles in the initial deployment (except via Admin).
 
 ### Additional risks 
-Additional risk descriptions here. 
+Additional risk descriptions here.

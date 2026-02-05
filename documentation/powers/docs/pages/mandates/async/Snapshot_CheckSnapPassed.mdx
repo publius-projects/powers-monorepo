@@ -1,0 +1,115 @@
+# Snapshot_CheckSnapPassed
+
+Snapshot_CheckSnapPassed is an async mandate that uses Chainlink Functions to verify if a Snapshot proposal has concluded and if a specific choice has won.
+
+## Overview
+
+This mandate extends the verification logic of `Snapshot_CheckSnapExists`. In addition to verifying existence, it ensures that:
+1.  The proposal has ended (state is "closed").
+2.  The specified choice has received the highest score (i.e., it won the vote).
+
+If these conditions are met, it triggers a fulfillment on the Powers contract. Like `Snapshot_CheckSnapExists`, the current implementation acts purely as an oracle and does not execute downstream actions upon fulfillment.
+
+## Configuration
+
+When adopting a Snapshot_CheckSnapPassed instance, the following parameters are required:
+
+1.  `spaceId` (string): The Snapshot Space ID (e.g., "yam.eth").
+2.  `subscriptionId` (uint64): The Chainlink Functions subscription ID.
+3.  `gasLimit` (uint32): The gas limit for the Chainlink Functions callback.
+4.  `donID` (bytes32): The Chainlink DON (Decentralized Oracle Network) ID.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the following parameters must be provided:
+
+1.  `proposalId` (string): The ID of the Snapshot proposal to verify.
+2.  `choice` (string): The voting choice to check for (e.g., "Yes").
+3.  `targets` (address[]): (Unused) Intended for future execution logic.
+4.  `values` (uint256[]): (Unused) Intended for future execution logic.
+5.  `calldatas` (bytes[]): (Unused) Intended for future execution logic.
+6.  `govDescription` (string): A description of the governance action.
+
+### Execution Flow
+
+1.  **Request Initiation (`handleRequest`)**
+    *   Prepares arguments for the Chainlink Function: `proposalId` and `choice`.
+    *   Initiates the request to the Chainlink Oracle.
+
+2.  **Oracle Call (`_externalCall`)**
+    *   Sends the request to Chainlink.
+    *   The off-chain script queries `https://hub.snapshot.org/graphql` to fetch proposal details and scores.
+
+3.  **Verification & Fulfillment (`fulfillRequest`)**
+    *   **Off-Chain Checks:**
+        *   Does the proposal exist?
+        *   Is the state "closed"?
+        *   Does the `choices` array include the requested `choice`?
+        *   Does the `choice` have the highest score in `scores`?
+    *   **On-Chain Verification:**
+        *   Receives the result ("true" or error message).
+        *   If "true", calls `powers.fulfill`.
+    *   **Note:** The current implementation executes `fulfill` with empty action arrays.
+
+## Technical Specifications
+
+### Chainlink Source
+
+The mandate uses a hardcoded JavaScript source to query the Snapshot API:
+```javascript
+// ...
+if (snapshotData.proposal.state != "closed") return Functions.encodeString("Vote not closed.");
+// ...
+const maxScore = Math.max(...snapshotData.proposal.scores)
+if (maxScore != snapshotData.proposal.scores[index]) return Functions.encodeString("Choice did not pass.");
+return Functions.encodeString("true");
+```
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Initializes Chainlink configuration.
+-   Sets input parameters.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Prepares Chainlink request arguments.
+
+#### `fulfillRequest`
+```solidity
+function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override
+```
+-   Callback from Chainlink.
+-   Verifies response is "true".
+-   Calls `powers.fulfill`.
+
+### Error Conditions
+
+1.  **Chainlink Errors**
+    *   "Proposal not recognised."
+    *   "Vote not closed."
+    *   "Choice not present."
+    *   "Choice did not pass."
+    *   "Request failed" (API error).
+
+2.  **Validation Errors**
+    *   "No response from the API"
+    *   "Request not found"
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

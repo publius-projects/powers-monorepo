@@ -1,0 +1,59 @@
+# Mandates_Prepackaged
+
+Mandates_Prepackaged is an executive mandate that allows for the adoption of a pre-configured set of mandates, with the ability to dynamically assign roles at runtime.
+
+## Overview
+
+This mandate serves as an installer for a "package" of governance features. The package (a list of mandates and their initial configurations) is defined when this mandate is initialized. However, the specific roles that will control these new mandates are not hardcoded; they are provided as input when the mandate is executed. This separation allows for reusable governance modules that can be applied to different role structures.
+
+## Configuration
+
+When adopting a Mandates_Prepackaged instance, the following parameter is required:
+
+1.  `MandatesToAdopt` (MandateInitData[]): An array of `MandateInitData` structs. Each struct contains the initialization data for a mandate to be adopted.
+    *   **Crucial Detail:** In the `allowedRole` field of the `conditions` struct within `MandateInitData`, you do not put the actual role ID. Instead, you put an **index** (0, 1, 2...). This index corresponds to the position in the `roleIds` array that will be provided at execution time.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, one parameter must be provided:
+
+1.  `roleIds` (uint256[]): An array of actual role IDs to map to the placeholders in the package.
+    *   If a mandate in the package has `allowedRole = 0`, it will be assigned `roleIds[0]`.
+    *   If `allowedRole = 1`, it gets `roleIds[1]`, and so on.
+
+### Execution Flow
+
+1.  **Mapping**
+    *   Iterates through the pre-configured `MandatesToAdopt` list.
+    *   For each mandate, replaces the placeholder `allowedRole` with the actual role ID from the provided `roleIds` array.
+    *   Adjusts relative mandate ID references (e.g., `needFulfilled`) to match the current state of the Powers contract (adding the current `mandateCount`).
+
+2.  **Adoption**
+    *   Generates a batch of `adoptMandate` calls with the fully resolved configurations.
+    *   Returns the batch for execution.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the package configuration.
+-   Sets input parameters to `(uint256[] roleIds)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Performs the index-to-role mapping and ID adjustment.
+-   Encodes the adoption calls.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

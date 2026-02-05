@@ -139,7 +139,7 @@ contract CulturalStewardsDAO is DeploySetup {
         console2.log("Deploying Physical sub-DAO factory (contract only)...");
         vm.startBroadcast();
         physicalDaoFactory = new PowersFactory(
-            "Physical sub-DAO Factory", // name
+            "Physical sub-DAO", // name
             "https://aqua-famous-sailfish-288.mypinata.cloud/ipfs/bafkreihqwcrtlrcqkgarehvqxubzhxtuxyvw444mt4erxzowbjdvggfpqu", // uri 
             config.maxCallDataLength, // max call data length
             config.maxReturnDataLength, // max return data length
@@ -151,7 +151,7 @@ contract CulturalStewardsDAO is DeploySetup {
         console2.log("Deploying Ideas Sub-DAO factory (contract only)...");
         vm.startBroadcast();
         ideasDaoFactory = new PowersFactory(
-            "Ideas sub-DAO Factory", // name
+            "Ideas sub-DAO", // name
             "https://aqua-famous-sailfish-288.mypinata.cloud/ipfs/bafkreiazlaxewkjkny7r2unmqeqhhzvpzeevrneyimcuowhpnol7bogc2e", // uri
             config.maxCallDataLength, // max call data length
             config.maxReturnDataLength, // max return data length
@@ -379,7 +379,8 @@ contract CulturalStewardsDAO is DeploySetup {
                 targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
                 config: abi.encode(
                     address(ideasDaoFactory), // calling the ideas factory
-                    bytes4(keccak256("createPowers()"))
+                    bytes4(keccak256("createPowers()")),
+                    abi.encode() //  
                 ),
                 conditions: conditions
             })
@@ -480,7 +481,8 @@ contract CulturalStewardsDAO is DeploySetup {
                 targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
                 config: abi.encode(
                     physicalDaoFactory, // calling the Physical factory 
-                    bytes4(keccak256("createPowers()")) 
+                    bytes4(keccak256("createPowers()")),
+                    abi.encode() // no params 
                 ),
                 conditions: conditions
             })
@@ -751,23 +753,6 @@ contract CulturalStewardsDAO is DeploySetup {
             })
         );
         delete conditions;
-
-        // Ideas sub-DAO: Mint Tokens Ideas sub-DAO - ERC 1155 //
-        inputParams = new string[](1);
-        inputParams[0] = "address To";
-
-        mandateCount++;
-        conditions.allowedRole = 4; // = Ideas sub-DAOs
-        primaryConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Mint token Ideas sub-DAO: Any Ideas sub-DAO can mint new NFTs",
-                targetMandate: initialisePowers.getInitialisedAddress("Soulbound1155_MintEncodedToken"),
-                config: abi.encode(address(soulbound1155)),
-                conditions: conditions
-            })
-        );
-        delete conditions;
-        mintActivityTokenId = mandateCount; // store the mandate id for minting activity tokens.
 
         // Physical sub-DAOs: Mint NFTs Physical sub-DAO - ERC 1155 //
         mandateCount++;
@@ -1828,33 +1813,7 @@ contract CulturalStewardsDAO is DeploySetup {
         //////////////////////////////////////////////////////////////////////
         //                      EXECUTIVE MANDATES                          //
         //////////////////////////////////////////////////////////////////////
-        // MINT ACTIVITY TOKENS //
-        inputParams = new string[](1);
-        inputParams[0] = "address To";
-
-        // Public: Mint an active ideas token
-        mandateCount++;
-        conditions.allowedRole = type(uint256).max; // = Public
-        conditions.throttleExecution = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // note: the more people try to gain access, the harder it will be to get as supply is fixed.
-        ideasConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Mint activity token: Anyone can mint an Active Ideas token. One token is available per 5 minutes.",
-                targetMandate: initialisePowers.getInitialisedAddress("PowersAction_Simple"),
-                config: abi.encode(
-                    address(primaryDAO), 
-                    mintActivityTokenId, // parent mandate id (the mint activity token at primary DAO mandate)
-                    inputParams
-                ),
-                conditions: conditions
-            })
-        );
-        delete conditions;
-
         // REQUEST CREATION NEW PHYSICAL DAO
-        inputParams = new string[](2);
-        inputParams[0] = "string name";
-        inputParams[1] = "string uri";
-
         // Conveners: request at Primary DAO the creation of a new physical DAO.
         // Note: this is a statement of intent. Physical DAOs are requested using a working group, after initated here by conveners.
         mandateCount++;
@@ -1869,7 +1828,7 @@ contract CulturalStewardsDAO is DeploySetup {
                 config: abi.encode( 
                     address(primaryDAO),
                     requestNewPhysicalDaoId, // parent mandate id (the create new physical sub-DAO at primary DAO mandate)
-                    inputParams
+                    abi.encode()
                 ),
                 conditions: conditions
             })

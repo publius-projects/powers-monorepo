@@ -1,0 +1,63 @@
+# CheckExternalActionState
+
+CheckExternalActionState is an executive mandate that acts as a synchronization gate. It verifies that a specific action has been fulfilled on another "Parent" Powers contract before allowing the current action to proceed.
+
+## Overview
+
+This mandate is used to coordinate governance across multiple Powers contracts (e.g., in a hierarchy or federation). It ensures that a Child contract only executes an action if a corresponding action has already been successfully executed on the Parent contract. It validates this by checking the state of an Action ID derived from the same inputs (mandate ID, calldata, and nonce).
+
+## Configuration
+
+When adopting a CheckExternalActionState instance, the following parameters are required:
+
+1.  `parentPowers` (address): The address of the external Powers contract to check.
+2.  `mandateId` (uint16): The ID of the mandate on the Parent contract that executed the prerequisite action.
+3.  `inputParams` (string[]): UI hints describing the parameters expected for the action. These should match the parameters of the Parent's mandate.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the input (`mandateCalldata`) must be identical to the input used for the action on the Parent contract. This allows the mandate to deterministically reconstruct the Action ID.
+
+### Execution Flow
+
+1.  **ID Reconstruction**
+    *   Computes the expected `remoteActionId` using the configured `mandateId` (from the Parent) and the provided `mandateCalldata` and `nonce` (from the current request).
+
+2.  **State Verification**
+    *   Queries the `parentPowers` contract to check the state of `remoteActionId`.
+    *   If the state is `Fulfilled`, the check passes.
+    *   If the state is anything else (e.g., Pending, Failed, Non-existent), the transaction reverts.
+
+3.  **Completion**
+    *   If verified, the mandate returns empty execution arrays. This effectively acts as a "pass" signal, allowing the action (and any subsequent chained actions or state changes) to be marked as complete/valid in the current contract.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the parent contract and mandate ID.
+-   Sets input parameters.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Computes the remote ID.
+-   Checks the external state.
+
+### Error Conditions
+
+1.  **Validation Errors**
+    *   "Action not fulfilled": The action on the parent contract has not been successfully executed.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

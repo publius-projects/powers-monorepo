@@ -1,0 +1,67 @@
+# ElectionList_CreateVoteMandate
+
+ElectionList_CreateVoteMandate is an integration mandate that initiates a new election by deploying a dedicated "Vote Mandate".
+
+## Overview
+
+In the PowerLabs election system, voting rights and logic are encapsulated in a temporary mandate (an instance of `ElectionList_Vote`). This mandate factory handles the creation of these instances. When executed, it:
+1.  Calculates a unique ID for the new election based on the proposal details.
+2.  Deploys/Adopts a new `ElectionList_Vote` mandate configured for that specific election.
+3.  Configures the new mandate to be accessible only by a specific `voterRoleId`.
+
+This separation ensures that each election is isolated and access-controlled.
+
+## Configuration
+
+When adopting an ElectionList_CreateVoteMandate instance, the following parameters are required:
+
+1.  `ElectionList` (address): The address of the ElectionList helper contract.
+2.  `ElectionList_Vote` (address): The address of the `ElectionList_Vote` mandate implementation (used as a template).
+3.  `maxVotes` (uint256): The maximum number of votes a voter can cast in the spawned elections.
+4.  `voterRoleId` (uint256): The role ID that will be granted permission to call (vote in) the spawned mandate.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, three parameters must be provided to define the election:
+
+1.  `Title` (string): A descriptive title for the election.
+2.  `StartBlock` (uint48): The block number when the election starts.
+3.  `EndBlock` (uint48): The block number when the election ends.
+
+### Execution Flow
+
+1.  **Initialization**
+    *   Computes a unique `electionId` hash from the inputs and the Powers address.
+    *   Prepares the initialization data (`MandateInitData`) for a new `ElectionList_Vote` mandate.
+    *   Sets the configuration of the new mandate to point to the correct `ElectionList` and `electionId`.
+    *   Sets the `allowedRole` condition of the new mandate to the configured `voterRoleId`.
+
+2.  **Adoption**
+    *   Generates a call to `IPowers.adoptMandate` to install the new vote mandate.
+    *   Returns the adoption call for execution.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the factory configuration.
+-   Sets input parameters to `(string Title, uint48 StartBlock, uint48 EndBlock)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Constructs the `MandateInitData` for the new vote mandate.
+-   Encodes the adoption call.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

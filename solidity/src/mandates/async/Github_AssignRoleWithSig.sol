@@ -11,10 +11,12 @@ import { Github_ClaimRoleWithSig } from "./Github_ClaimRoleWithSig.sol";
 
 /**
  * @title Github_AssignRoleWithSig
- * @notice to do
+ * @notice Assigns a role to a user after verification of a GitHub signature via Github_ClaimRoleWithSig.
  *
+ * This mandate works in tandem with Github_ClaimRoleWithSig.
+ * 1. It checks if the `Github_ClaimRoleWithSig` mandate (linked via `needFulfilled` condition) has successfully verified a user's GitHub signature.
+ * 2. If verified, it resets the verification status on `Github_ClaimRoleWithSig` (preventing replay) and assigns the role on `Powers`.
  */
-
 contract Github_AssignRoleWithSig is Mandate {
     // --- Mem struct for handleRequest ---
     // (This is just to avoid "stack too deep" errors)
@@ -29,6 +31,7 @@ contract Github_AssignRoleWithSig is Mandate {
     }
 
     // --- Constructor ---
+    /// @notice Constructor for Github_AssignRoleWithSig
     constructor() {
         // Define the parameters required to configure this mandate
         bytes memory configParams = abi.encode();
@@ -36,6 +39,11 @@ contract Github_AssignRoleWithSig is Mandate {
     }
 
     // --- Mandate Initialization ---
+    /// @notice Initialize the mandate with configuration
+    /// @param index The index of the mandate in the Powers contract
+    /// @param nameDescription The name and description of the mandate
+    /// @param inputParams The input parameters for the mandate (roleId, commitHash)
+    /// @param config The configuration bytes (empty for this mandate)
     function initializeMandate(
         uint16 index,
         string memory nameDescription,
@@ -48,6 +56,16 @@ contract Github_AssignRoleWithSig is Mandate {
     }
 
     // --- Mandate Execution (Request) ---
+    /// @notice Process a request to assign a role
+    /// @param caller The user requesting the role
+    /// @param powers The Powers contract address
+    /// @param mandateId The mandate identifier
+    /// @param mandateCalldata The calldata containing roleId and commitHash
+    /// @param nonce The nonce for the action
+    /// @return actionId The computed action ID
+    /// @return targets The target addresses for execution
+    /// @return values The ETH values for execution
+    /// @return calldatas The calldata for execution
     function handleRequest(
         address caller, // The user requesting the role
         address powers,

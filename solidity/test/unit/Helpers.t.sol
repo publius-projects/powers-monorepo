@@ -2200,8 +2200,8 @@ contract PowersFactoryTest is TestSetupPowers {
 
         vm.startPrank(address(daoMock));
         factory = new PowersFactory(
-            "Powers Factory", // name
-            "https://testURI", // uri
+            "Factory DAO", // name
+            "https://factory.dao", // uri
             MAX_CALL_DATA, 
             MAX_RETURN_DATA, 
             MAX_EXECUTIONS
@@ -2263,8 +2263,8 @@ contract PowersFactoryTest is TestSetupPowers {
 
         vm.startPrank(address(daoMockChild1));
         factory = new PowersFactory(
-            "Powers Factory", // name
-            "https://testURI", // uri
+            "Another DAO", // name
+            "ipfs://QmHash", // uri
             MAX_CALL_DATA, 
             MAX_RETURN_DATA, 
             MAX_EXECUTIONS

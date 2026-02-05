@@ -1,0 +1,58 @@
+# ElectionList_CleanUpVoteMandate
+
+ElectionList_CleanUpVoteMandate is an integration mandate that cleans up the temporary voting mandate created for an election after the election has concluded.
+
+## Overview
+
+In the PowerLabs election system, each election can spawn a dedicated "Vote Mandate" (a clone of `ElectionList_Vote`) to handle voting for that specific event. This keeps permissions clean. Once the election is over and tallied, this mandate is used to revoke (remove) that temporary vote mandate from the Powers contract, keeping the system tidy.
+
+It retrieves the address of the vote mandate to revoke by re-computing the action ID of the creation event and looking up the return data.
+
+## Configuration
+
+When adopting an ElectionList_CleanUpVoteMandate instance, the following parameter is required:
+
+1.  `CreateVoteMandate_Id` (uint16): The ID of the `ElectionList_CreateVoteMandate` that was used to create the election. This is needed to trace the creation action.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the inputs must match exactly the inputs used to create the election (to ensure the Action ID matches):
+
+1.  `Title` (string): The title of the election.
+2.  `StartBlock` (uint48): The start block of the election.
+3.  `EndBlock` (uint48): The end block of the election.
+
+### Execution Flow
+
+1.  **Lookup**
+    *   Re-computes the `actionId` of the original `createVote` action using the inputs (`Title`, `StartBlock`, `EndBlock`) and the configured `CreateVoteMandate_Id`.
+    *   Queries the Powers contract for the `returnData` of that action. The return data contains the ID of the deployed vote mandate.
+
+2.  **Revocation**
+    *   Decodes the `voteMandate_Id` from the return data.
+    *   Generates a call to `IPowers.revokeMandate` for that ID.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the creator mandate ID.
+-   Sets input parameters to `(string Title, uint48 StartBlock, uint48 EndBlock)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Performs the lookup and generates the revocation call.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |
