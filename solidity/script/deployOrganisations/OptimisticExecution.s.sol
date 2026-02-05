@@ -65,6 +65,7 @@ contract OptimisticExecution is DeploySetup {
     }
 
     function createConstitution() internal returns (uint256 constitutionLength) {
+        uint16 mandateCount = 0;
         // Mandate 1: Initial Setup
         targets = new address[](3);
         values = new uint256[](3);
@@ -74,8 +75,9 @@ contract OptimisticExecution is DeploySetup {
         }
         calldatas[0] = abi.encodeWithSelector(IPowers.labelRole.selector, 1, "Members");
         calldatas[1] = abi.encodeWithSelector(IPowers.labelRole.selector, 2, "Executives");
-        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, 1); // revoke mandate 1 after use.
+        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1); // revoke mandate 1 after use.
 
+        mandateCount++;
         conditions.allowedRole = 0; // = admin.
         constitution.push(
             PowersTypes.MandateInitData({
@@ -89,10 +91,11 @@ contract OptimisticExecution is DeploySetup {
 
         // Mandate 2: Veto Actions (StatementOfIntent)
         inputParams = new string[](3);
-        inputParams[0] = "targets address[]";
-        inputParams[1] = "values uint256[]";
-        inputParams[2] = "calldatas bytes[]";
+        inputParams[0] = "address[] targets";
+        inputParams[1] = "uint256[] values";
+        inputParams[2] = "bytes[] calldatas";
 
+        mandateCount++;
         conditions.allowedRole = 1; // = Members
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = 5 minutes approx
         conditions.succeedAt = 66; // = 66% majority (high threshold)
@@ -108,10 +111,11 @@ contract OptimisticExecution is DeploySetup {
         delete conditions;
 
         // Mandate 3: Execute an action (OpenAction)
+        mandateCount++;
         conditions.allowedRole = 2; // = Executives
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR);
         conditions.succeedAt = 51;
-        conditions.needNotFulfilled = 2; // = Mandate 2 (Veto Actions)
+        conditions.needNotFulfilled = mandateCount - 1; // = Mandate 2 (Veto Actions)
         conditions.quorum = 33;
         constitution.push(
             PowersTypes.MandateInitData({
@@ -128,6 +132,7 @@ contract OptimisticExecution is DeploySetup {
         dynamicParams[0] = "uint256 roleId";
         dynamicParams[1] = "address account";
 
+        mandateCount++;
         conditions.allowedRole = 0; // = Admin
         constitution.push(
             PowersTypes.MandateInitData({
@@ -140,8 +145,9 @@ contract OptimisticExecution is DeploySetup {
         delete conditions;
 
         // Mandate 5: Delegate revoke role (BespokeAction_Simple)
+        mandateCount++;
         conditions.allowedRole = 2; // = Executives
-        conditions.needFulfilled = 4; // = Mandate 4 (Admin assign role)
+        conditions.needFulfilled = mandateCount - 1; // = Mandate 4 (Admin assign role)
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "A delegate can revoke a role: For this demo, any delegate can revoke previously assigned roles.",

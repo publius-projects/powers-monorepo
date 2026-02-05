@@ -33,6 +33,7 @@
     "PowersFactory_AddSafeDelegate": "0x249015872f8eF316649f4463513F22cDc5A96c6c",
     "PowersFactory_AssignRole": "0x0530dDE682c9aebf64Cc82CB3a36406e7010bEa1",
     "PresetActions_Multiple": "0x25922716C891A628a556A4A92549dDE5705144DF",
+    "PresetActions_OnOwnPowers": "0x684da4fAEAC0C04f008374f16F3d91cFf78258f2",
     "PresetActions_Single": "0x68D8588341CC289797B7270Bc0F6dC471c69a8f2",
     "RenounceRole": "0xf6bF1cCDb8F4E2d4313434d866b232B29Dd19194",
     "RevokeAccountsRoleId": "0x540a506DE2a84614C34fa50E028D59908018B260",
