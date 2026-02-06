@@ -1788,15 +1788,16 @@ contract CulturalStewardsDAO is DeploySetup {
         //                              SETUP                               //
         //////////////////////////////////////////////////////////////////////
         // setup role labels // 
-        calldatas = new bytes[](8);
+        calldatas = new bytes[](9);
         calldatas[0] = abi.encodeWithSelector(IPowers.labelRole.selector, 1, "Members");
         calldatas[1] = abi.encodeWithSelector(IPowers.labelRole.selector, 2, "Conveners"); 
         calldatas[2] = abi.encodeWithSelector(IPowers.labelRole.selector, 3, "Moderators"); // accounts that moderate on forum and assess potential members.
         calldatas[3] = abi.encodeWithSelector(IPowers.labelRole.selector, 4, "Primary DAO");
         calldatas[4] = abi.encodeWithSelector(IPowers.assignRole.selector, 1, cedars);
         calldatas[5] = abi.encodeWithSelector(IPowers.assignRole.selector, 2, cedars);
-        calldatas[6] = abi.encodeWithSelector(IPowers.assignRole.selector, 3, address(primaryDAO)); 
-        calldatas[7] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1); // revoke mandate 1 after use.
+        calldatas[6] = abi.encodeWithSelector(IPowers.assignRole.selector, 3, cedars);
+        calldatas[7] = abi.encodeWithSelector(IPowers.assignRole.selector, 4, address(primaryDAO)); 
+        calldatas[8] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1); // revoke mandate 1 after use.
 
         mandateCount++;
         conditions.allowedRole = type(uint256).max; // = public.
@@ -2961,7 +2962,7 @@ contract CulturalStewardsDAO is DeploySetup {
 
         // PrimaryDAO: Veto Adopting Mandates
         mandateCount++;
-        conditions.allowedRole = 3; // PrimaryDAO = role 3. 
+        conditions.allowedRole = 4; // PrimaryDAO = role 4. 
         conditions.needFulfilled = mandateCount - 1;
         physicalConstitution.push(
             PowersTypes.MandateInitData({

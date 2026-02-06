@@ -9,6 +9,8 @@ import { MandateActions } from "./MandateActions";
 import { TitleText } from "@/components/StandardFonts";
 import { Voting } from "@/components/Voting"; 
 import { usePowersStore  } from "@/context/store";
+import { Button } from "@/components/Button";
+import { ArrowUpRightIcon } from "@heroicons/react/24/outline";
 
 const Page = () => {
   const action = useActionStore();  
@@ -155,15 +157,27 @@ const Page = () => {
           {/* Latest actions */}
           {mandate && <MandateActions mandateId = {mandate.index} powers = {powers} />}
 
-          {/* Go to Forum button */}
-          <div className="w-full mt-6">
-            <button
-              onClick={() => router.push('/forum')}
-              className="w-full text-slate-700 font-semibold py-4 px-8 border border-slate-300 hover:border-slate-500 rounded-lg text-lg transition-colors duration-200"
-            >
-              Go to Forum
-            </button>
-          </div>
+          {/* Go to Forum button in case there is a vote */}
+          {Number(mandate?.conditions?.quorum) > 0 && populatedAction?.state != 0 && populatedAction?.state != 8 && (
+          <section className="w-full flex justify-center items-center py-4 text-slate-800 opacity-75 hover:opacity-100">
+               <div className="w-full">
+                 <Button 
+                   size={0} 
+                   showBorder={true} 
+                   role={6}
+                   filled={false}
+                   selected={true}
+                   onClick={() => router.push(`/forum`)}
+                   statusButton="idle"
+                 > 
+                   <div className="flex flex-row gap-1 items-center justify-center">
+                     Go to forum
+                     <ArrowUpRightIcon className="w-4 h-4" />
+                   </div>
+                 </Button>
+               </div>
+             </section>
+          )}
         </div>        
     </main>
   )
