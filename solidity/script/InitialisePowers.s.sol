@@ -46,6 +46,8 @@ import { PowersAction_Simple } from "@src/mandates/executive/PowersAction_Simple
 import { PowersAction_Flexible } from "@src/mandates/executive/PowersAction_Flexible.sol";
 import { Mandates_Prepackaged } from "@src/mandates/executive/Mandates_Prepackaged.sol";
 import { PresetActions_OnOwnPowers } from "@src/mandates/executive/PresetActions_OnOwnPowers.sol";
+import { BespokeAction_OnOwnPowers_Advanced } from "@src/mandates/executive/BespokeAction_OnOwnPowers_Advanced.sol";
+import { BespokeAction_OnOwnPowers_OnReturnValue } from "@src/mandates/executive/BespokeAction_OnOwnPowers_OnReturnValue.sol";
 
 // Integration Mandates
 import { Governor_CreateProposal } from "@src/mandates/integrations/Governor_CreateProposal.sol";
@@ -259,6 +261,14 @@ contract InitialisePowers is Script {
         names.push("PresetActions_OnOwnPowers");
         creationCodes.push(type(PresetActions_OnOwnPowers).creationCode);
         constructorArgs.push(abi.encode("PresetActions_OnOwnPowers"));
+
+        names.push("BespokeAction_OnOwnPowers_Advanced");
+        creationCodes.push(type(BespokeAction_OnOwnPowers_Advanced).creationCode);
+        constructorArgs.push(abi.encode("BespokeAction_OnOwnPowers_Advanced"));
+
+        names.push("BespokeAction_OnOwnPowers_OnReturnValue");
+        creationCodes.push(type(BespokeAction_OnOwnPowers_OnReturnValue).creationCode);
+        constructorArgs.push(abi.encode("BespokeAction_OnOwnPowers_OnReturnValue"));
 
         //////////////////////////////////////////////////////////////////////////
         //                      Integrations Mandates                           //

@@ -1907,9 +1907,8 @@ contract CulturalStewardsDAO is DeploySetup {
         ideasConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Assess and Assign Membership: Moderators can assess applications and assign membership to applicants.",
-                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Advanced"),
-                config: abi.encode(
-                    address(primaryDAO), // target contract
+                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_OnOwnPowers_Advanced"),
+                config: abi.encode( 
                     IPowers.assignRole.selector, // function selector to call
                     abi.encode(1), // params before (role id 1 = Members) // the static params
                     inputParams, // the dynamic params (the input params of the parent mandate) -- NB: not that any excess data at the END OF CALLDATA is ignored. hence we can add the uri - it will not be taken into consideration. 
@@ -1951,9 +1950,8 @@ contract CulturalStewardsDAO is DeploySetup {
         ideasConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Revoke Membership: Moderators can revoke membership from members.",
-                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Advanced"),
-                config: abi.encode(
-                    address(primaryDAO), // target contract
+                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_OnOwnPowers_Advanced"),
+                config: abi.encode( 
                     IPowers.revokeRole.selector, // function selector to call
                     abi.encode(1), // params before (role id 1 = Members) // the static params
                     inputParams, // the dynamic params (the input params of the parent mandate)
@@ -1994,9 +1992,8 @@ contract CulturalStewardsDAO is DeploySetup {
         ideasConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Assign Moderator Role: Conveners can assign the Moderator role to an account.",
-                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Advanced"),
-                config: abi.encode(
-                    address(primaryDAO), // target contract
+                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_OnOwnPowers_Advanced"),
+                config: abi.encode( 
                     IPowers.assignRole.selector, // function selector to call
                     abi.encode(3), // params before (role id 3 = Moderators) // the static params
                     inputParams, // the dynamic params (the input params of the parent mandate)
@@ -2034,9 +2031,8 @@ contract CulturalStewardsDAO is DeploySetup {
         ideasConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Revoke Moderator Role: Conveners can revoke the Moderator role from an account.",
-                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Advanced"),
-                config: abi.encode(
-                    address(primaryDAO), // target contract
+                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_OnOwnPowers_Advanced"),
+                config: abi.encode( 
                     IPowers.revokeRole.selector, // function selector to call
                     abi.encode(3), // params before (role id 3 = Moderators) // the static params
                     inputParams, // the dynamic params (the input params of the parent mandate)
@@ -2210,9 +2206,8 @@ contract CulturalStewardsDAO is DeploySetup {
         ideasConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Clean up election: After an election has finished, clean up related mandates.",
-                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_OnReturnValue"),
-                config: abi.encode(
-                    address(primaryDAO), // target contract
+                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_OnOwnPowers_OnReturnValue"),
+                config: abi.encode( 
                     IPowers.revokeMandate.selector, // function selector to call
                     abi.encode(), // params before
                     inputParams, // dynamic params (the input params of the parent mandate)
@@ -2320,6 +2315,8 @@ contract CulturalStewardsDAO is DeploySetup {
         calldatas[5] = abi.encodeWithSelector(IPowers.assignRole.selector, 3, address(primaryDAO)); 
         calldatas[6] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1); // revoke mandate 1 after use.
 
+        // £todo: NEED TO SET UP SAFE WALLET HERE TOO! 
+
         mandateCount++;
         conditions.allowedRole = type(uint256).max; // = public.
         physicalConstitution.push(
@@ -2335,7 +2332,15 @@ contract CulturalStewardsDAO is DeploySetup {
         //////////////////////////////////////////////////////////////////////
         //                      EXECUTIVE MANDATES                          //
         //////////////////////////////////////////////////////////////////////
-         // PAYMENT OF RECEIPTS //
+        // £todo 
+        // SELL NFT BASED ART WORK // - no direct link to physical art yet. 
+        // Public: Buy NFT. -- payment pulled from buyer, calculates splits and send to 1) physcical Sub-DAO safe, Primary DAO safe and artists wallet. // Local activity token is minted and send to caller. // NFT send to buyer.  
+
+        // FORCE NFT SALE // 
+        // Convener: Sell NFT. -- payment pulled from buyer, calculates splits and send to 1) physcical Sub-DAO safe, Primary DAO safe and artists wallet. // Local activity token is minted and send to caller. // NFT send to buyer.  
+
+        
+        // PAYMENT OF RECEIPTS //
         inputParams = new string[](3);
         inputParams[0] = "address Token";
         inputParams[1] = "uint256 Amount";
@@ -2371,234 +2376,238 @@ contract CulturalStewardsDAO is DeploySetup {
         );
         delete conditions;
 
+        // £todo 
+        // REDEMPTION OF LOCAL ACTIVITY TOKENS // - no direct link to physical art yet.
+        // Public: Redeem local activity tokens. -- Local activity tokens are burned, and the caller is whitelisted for redeeming in person at the physical space.
 
-        // CREATE NEW RWA TOKEN //
-        inputParams = new string[](1); 
-        inputParams[0] = "string Name";
 
-        // role 1: veto creating RWA token
-        mandateCount++;
-        conditions.allowedRole = 1; // = Members.
-        conditions.quorum = 40; //  
-        conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
-        conditions.succeedAt = 67; // two thirds majority
-        physicalConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Veto creating new RWA item: Role 1 can veto creating new RWA item",
-                targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
-                config: abi.encode(inputParams),
-                conditions: conditions
-            })
-        );
-        delete conditions;
+        // // CREATE NEW RWA TOKEN //
+        // inputParams = new string[](1); 
+        // inputParams[0] = "string Name";
 
-        // role 2: create RWA token
-        mandateCount++;
-        conditions.allowedRole = 2; // = Conveners.
-        conditions.quorum = 20; //
-        conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
-        conditions.succeedAt = 51; // simple majority
-        conditions.timelock = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minute timelock after passing
-        conditions.needNotFulfilled = mandateCount - 1; // need role 1 not to have vetoed.
-        physicalConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Creating RWA token: Role 2 (conveners) can create RWA token",
-                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
-                config: abi.encode(
-                    initialisePowers.getInitialisedAddress("RwaMock"), // RWA token contract
-                    RwaMock.createToken.selector, // 
-                    inputParams // 
-                ),
-                conditions: conditions
-            })
-        );
-        delete conditions;
+        // // role 1: veto creating RWA token
+        // mandateCount++;
+        // conditions.allowedRole = 1; // = Members.
+        // conditions.quorum = 40; //  
+        // conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
+        // conditions.succeedAt = 67; // two thirds majority
+        // physicalConstitution.push(
+        //     PowersTypes.MandateInitData({
+        //         nameDescription: "Veto creating new RWA item: Role 1 can veto creating new RWA item",
+        //         targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
+        //         config: abi.encode(inputParams),
+        //         conditions: conditions
+        //     })
+        // );
+        // delete conditions;
+
+        // // role 2: create RWA token
+        // mandateCount++;
+        // conditions.allowedRole = 2; // = Conveners.
+        // conditions.quorum = 20; //
+        // conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
+        // conditions.succeedAt = 51; // simple majority
+        // conditions.timelock = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minute timelock after passing
+        // conditions.needNotFulfilled = mandateCount - 1; // need role 1 not to have vetoed.
+        // physicalConstitution.push(
+        //     PowersTypes.MandateInitData({
+        //         nameDescription: "Creating RWA token: Role 2 (conveners) can create RWA token",
+        //         targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
+        //         config: abi.encode(
+        //             initialisePowers.getInitialisedAddress("RwaMock"), // RWA token contract
+        //             RwaMock.createToken.selector, // 
+        //             inputParams // 
+        //         ),
+        //         conditions: conditions
+        //     })
+        // );
+        // delete conditions;
 
     
-        // SET COMPLIANCE TOKEN //
-        inputParams = new string[](6); 
-        inputParams[0] = "uint256 tokenId";
-        inputParams[1] = "address from"; 
-        inputParams[2] = "address to";
-        inputParams[3] = "uint256 amount";
-        inputParams[4] = "uint256 currentToBalance";
-        inputParams[5] = "uint256 currentTotalSupply";
+        // // SET COMPLIANCE TOKEN //
+        // inputParams = new string[](6); 
+        // inputParams[0] = "uint256 tokenId";
+        // inputParams[1] = "address from"; 
+        // inputParams[2] = "address to";
+        // inputParams[3] = "uint256 amount";
+        // inputParams[4] = "uint256 currentToBalance";
+        // inputParams[5] = "uint256 currentTotalSupply";
 
-        // role 1: veto setting compliance token
-        mandateCount++;
-        conditions.allowedRole = 1; // = Members.
-        conditions.quorum = 40; //  
-        conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
-        conditions.succeedAt = 67; // two thirds majority
-        physicalConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Veto setting compliance token: Role 1 can veto setting compliance token",
-                targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
-                config: abi.encode(inputParams),
-                conditions: conditions
-            })
-        );
-        delete conditions;
+        // // role 1: veto setting compliance token
+        // mandateCount++;
+        // conditions.allowedRole = 1; // = Members.
+        // conditions.quorum = 40; //  
+        // conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
+        // conditions.succeedAt = 67; // two thirds majority
+        // physicalConstitution.push(
+        //     PowersTypes.MandateInitData({
+        //         nameDescription: "Veto setting compliance token: Role 1 can veto setting compliance token",
+        //         targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
+        //         config: abi.encode(inputParams),
+        //         conditions: conditions
+        //     })
+        // );
+        // delete conditions;
 
-         // role 2: set compliance token
-        mandateCount++;
-        conditions.allowedRole = 2; // = Conveners.
-        conditions.quorum = 20; //
-        conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
-        conditions.succeedAt = 51; // simple majority
-        conditions.timelock = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minute timelock after passing
-        conditions.needNotFulfilled = mandateCount - 1; // need role 1 not to have vetoed.
-        physicalConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Setting compliance token: Role 2 (conveners) can set compliance token",
-                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
-                config: abi.encode(
-                    initialisePowers.getInitialisedAddress("ComplianceRegistryMock"), // compliance registry contract
-                    ComplianceRegistryMock.setComplianceChecks.selector, //  
-                    inputParams // 
-                ),
-                conditions: conditions
-            })
-        );
-        delete conditions;
+        //  // role 2: set compliance token
+        // mandateCount++;
+        // conditions.allowedRole = 2; // = Conveners.
+        // conditions.quorum = 20; //
+        // conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
+        // conditions.succeedAt = 51; // simple majority
+        // conditions.timelock = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minute timelock after passing
+        // conditions.needNotFulfilled = mandateCount - 1; // need role 1 not to have vetoed.
+        // physicalConstitution.push(
+        //     PowersTypes.MandateInitData({
+        //         nameDescription: "Setting compliance token: Role 2 (conveners) can set compliance token",
+        //         targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
+        //         config: abi.encode(
+        //             initialisePowers.getInitialisedAddress("ComplianceRegistryMock"), // compliance registry contract
+        //             ComplianceRegistryMock.setComplianceChecks.selector, //  
+        //             inputParams // 
+        //         ),
+        //         conditions: conditions
+        //     })
+        // );
+        // delete conditions;
 
-        // MINT AND TRANSFER RWA TOKEN TO TREASURY // 
-        inputParams = new string[](3); 
-        inputParams[0] = "address To";
-        inputParams[1] = "uint256 TokenId";
-        inputParams[2] = "uint256 Amount";
+        // // MINT AND TRANSFER RWA TOKEN TO TREASURY // 
+        // inputParams = new string[](3); 
+        // inputParams[0] = "address To";
+        // inputParams[1] = "uint256 TokenId";
+        // inputParams[2] = "uint256 Amount";
 
-        // role 1: veto minting RWA token to treasury
-        mandateCount++;
-        conditions.allowedRole = 1; // = Members.
-        conditions.quorum = 40;  
-        conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
-        conditions.succeedAt = 67; // two thirds majority
-        physicalConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Veto minting RWA token to treasury: Role 1 can veto minting RWA token to treasury",
-                targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
-                config: abi.encode(inputParams),
-                conditions: conditions
-            })
-        );
-        delete conditions;
+        // // role 1: veto minting RWA token to treasury
+        // mandateCount++;
+        // conditions.allowedRole = 1; // = Members.
+        // conditions.quorum = 40;  
+        // conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
+        // conditions.succeedAt = 67; // two thirds majority
+        // physicalConstitution.push(
+        //     PowersTypes.MandateInitData({
+        //         nameDescription: "Veto minting RWA token to treasury: Role 1 can veto minting RWA token to treasury",
+        //         targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
+        //         config: abi.encode(inputParams),
+        //         conditions: conditions
+        //     })
+        // );
+        // delete conditions;
 
-        // role 2: mint RWA token to treasury
-        mandateCount++;
-        conditions.allowedRole = 2; // = Conveners.
-        conditions.quorum = 20; //
-        conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
-        conditions.succeedAt = 51; // simple majority
-        conditions.timelock = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minute timelock after passing
-        conditions.needNotFulfilled = mandateCount - 1; // need role 1 not to have vetoed.
-        physicalConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Minting RWA token to treasury: Role 2 (conveners) can mint RWA token to treasury",
-                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
-                config: abi.encode(
-                    initialisePowers.getInitialisedAddress("RwaMock"), // RWA token contract
-                    RwaMock.mint.selector, // 
-                    inputParams // 
-                ),
-                conditions: conditions
-            })
-        );
-        delete conditions;
+        // // role 2: mint RWA token to treasury
+        // mandateCount++;
+        // conditions.allowedRole = 2; // = Conveners.
+        // conditions.quorum = 20; //
+        // conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
+        // conditions.succeedAt = 51; // simple majority
+        // conditions.timelock = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minute timelock after passing
+        // conditions.needNotFulfilled = mandateCount - 1; // need role 1 not to have vetoed.
+        // physicalConstitution.push(
+        //     PowersTypes.MandateInitData({
+        //         nameDescription: "Minting RWA token to treasury: Role 2 (conveners) can mint RWA token to treasury",
+        //         targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
+        //         config: abi.encode(
+        //             initialisePowers.getInitialisedAddress("RwaMock"), // RWA token contract
+        //             RwaMock.mint.selector, // 
+        //             inputParams // 
+        //         ),
+        //         conditions: conditions
+        //     })
+        // );
+        // delete conditions;
 
-        // TRANSFER RWA TOKEN TO THIRD PARTY //
-        inputParams = new string[](5); 
-        inputParams[0] = "address From";
-        inputParams[1] = "address To";
-        inputParams[2] = "uint256 TokenId";
-        inputParams[3] = "uint256 Amount";
-        inputParams[4] = "bytes Data";
+        // // TRANSFER RWA TOKEN TO THIRD PARTY //
+        // inputParams = new string[](5); 
+        // inputParams[0] = "address From";
+        // inputParams[1] = "address To";
+        // inputParams[2] = "uint256 TokenId";
+        // inputParams[3] = "uint256 Amount";
+        // inputParams[4] = "bytes Data";
 
-        // role 1: veto transfer RWA token to third party
-        mandateCount++;
-        conditions.allowedRole = 1; // = Members.
-        conditions.quorum = 40;  
-        conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
-        conditions.succeedAt = 67; // two thirds majority
-        physicalConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Veto transfer RWA token to third party: Role 1 can veto transfer RWA token to third party",
-                targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
-                config: abi.encode(inputParams),
-                conditions: conditions
-            })
-        );
-        delete conditions;
+        // // role 1: veto transfer RWA token to third party
+        // mandateCount++;
+        // conditions.allowedRole = 1; // = Members.
+        // conditions.quorum = 40;  
+        // conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
+        // conditions.succeedAt = 67; // two thirds majority
+        // physicalConstitution.push(
+        //     PowersTypes.MandateInitData({
+        //         nameDescription: "Veto transfer RWA token to third party: Role 1 can veto transfer RWA token to third party",
+        //         targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
+        //         config: abi.encode(inputParams),
+        //         conditions: conditions
+        //     })
+        // );
+        // delete conditions;
 
-        // role 2: transfer RWA token to third party
-        mandateCount++;
-        conditions.allowedRole = 2; // = Conveners.
-        conditions.quorum = 20; //
-        conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
-        conditions.succeedAt = 51; // simple majority
-        conditions.timelock = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minute timelock after passing
-        conditions.needNotFulfilled = mandateCount - 1; // need role 1 not to have vetoed.
-        physicalConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Transfer RWA token to third party: Role 2 (conveners) can transfer RWA token to third party",
-                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
-                config: abi.encode(
-                    initialisePowers.getInitialisedAddress("RwaMock"), // RWA token contract
-                    RwaMock.safeTransferFrom.selector, // 
-                    inputParams // 
-                ),
-                conditions: conditions
-            })
-        );
-        delete conditions;
+        // // role 2: transfer RWA token to third party
+        // mandateCount++;
+        // conditions.allowedRole = 2; // = Conveners.
+        // conditions.quorum = 20; //
+        // conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
+        // conditions.succeedAt = 51; // simple majority
+        // conditions.timelock = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minute timelock after passing
+        // conditions.needNotFulfilled = mandateCount - 1; // need role 1 not to have vetoed.
+        // physicalConstitution.push(
+        //     PowersTypes.MandateInitData({
+        //         nameDescription: "Transfer RWA token to third party: Role 2 (conveners) can transfer RWA token to third party",
+        //         targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
+        //         config: abi.encode(
+        //             initialisePowers.getInitialisedAddress("RwaMock"), // RWA token contract
+        //             RwaMock.safeTransferFrom.selector, // 
+        //             inputParams // 
+        //         ),
+        //         conditions: conditions
+        //     })
+        // );
+        // delete conditions;
 
-        // FORCED TRANSFER RWA TO TREASURY //
-        // Note the higher thresholds for passing this governance flow. 
-        inputParams = new string[](4); 
-        inputParams[0] = "address From";
-        inputParams[1] = "address To";
-        inputParams[2] = "uint256 TokenId";
-        inputParams[3] = "uint256 Amount"; 
+        // // FORCED TRANSFER RWA TO TREASURY //
+        // // Note the higher thresholds for passing this governance flow. 
+        // inputParams = new string[](4); 
+        // inputParams[0] = "address From";
+        // inputParams[1] = "address To";
+        // inputParams[2] = "uint256 TokenId";
+        // inputParams[3] = "uint256 Amount"; 
 
-        // role 1: veto forced transfer RWA token to treasury
-        // Lower threshold here: = easier to veto. 
-        mandateCount++;
-        conditions.allowedRole = 1; // = Members.
-        conditions.quorum = 20;  
-        conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
-        conditions.succeedAt = 51; // More than two thirds majority
-        physicalConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Veto forced transfer RWA token to treasury: Role 1 can veto forced transfer RWA token to treasury",
-                targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
-                config: abi.encode(inputParams),
-                conditions: conditions
-            })
-        );
-        delete conditions;
+        // // role 1: veto forced transfer RWA token to treasury
+        // // Lower threshold here: = easier to veto. 
+        // mandateCount++;
+        // conditions.allowedRole = 1; // = Members.
+        // conditions.quorum = 20;  
+        // conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
+        // conditions.succeedAt = 51; // More than two thirds majority
+        // physicalConstitution.push(
+        //     PowersTypes.MandateInitData({
+        //         nameDescription: "Veto forced transfer RWA token to treasury: Role 1 can veto forced transfer RWA token to treasury",
+        //         targetMandate: initialisePowers.getInitialisedAddress("StatementOfIntent"),
+        //         config: abi.encode(inputParams),
+        //         conditions: conditions
+        //     })
+        // );
+        // delete conditions;
 
-        // role 2: forced transfer RWA token to treasury
-        // higher threshold here: = harder to pass.
-        mandateCount++;
-        conditions.allowedRole = 2; // = Conveners.
-        conditions.quorum = 40; //
-        conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
-        conditions.succeedAt = 67; // simple majority
-        conditions.timelock = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minute timelock after passing
-        conditions.needNotFulfilled = mandateCount - 1; // need role 1 not to have vetoed.
-        physicalConstitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Forced transfer RWA token to treasury: Role 2 (conveners) can transfer RWA token to treasury",
-                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
-                config: abi.encode(
-                    initialisePowers.getInitialisedAddress("RwaMock"), // RWA token contract    
-                    RwaMock.safeTransferFrom.selector, // 
-                    inputParams // 
-                ),
-                conditions: conditions
-            })
-        );
-        delete conditions;
+        // // role 2: forced transfer RWA token to treasury
+        // // higher threshold here: = harder to pass.
+        // mandateCount++;
+        // conditions.allowedRole = 2; // = Conveners.
+        // conditions.quorum = 40; //
+        // conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minutes to vote
+        // conditions.succeedAt = 67; // simple majority
+        // conditions.timelock = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // 10 minute timelock after passing
+        // conditions.needNotFulfilled = mandateCount - 1; // need role 1 not to have vetoed.
+        // physicalConstitution.push(
+        //     PowersTypes.MandateInitData({
+        //         nameDescription: "Forced transfer RWA token to treasury: Role 2 (conveners) can transfer RWA token to treasury",
+        //         targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
+        //         config: abi.encode(
+        //             initialisePowers.getInitialisedAddress("RwaMock"), // RWA token contract    
+        //             RwaMock.safeTransferFrom.selector, // 
+        //             inputParams // 
+        //         ),
+        //         conditions: conditions
+        //     })
+        // );
+        // delete conditions;
 
         // MINT POAPS // 
         inputParams = new string[](1);
