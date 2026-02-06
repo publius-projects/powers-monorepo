@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { MandateBox } from "@/components/MandateBox";
 import { setAction, setError, useActionStore, useStatusStore } from "@/context/store";
 import { Action, Powers } from "@/context/types";
-import { useParams } from "next/navigation"; 
+import { useParams, useRouter } from "next/navigation"; 
 import { MandateActions } from "./MandateActions";
 import { TitleText } from "@/components/StandardFonts";
 import { Voting } from "@/components/Voting"; 
@@ -13,6 +13,7 @@ import { usePowersStore  } from "@/context/store";
 const Page = () => {
   const action = useActionStore();  
   const { mandateId } = useParams<{ mandateId: string }>()  
+  const router = useRouter();
   const powers = usePowersStore();
   const statusPowers = useStatusStore();
   const mandate = powers?.mandates?.find(mandate => BigInt(mandate.index) == BigInt(mandateId)) 
@@ -153,6 +154,16 @@ const Page = () => {
           
           {/* Latest actions */}
           {mandate && <MandateActions mandateId = {mandate.index} powers = {powers} />}
+
+          {/* Go to Forum button */}
+          <div className="w-full mt-6">
+            <button
+              onClick={() => router.push('/forum')}
+              className="w-full text-slate-700 font-semibold py-4 px-8 border border-slate-300 hover:border-slate-500 rounded-lg text-lg transition-colors duration-200"
+            >
+              Go to Forum
+            </button>
+          </div>
         </div>        
     </main>
   )
