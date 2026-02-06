@@ -1,0 +1,108 @@
+import { Callout } from 'vocs/components'
+
+<Callout type="warning">
+  Open Elections DAO is under development. The organisational specs and deployment addresses are subject to change.
+</Callout>
+
+# Open Elections Specification
+
+**Latest deployments:** 
+
+| Network | Deployment |
+| :---- | :---- |
+| - | - |
+
+## **Organisational Structure & Context**
+
+### ***Vision & Mission***
+
+Open Elections DAO demonstrates a governance model focused on the democratic election of Delegates by Voters. It implements a full on-chain election lifecycle including creation, nomination, voting, and tallying, ensuring a transparent and verifiable process for selecting representatives.
+
+### ***Assets*** 
+
+The DAO controls the following assets:
+
+*   It is the owner of the treasury (implicit in the Powers contract).
+
+### ***Actions*** 
+
+The DAO can take the following actions:
+
+*   **Voters** can create elections, nominate themselves, vote, and tally results.
+*   **Delegates** are elected by Voters and have the power to revoke roles (check on power).
+*   **Admin** can assign roles to any account.
+
+### ***Roles***
+
+<div class="table-roles">
+| Role Id | Role name | Selection criteria |
+| :---- | :---- | :---- |
+| 0 | Admin | Assigned at deployment. |
+| 1 | Voters | Assigned by Admin. |
+| 2 | Delegates | Elected by Voters. |
+| … | Public | Everyone. |
+</div>
+
+### ***Electoral Mandates***
+
+#### Election Cycle
+
+The election process follows a strict sequence: creating the election, opening it for voting, tallying the results, and finally cleaning up the governance artifacts.
+
+<div class="table-mandates">
+| Role | Name & Description | Base contract | User Input | Executable Output | Conditions |
+| :---- | :---- | :---- | :---- | :---- | :---- |
+| Voters | Create election | BespokeAction_Simple.sol | "string Title, uint48 StartBlock, uint48 EndBlock" | Creates election entry | Throttled (once every ~2 hours). |
+| Voters | Open Vote for election | ElectionList_CreateVoteMandate.sol | None | Creates Vote Mandate | Requires "Create election" to be fulfilled. |
+| Voters | Tally elections | ElectionList_Tally.sol | None | Assigns Delegate role to winners | Requires "Open Vote for election" to be fulfilled. Top 5 candidates elected. |
+| Voters | Clean up election | BespokeAction_OnReturnValue.sol | None | Revokes election mandates | Requires "Tally elections" to be fulfilled. |
+</div>
+
+#### Nomination
+
+Voters can nominate themselves (or revoke nomination) for an upcoming election.
+
+<div class="table-mandates">
+| Role | Name & Description | Base contract | User Input | Executable Output | Conditions |
+| :---- | :---- | :---- | :---- | :---- | :---- |
+| Voters | Nominate for election | ElectionList_Nominate.sol | None (implicit bool true) | Nomination logged | None. |
+| Voters | Revoke nomination | ElectionList_Nominate.sol | None (implicit bool false) | Nomination revoked | None. |
+</div>
+
+### ***Reform Mandates***
+
+#### Role Management
+
+The Admin has the power to assign roles. As a check on this power, Delegates can revoke roles that have been assigned.
+
+<div class="table-mandates">
+| Role | Name & Description | Base contract | User Input | Executable Output | Conditions |
+| :---- | :---- | :---- | :---- | :---- | :---- |
+| Admin | Admin assign role | BespokeAction_Simple.sol | "uint256 roleId, address account" | Assigns role | None. |
+| Delegates | Delegate revoke role | BespokeAction_Simple.sol | "uint256 roleId, address account" | Revokes role | Requires "Admin assign role" to be fulfilled. |
+</div>
+
+## Off-chain Operations
+
+### ***Dispute Resolution***
+
+Disputes regarding election conduct or results will be addressed through community discussion, with final arbitration by the Admin role.
+
+### ***Code of Conduct***
+
+Voters and Delegates are expected to participate honestly. Campaigning should be respectful and transparent.
+
+## Description of Governance
+
+*   **Remit**: To select Delegates through a fair election process.
+*   **Roles**: Voters elect Delegates.
+*   **Executive Paths**:
+    *   **Election Cycle**: Create -> Nominate -> Vote -> Tally -> Assign Role.
+
+## Risk Assessment
+
+### Voter Turnout
+Low voter turnout could lead to unrepresentative Delegates.
+
+### Sybil Attacks
+If the mechanism for assigning the Voter role is not secure, one person could control multiple Voter accounts.

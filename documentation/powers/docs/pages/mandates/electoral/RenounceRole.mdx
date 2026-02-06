@@ -1,0 +1,66 @@
+# RenounceRole
+
+RenounceRole is an electoral mandate that allows users to voluntarily resign from specific roles they currently hold.
+
+## Overview
+
+This mandate provides a mechanism for self-revocation. It is useful for roles where members should be able to leave at will (e.g., opting out of a committee or resigning from a position) without needing an external authority to process the removal. The mandate is configured with a whitelist of roles that can be renounced.
+
+## Configuration
+
+When adopting a RenounceRole instance, the following parameter is required:
+
+1.  `allowedRoleIds` (uint256[]): An array of role IDs that this mandate is authorized to process. Users can only renounce roles included in this list.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, one parameter must be provided:
+
+1.  `roleId` (uint256): The specific role ID the caller wishes to renounce.
+
+### Execution Flow
+
+1.  **Validation**
+    *   **Ownership Check:** Verifies that the caller currently holds the specified `roleId` in the Powers contract.
+    *   **Permission Check:** Verifies that the `roleId` is present in the `allowedRoleIds` configuration list.
+
+2.  **Revocation**
+    *   If checks pass, the mandate generates a `revokeRole` call targeting the caller and the specified role.
+    *   The role is immediately revoked upon execution.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Initializes the allowed role IDs.
+-   Sets input parameters to `(uint256 roleId)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Performs ownership and permission checks.
+-   Returns the revocation call.
+
+### Error Conditions
+
+1.  **Validation Errors**
+    *   "Account does not have role.": The caller is trying to renounce a role they don't hold.
+    *   "Role not allowed to be renounced.": The requested role ID is not in the allowed list.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

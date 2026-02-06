@@ -1,0 +1,52 @@
+# BespokeAction_Simple
+
+BespokeAction_Simple is an executive mandate that enables the execution of a single, predefined function call to a target contract.
+
+## Overview
+
+This mandate is the most basic tool for executing external actions. It is configured to call a specific function on a specific contract. When executed, it passes the user's input directly to that function.
+
+## Configuration
+
+When adopting a BespokeAction_Simple instance, the following parameters are required:
+
+1.  `TargetContract` (address): The address of the contract to call.
+2.  `FunctionSelector` (bytes4): The function selector to call.
+3.  `Params` (string[]): An array of strings describing the input parameters for the UI (e.g., `["uint256 Amount", "address Recipient"]`).
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the input (`mandateCalldata`) must contain the encoded arguments matching the target function's signature (excluding the selector).
+
+### Execution Flow
+
+1.  **Assembly**
+    *   Concatenates the configured `FunctionSelector` with the provided `mandateCalldata`.
+
+2.  **Execution**
+    *   Calls the `TargetContract` with the assembled data.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the contract and function.
+-   Sets input parameters.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Encodes the call.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

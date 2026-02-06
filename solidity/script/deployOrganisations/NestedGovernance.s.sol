@@ -88,6 +88,7 @@ contract NestedGovernance is DeploySetup {
     }
 
     function createPrimaryConstitution() internal returns (uint256 constitutionLength) {
+        uint16 mandateCount = 0;
         // Mandate 1: Initial Setup
         targets = new address[](3);
         values = new uint256[](3);
@@ -98,8 +99,9 @@ contract NestedGovernance is DeploySetup {
 
         calldatas[0] = abi.encodeWithSelector(IPowers.labelRole.selector, 1, "Members");
         calldatas[1] = abi.encodeWithSelector(IPowers.setTreasury.selector, address(powersParent));
-        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, 1);
+        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1);
 
+        mandateCount++;
         conditions.allowedRole = 0; // Admin
         primaryConstitution.push(
             PowersTypes.MandateInitData({
@@ -115,6 +117,7 @@ contract NestedGovernance is DeploySetup {
         dynamicParams = new string[](1);
         dynamicParams[0] = "string Uri";
 
+        mandateCount++;
         conditions.allowedRole = 0; // Admin
         primaryConstitution.push(
             PowersTypes.MandateInitData({
@@ -130,6 +133,7 @@ contract NestedGovernance is DeploySetup {
         inputParams = new string[](1);
         inputParams[0] = "uint256 Quantity";
 
+        mandateCount++;
         conditions.allowedRole = 1; // Members
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // ~5 mins
         conditions.succeedAt = 51;
@@ -149,6 +153,7 @@ contract NestedGovernance is DeploySetup {
         dynamicParams[0] = "uint256 roleId";
         dynamicParams[1] = "address account";
 
+        mandateCount++;
         conditions.allowedRole = 0; // Admin
         primaryConstitution.push(
             PowersTypes.MandateInitData({
@@ -161,8 +166,9 @@ contract NestedGovernance is DeploySetup {
         delete conditions;
 
         // Mandate 5: A delegate can revoke a role
+        mandateCount++;
         conditions.allowedRole = 2; // Role 2 (Delegates presumed)
-        conditions.needFulfilled = 4; // Mandate 4
+        conditions.needFulfilled = mandateCount - 1; // Mandate 4
         primaryConstitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "A delegate can revoke a role: For this demo, any delegate can revoke previously assigned roles.",
@@ -180,6 +186,7 @@ contract NestedGovernance is DeploySetup {
         internal
         returns (uint256 constitutionLength)
     {
+        uint16 mandateCount = 0;
         // Mandate 1: Initial Setup
         targets = new address[](3);
         values = new uint256[](3);
@@ -190,8 +197,9 @@ contract NestedGovernance is DeploySetup {
 
         calldatas[0] = abi.encodeWithSelector(IPowers.labelRole.selector, 1, "Members");
         calldatas[1] = abi.encodeWithSelector(IPowers.setTreasury.selector, address(powersChild));
-        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, 1);
+        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1);
 
+        mandateCount++;
         conditions.allowedRole = 0; // Admin
         childConstitution.push(
             PowersTypes.MandateInitData({
@@ -207,6 +215,7 @@ contract NestedGovernance is DeploySetup {
         dynamicParams = new string[](1);
         dynamicParams[0] = "string Uri";
 
+        mandateCount++;
         conditions.allowedRole = 0; // Admin
         childConstitution.push(
             PowersTypes.MandateInitData({
@@ -222,6 +231,7 @@ contract NestedGovernance is DeploySetup {
         inputParams = new string[](1);
         inputParams[0] = "uint256 Quantity";
 
+        mandateCount++;
         conditions.allowedRole = type(uint256).max; // Public
         childConstitution.push(
             PowersTypes.MandateInitData({
@@ -234,8 +244,9 @@ contract NestedGovernance is DeploySetup {
         delete conditions;
 
         // Mandate 4: Mint Tokens
+        mandateCount++;
         conditions.allowedRole = 1; // Members
-        conditions.needFulfilled = 3; // Check Parent
+        conditions.needFulfilled = mandateCount - 1; // Check Parent
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // ~5 mins
         conditions.succeedAt = 51;
         conditions.quorum = 33;
@@ -250,6 +261,7 @@ contract NestedGovernance is DeploySetup {
         delete conditions;
 
         // Mandate 5: Sync Member status (Adopt Role)
+        mandateCount++;
         conditions.allowedRole = type(uint256).max; // Public
         childConstitution.push(
             PowersTypes.MandateInitData({

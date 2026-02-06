@@ -1,0 +1,68 @@
+# AssignExternalRole
+
+AssignExternalRole is an electoral mandate that synchronizes a role assignment from an external "Parent" Powers contract to the current "Child" Powers contract.
+
+## Overview
+
+This mandate allows a Powers contract (the Child) to mirror the role assignments of another Powers contract (the Parent). This is useful for creating hierarchical governance structures where membership in a parent organization automatically grants membership in a child organization, or where revocation in the parent propagates to the child.
+
+## Configuration
+
+When adopting an AssignExternalRole instance, the following parameters are required:
+
+1.  `externalPowers` (address): The address of the external (Parent) Powers contract to mirror.
+2.  `roleId` (uint256): The specific role ID to synchronize. This ID is checked on both contracts.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, one parameter must be provided:
+
+1.  `account` (address): The account address to check and synchronize.
+
+### Execution Flow
+
+1.  **Status Check**
+    *   Checks if the `account` holds the configured `roleId` in the **Child** (current) contract.
+    *   Checks if the `account` holds the configured `roleId` in the **Parent** (external) contract.
+
+2.  **Synchronization Logic**
+    *   **Assign:** If the account has the role in the Parent but *not* in the Child, the mandate assigns the role in the Child contract.
+    *   **Revoke:** If the account has the role in the Child but *not* in the Parent, the mandate revokes the role in the Child contract.
+    *   **No Action:** If the status is the same in both contracts (both have it or both don't), the transaction reverts with an error message (as no state change is needed).
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Initializes the Parent contract address and role ID.
+-   Sets input parameters to `(address account)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Performs the cross-contract checks.
+-   Returns the appropriate `assignRole` or `revokeRole` call, or reverts if no action is needed.
+
+### Error Conditions
+
+1.  **Validation Errors**
+    *   "Account does not have role at parent": Attempted to sync an account that has no role in either contract.
+    *   "Account already has role at parent": Attempted to sync an account that already has the role in both contracts.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

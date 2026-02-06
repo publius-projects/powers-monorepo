@@ -1,0 +1,72 @@
+# RevokeAccountsRoleId
+
+RevokeAccountsRoleId is an electoral mandate that revokes a specific role from **all** accounts that currently hold it.
+
+## Overview
+
+This mandate acts as a "reset button" or a dissolution mechanism for a specific role. When executed, it iterates through every account that holds the configured role and revokes it. This is useful for:
+*   Dissolving a committee or working group.
+*   Resetting role assignments before a new election cycle.
+*   Emergency revocation of a compromised group.
+
+## Configuration
+
+When adopting a RevokeAccountsRoleId instance, the following parameters are required:
+
+1.  `RoleId` (uint256): The role ID that will be revoked from all holders.
+2.  `InputParams` (string[]): An array of strings defining the input parameters for the mandate (e.g., `["string Reason"]`).
+    *   These parameters are displayed in the UI to prompt the caller for information (like a reason for the reset).
+    *   The values provided by the caller are included in the action data (and hash) but are not used in the execution logic itself. They serve as an on-chain record of the context.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the inputs depend on the `InputParams` configuration.
+*   If `InputParams` is empty, no arguments are needed.
+*   If `InputParams` is set (e.g., `["string Reason"]`), the caller must provide the corresponding values.
+
+### Execution Flow
+
+1.  **State Retrieval**
+    *   Queries the Powers contract to get the total count of accounts holding the target `RoleId`.
+    *   Retrieves the address of every current role holder.
+
+2.  **Revocation**
+    *   Iterates through the list of role holders.
+    *   Generates a `revokeRole` call for each account.
+    *   Returns the batch of revocation calls for execution.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Initializes the target role ID.
+-   Sets the `inputParams` for the UI based on the configuration.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Fetches all role holders.
+-   Constructs the batch revocation logic.
+
+### Error Conditions
+
+1.  **No Action**
+    *   If there are no current holders of the role, the mandate returns empty arrays (no execution actions), effectively doing nothing but recording the call.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

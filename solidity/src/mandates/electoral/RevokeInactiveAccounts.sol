@@ -6,6 +6,16 @@ import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 import { IPowers } from "../../interfaces/IPowers.sol";
 import { PowersTypes } from "../../interfaces/PowersTypes.sol";
 
+/**
+ * @title RevokeInactiveAccounts
+ * @notice Revokes a specific role from accounts that have not participated in enough governance actions.
+ *
+ * Logic:
+ * 1. Identifies all mandates that restrict actions to the specified role.
+ * 2. Samples recent actions from these mandates.
+ * 3. Checks if each role holder participated in these actions (either as the caller or a voter).
+ * 4. Revokes the role from any account whose participation count is below the minimum threshold.
+ */
 contract RevokeInactiveAccounts is Mandate {
     struct Mem {
         uint256 roleId;
@@ -31,11 +41,13 @@ contract RevokeInactiveAccounts is Mandate {
         address[] toRevoke;
     }
 
+    /// @notice Constructor
     constructor() {
         bytes memory configParams = abi.encode("uint256 RoleId", "uint256 minimumActionsNeeded", "uint256 numberActionsToCheck");
         emit Mandate__Deployed(configParams);
     }
 
+    /// @notice Initialize the mandate
     function initializeMandate(uint16 index, string memory nameDescription, bytes memory, bytes memory config)
         public
         override
@@ -45,6 +57,15 @@ contract RevokeInactiveAccounts is Mandate {
         super.initializeMandate(index, nameDescription, inputParams, config);
     }
 
+    /// @notice Process a request to revoke inactive accounts
+    /// @param powers The Powers contract address
+    /// @param mandateId The mandate identifier
+    /// @param mandateCalldata Unused (no input params)
+    /// @param nonce The nonce for the action
+    /// @return actionId The computed action ID
+    /// @return targets The target addresses for execution
+    /// @return values The ETH values for execution
+    /// @return calldatas The calldata for execution
     function handleRequest(
         address, /*caller*/
         address powers,

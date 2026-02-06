@@ -1,0 +1,63 @@
+# SelfSelect
+
+SelfSelect is an electoral mandate that allows users to freely claim a specific role. This is useful for open membership organizations or for onboarding users to a "Member" role.
+
+## Overview
+
+This mandate provides a permissionless entry point into a role. Any account can call this mandate to assign the configured role to themselves, provided they do not already hold it. It is the simplest form of onboarding.
+
+## Configuration
+
+When adopting a SelfSelect instance, the following parameter is required:
+
+1.  `RoleId` (uint256): The role ID that users can claim.
+
+## Usage
+
+### Proposing an Action
+
+This mandate does not require any input parameters. When called, it attempts to assign the role to the caller.
+
+### Execution Flow
+
+1.  **Validation**
+    *   Checks if the caller already holds the configured `RoleId`.
+    *   If the caller already has the role, the transaction reverts to prevent redundant assignments.
+
+2.  **Assignment**
+    *   If the check passes, the mandate generates an `assignRole` call targeting the caller and the `RoleId`.
+    *   The role is immediately assigned.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Initializes the target role ID.
+-   Sets input parameters to empty.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Validates the user's current status.
+-   Returns the assignment call.
+
+### Error Conditions
+
+1.  **Validation Errors**
+    *   "Account already has role.": The caller is already a member of the role.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

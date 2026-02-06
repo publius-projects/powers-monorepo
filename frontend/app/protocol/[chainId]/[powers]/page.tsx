@@ -48,10 +48,6 @@ export default function FlowPage() {
   useEffect(() => {
       validateBannerImage(powers?.metadatas?.banner)
   }, [powers?.metadatas?.banner, validateBannerImage])
-
-  const navigateToUserUser = () => {
-    router.push(`/user/${chainId}/${addressPowers}`)
-  }
   
   return (
     <main className="w-full h-full flex flex-col justify-start items-center gap-3 px-2 overflow-x-scroll pt-16 pb-20" >
@@ -131,7 +127,7 @@ export default function FlowPage() {
       
     </section>
 
-    {/* Go to user portal button */}
+    {/* Go to forum button */}
     <section className="w-full flex justify-center items-center py-4 text-slate-800 opacity-75 hover:opacity-100">
       <div className="w-full">
         <Button 
@@ -140,11 +136,11 @@ export default function FlowPage() {
           role={6}
           filled={false}
           selected={true}
-          onClick={navigateToUserUser}
+          onClick={() => router.push(`/forum`)}
           statusButton="idle"
         > 
           <div className="flex flex-row gap-1 items-center justify-center">
-            Go to user portal
+            Go to forum
             <ArrowUpRightIcon className="w-4 h-4" />
           </div>
         </Button>

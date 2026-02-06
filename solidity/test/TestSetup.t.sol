@@ -571,6 +571,8 @@ abstract contract TestSetupIntegrations is BaseSetup {
         soulbound1155 = new Soulbound1155("this is a test uri");
         electionList = new ElectionList();
         powersFactory = new PowersFactory(
+            "Powers Factory", // name
+            "https://testURI", // uri
             config.maxCallDataLength,
             config.maxReturnDataLength,
             config.maxExecutionsLength

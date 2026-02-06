@@ -1,0 +1,88 @@
+# Github_AssignRoleWithSig
+
+Github_AssignRoleWithSig is an async mandate that assigns a role to a user after they have successfully proved ownership of a GitHub commit via the `Github_ClaimRoleWithSig` mandate.
+
+## Overview
+
+This mandate works in tandem with `Github_ClaimRoleWithSig`. It acts as the final step in the GitHub verification process:
+1.  It verifies that the user has a valid, unconsumed claim on the linked `Github_ClaimRoleWithSig` mandate.
+2.  It consumes the claim (resets it) to prevent replay attacks.
+3.  It assigns the specified role to the user on the Powers contract.
+
+## Configuration
+
+This mandate does not require any specific configuration parameters during adoption.
+
+**Dependencies:**
+- This mandate **MUST** be configured with a `needFulfilled` condition pointing to the mandate ID of an active `Github_ClaimRoleWithSig` instance. This link allows it to locate the verification source.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, two parameters must be provided:
+
+1.  `roleId` (uint256): The role ID to be assigned. This must match the role ID verified by the `Github_ClaimRoleWithSig` mandate.
+2.  `commitHash` (string): The commit hash associated with the verification.
+
+### Execution Flow
+
+1.  **Condition Check**
+    *   Retrieves the `needFulfilled` condition to identify the linked `Github_ClaimRoleWithSig` mandate.
+    *   Verifies the linked mandate is active.
+
+2.  **Verification Check**
+    *   Calls `getLatestReply` on the linked `Github_ClaimRoleWithSig` mandate.
+    *   Checks if the caller has a valid, error-free verification result for the requested role.
+
+3.  **Role Assignment**
+    *   **Reset Reply:** Calls `resetReply` on the `Github_ClaimRoleWithSig` mandate to consume the verification (preventing reuse).
+    *   **Assign Role:** Calls `assignRole` on the Powers contract to grant the role to the caller.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Sets input parameters to `(uint256 roleId, string commitHash)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(
+    address caller,
+    address powers,
+    uint16 mandateId,
+    bytes memory mandateCalldata,
+    uint256 nonce
+) public view virtual override returns (
+    uint256 actionId,
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas
+)
+```
+-   Validates the verification status on the linked mandate.
+-   Returns actions to consume the verification and assign the role.
+
+### Error Conditions
+
+1.  **Configuration Errors**
+    *   "Need fulfilled condition not set": The mandate was not configured with a link to `Github_ClaimRoleWithSig`.
+    *   "Claim role mandate not active": The linked mandate is not active.
+
+2.  **Verification Errors**
+    *   "error in claiming role": The caller has not been verified or the verification failed.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

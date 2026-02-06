@@ -1,0 +1,79 @@
+# DelegateTokenSelect
+
+DelegateTokenSelect is an electoral mandate that conducts an election based on delegated token weight. It assigns roles to the top nominees who have received the most delegated votes from an ERC20Votes token.
+
+## Overview
+
+This mandate automates the election process by:
+1.  Fetching a list of nominees from a `Nominees` contract.
+2.  Calculating the voting power (delegated votes) for each nominee using an `ERC20Votes` token.
+3.  Ranking the nominees by their voting power.
+4.  Revoking the role from all current holders.
+5.  Assigning the role to the top *N* nominees, where *N* is the configured maximum number of role holders.
+
+This mechanism ensures that the role holders always reflect the current delegation preferences of token holders.
+
+## Configuration
+
+When adopting a DelegateTokenSelect instance, the following parameters are required:
+
+1.  `VotesToken` (address): The address of the ERC20Votes governance token used for calculating voting power.
+2.  `NomineesContract` (address): The address of the Nominees helper contract that maintains the list of candidates.
+3.  `RoleId` (uint256): The role ID to be assigned to the winners (and revoked from losers/previous holders).
+4.  `MaxRoleHolders` (uint256): The maximum number of candidates to elect (the top N).
+
+## Usage
+
+### Proposing an Action
+
+This mandate does not require any input parameters. When called, it automatically performs the election logic based on the current state of the token and nominee list.
+
+### Execution Flow
+
+1.  **State Retrieval**
+    *   Retrieves all current holders of the target `RoleId`.
+    *   Retrieves the list of current nominees from the `NomineesContract`.
+
+2.  **Ranking Logic**
+    *   Queries the `VotesToken` to get the current voting power (`getVotes`) for each nominee.
+    *   Sorts the nominees in descending order of voting power.
+    *   Selects the top `MaxRoleHolders` nominees as the winners.
+
+3.  **Role Updates**
+    *   **Revocation:** Generates `revokeRole` calls for *all* current role holders.
+    *   **Assignment:** Generates `assignRole` calls for the new set of winners.
+    *   **Optimization:** The mandate effectively resets the role membership to match the election results exactly.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Initializes the mandate configuration.
+-   Sets input parameters to empty (none required).
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Performs the sorting and selection logic.
+-   Returns the batch of revocation and assignment calls.
+
+### Error Conditions
+
+1.  **Configuration Errors**
+    *   Invalid contract addresses for `VotesToken` or `NomineesContract`.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

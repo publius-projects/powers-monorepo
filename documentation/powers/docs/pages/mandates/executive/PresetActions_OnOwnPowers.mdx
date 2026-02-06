@@ -1,0 +1,52 @@
+# PresetActions_OnOwnPowers
+
+PresetActions_OnOwnPowers is an executive mandate that executes a predefined set of actions on the Powers contract itself.
+
+## Overview
+
+This mandate is similar to `PresetActions_Single`, but the target of the execution is hardcoded to `address(this)` (the Powers contract). This is used for "canned" administrative actions, such as a one-click button to update a specific configuration or enable a specific module on the Powers protocol.
+
+## Configuration
+
+When adopting a PresetActions_OnOwnPowers instance, the following parameter is required:
+
+1.  `callDatas` (bytes[]): An array of encoded function calls to be executed on the Powers contract.
+
+## Usage
+
+### Proposing an Action
+
+This mandate does not require any input parameters. When called, it unconditionally executes the configured actions.
+
+### Execution Flow
+
+1.  **Assembly**
+    *   Iterates through the configured `callDatas`.
+    *   Constructs an execution request where the `target` for every call is the Powers contract address.
+
+2.  **Execution**
+    *   Returns the batch of calls for execution.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the call data.
+-   Sets input parameters to empty.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Sets targets to `address(powers)`.
+-   Returns the preset calldatas.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

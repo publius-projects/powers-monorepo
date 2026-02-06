@@ -1,0 +1,52 @@
+# BespokeAction_OnOwnPowers
+
+BespokeAction_OnOwnPowers is an executive mandate that executes a function call directly on the Powers contract itself.
+
+## Overview
+
+This mandate is a specialized tool for administrative actions. Unlike other mandates that usually call *external* contracts, this one targets `address(this)` (the Powers contract). It allows for the execution of restricted functions on the Powers protocol, such as configuration updates or module management, provided the mandate has the necessary permissions.
+
+## Configuration
+
+When adopting a BespokeAction_OnOwnPowers instance, the following parameters are required:
+
+1.  `FunctionSelector` (bytes4): The selector of the function to call on the Powers contract (e.g., `setGovernanceToken.selector`).
+2.  `Params` (string[]): An array of strings describing the input parameters for the UI (e.g., `["address NewToken"]`).
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the input (`mandateCalldata`) should contain the encoded arguments for the target function.
+
+### Execution Flow
+
+1.  **Assembly**
+    *   Concatenates the configured `FunctionSelector` with the provided `mandateCalldata`.
+
+2.  **Execution**
+    *   Calls the Powers contract (`address(this)`) with the assembled data.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the function selector.
+-   Sets input parameters to the provided `Params`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Sets the target to the Powers contract address.
+-   Encodes the call.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

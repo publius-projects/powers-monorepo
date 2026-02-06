@@ -73,9 +73,11 @@ contract Powers101 is DeploySetup {
     }
 
     function createConstitution() internal returns (uint256 constitutionLength) {
+        uint16 mandateCount = 0;
         string[] memory dynamicParamsSimple = new string[](1);
         dynamicParamsSimple[0] = "bool NominateMe";
 
+        mandateCount++;
         conditions.allowedRole = type(uint256).max;
         constitution.push(
             PowersTypes.MandateInitData({
@@ -88,6 +90,7 @@ contract Powers101 is DeploySetup {
         delete conditions;
 
         // delegateSelect
+        mandateCount++;
         conditions.allowedRole = type(uint256).max; // = role that can call this mandate.
         constitution.push(
             PowersTypes.MandateInitData({
@@ -105,10 +108,11 @@ contract Powers101 is DeploySetup {
 
         // proposalOnly
         string[] memory inputParams = new string[](3);
-        inputParams[0] = "targets address[]";
-        inputParams[1] = "values uint256[]";
-        inputParams[2] = "calldatas bytes[]";
+        inputParams[0] = "address[] targets";
+        inputParams[1] = "uint256[] values";
+        inputParams[2] = "bytes[] calldatas";
 
+        mandateCount++;
         conditions.allowedRole = 1; // = role that can call this mandate.
         conditions.quorum = 20; // = 30% quorum needed
         conditions.succeedAt = 66; // = 51% simple majority needed for assigning and revoking members.
@@ -123,8 +127,9 @@ contract Powers101 is DeploySetup {
         );
         delete conditions;
 
+        mandateCount++;
         conditions.allowedRole = 0; // = admin.
-        conditions.needFulfilled = 3; // = mandate that must be completed before this one.
+        conditions.needFulfilled = mandateCount - 1; // = mandate that must be completed before this one.
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Veto an action: Veto an action that has been proposed by the community.",
@@ -135,12 +140,13 @@ contract Powers101 is DeploySetup {
         );
         delete conditions;
 
+        mandateCount++;
         conditions.allowedRole = 2; // = role that can call this mandate.
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = number of blocks
         conditions.succeedAt = 66; // = 51% simple majority needed for executing an action.
         conditions.quorum = 20; // = 30% quorum needed
-        conditions.needFulfilled = 3; // = mandate that must be completed before this one.
-        conditions.needNotFulfilled = 4; // = mandate that must not be completed before this one.
+        conditions.needFulfilled = mandateCount - 2; // = mandate that must be completed before this one.
+        conditions.needNotFulfilled = mandateCount - 1; // = mandate that must not be completed before this one.
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Execute an action: Execute an action that has been proposed by the community and should not have been vetoed by an admin.",
@@ -161,9 +167,10 @@ contract Powers101 is DeploySetup {
         }
         calldatas[0] = abi.encodeWithSelector(IPowers.labelRole.selector, 1, "Member");
         calldatas[1] = abi.encodeWithSelector(IPowers.labelRole.selector, 2, "Delegate");
-        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, 6); // revoke mandate after use.
+        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1); // revoke mandate after use.
 
         // set conditions
+        mandateCount++;
         conditions.allowedRole = type(uint256).max; // = public role. .
         constitution.push(
             PowersTypes.MandateInitData({

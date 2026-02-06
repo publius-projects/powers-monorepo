@@ -1,0 +1,122 @@
+# Github_ClaimRoleWithSig
+
+Github_ClaimRoleWithSig is an async mandate that leverages Chainlink Functions to verify GitHub commit ownership. It allows users to prove they have control over a GitHub repository by signing a message in a commit.
+
+## Overview
+
+This mandate acts as a bridge between on-chain identity and GitHub activity. It:
+1.  Uses Chainlink Functions to inspect a GitHub commit.
+2.  Verifies that the commit:
+    *   Exists on the specified branch.
+    *   Modified a specific folder path associated with the requested role.
+    *   Is recent (typically < 90 days).
+    *   Contains a valid signature in the commit message.
+3.  Verifies the signature on-chain to ensure the signer matches the transaction sender.
+4.  If successful, records the verification result, which can then be consumed by `Github_AssignRoleWithSig` to grant the role.
+
+## Configuration
+
+When adopting a Github_ClaimRoleWithSig instance, several parameters are required to configure the GitHub verification logic and Chainlink integration:
+
+1.  `branch` (string): The target GitHub branch to check (e.g., "main").
+2.  `paths` (string[]): An array of folder paths. Each path corresponds to a specific role.
+3.  `roleIds` (uint256[]): An array of role IDs corresponding to the `paths` array. `paths[i]` is the required folder modification for `roleIds[i]`.
+4.  `signatureString` (string): The standard message that users must sign and include in their commit (e.g., "I am claiming role X").
+5.  `subscriptionId` (uint64): The Chainlink Functions subscription ID.
+6.  `gasLimit` (uint32): The gas limit for the Chainlink Functions callback.
+7.  `donId` (bytes32): The Chainlink DON (Decentralized Oracle Network) ID.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, two parameters must be provided:
+
+1.  `roleId` (uint256): The role ID the user is claiming.
+2.  `commitHash` (string): The SHA hash of the GitHub commit containing the signature.
+
+### Execution Flow
+
+1.  **Request Initiation (`handleRequest`)**
+    *   Validates that the requested `roleId` exists in the configuration.
+    *   Retrieves the associated folder path.
+    *   Prepares arguments for the Chainlink Function: `branch`, `commitHash`, and `folderPath`.
+    *   Generates an action ID.
+
+2.  **Oracle Call (`_externalCall`)**
+    *   Sends a request to the Chainlink Oracle with the prepared arguments.
+    *   Stores the request details (caller, roleId, etc.) pending fulfillment.
+
+3.  **Verification & Fulfillment (`fulfillRequest`)**
+    *   The Chainlink Oracle executes the off-chain script (verifying commit details and extracting the signature).
+    *   **On-Chain Verification:** The contract receives the signature, recovers the signer address using the configured `signatureString`, and compares it to the original caller's address.
+    *   **Success:** If the addresses match, the verification is recorded in `chainlinkReplies`.
+    *   **Completion:** Calls `powers.fulfill` to signal the async action is complete.
+
+## Technical Specifications
+
+### State Variables
+
+```solidity
+mapping(bytes32 mandateHash => mapping(address => bytes errorMessage)) internal chainlinkErrors;
+mapping(bytes32 mandateHash => mapping(address => uint256 roleId)) internal chainlinkReplies;
+```
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Initializes Chainlink configuration and verification rules.
+-   Sets input parameters to `(uint256 roleId, string commitHash)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(
+    address caller,
+    address powers,
+    uint16 mandateId,
+    bytes memory mandateCalldata,
+    uint256 nonce
+) public view virtual override returns (...)
+```
+-   Prepares the Chainlink request.
+-   Returns calldata to trigger `_externalCall`.
+
+#### `getLatestReply`
+```solidity
+function getLatestReply(bytes32 mandateHash, address caller)
+    external
+    view
+    returns (bytes memory errorMessage, uint256 roleId)
+```
+-   Returns the result of the verification for a specific caller.
+-   Used by `Github_AssignRoleWithSig` to check status.
+
+#### `resetReply`
+```solidity
+function resetReply(address powers, uint16 mandateId, address caller) external returns (bool success)
+```
+-   Resets the verification status for a caller.
+-   Only callable by the Powers contract (via `Github_AssignRoleWithSig`).
+
+### Error Conditions
+
+1.  **Validation Errors**
+    *   "RoleId not found": The requested role is not configured.
+    *   "UnexpectedRequestID": Chainlink callback ID mismatch.
+
+2.  **Chainlink Errors**
+    *   The off-chain script may return errors (e.g., commit not found, signature missing), which are stored in `chainlinkErrors`.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

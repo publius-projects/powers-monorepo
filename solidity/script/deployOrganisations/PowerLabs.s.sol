@@ -36,7 +36,6 @@ contract PowerLabs is DeploySetup {
     bytes[] calldatas;
     string[] inputParams;
     string[] dynamicParams;
-    uint16 mandateCount;
 
     function run() external {
         // step 0, setup.
@@ -87,6 +86,7 @@ contract PowerLabs is DeploySetup {
     }
 
     function createPrimaryConstitution() internal returns (uint256 constitutionLength) {
+        uint16 mandateCount = 0;
         // Mandate 1: Setup Safe
         // Safe_Setup
         mandateCount++;
@@ -122,7 +122,7 @@ contract PowerLabs is DeploySetup {
         calldatas[2] = abi.encodeWithSelector(IPowers.labelRole.selector, 3, "Frontend Contributors");
         calldatas[3] = abi.encodeWithSelector(IPowers.labelRole.selector, 4, "Protocol Contributors");
         calldatas[4] = abi.encodeWithSelector(IPowers.labelRole.selector, 5, "Members");
-        calldatas[5] = abi.encodeWithSelector(IPowers.revokeMandate.selector, 2); // revoke this mandate after execution
+        calldatas[5] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1); // revoke this mandate after execution
 
         mandateCount++;
         conditions.allowedRole = 0; // Admin
@@ -257,8 +257,6 @@ contract PowerLabs is DeploySetup {
             })
         );
         delete conditions;
-
-        // FROM HERE NEW; MEMORY COUNTER FOR MANDATES. ///
 
         //////////////////////////////////////////////////////////////////////////
         //   GOVERNANCE FLOW FOR ADOPTING DELEGATE / CHILD POWERS DEPLOYMENTS   //
@@ -613,6 +611,7 @@ contract PowerLabs is DeploySetup {
         internal
         returns (uint256 constitutionLength)
     {
+        uint16 mandateCount = 0;
         // Mandate 1: Initial Setup
         targets = new address[](6);
         values = new uint256[](6);
@@ -626,9 +625,9 @@ contract PowerLabs is DeploySetup {
         calldatas[2] = abi.encodeWithSelector(IPowers.labelRole.selector, 3, "Frontend Contributors");
         calldatas[3] = abi.encodeWithSelector(IPowers.labelRole.selector, 4, "Protocol Contributors");
         calldatas[4] = abi.encodeWithSelector(IPowers.labelRole.selector, 5, "Members");
-        calldatas[5] = abi.encodeWithSelector(IPowers.revokeMandate.selector, 1);
+        calldatas[5] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1);
 
-        mandateCount = 1; // resetting mandate Count for child constitution
+        mandateCount++;
         conditions.allowedRole = 0; // Admin
         childConstitution.push(
             PowersTypes.MandateInitData({

@@ -1,0 +1,50 @@
+# PowersAction_Simple
+
+PowersAction_Simple is an executive mandate that triggers a pre-configured action on another Powers contract.
+
+## Overview
+
+Unlike `PowersAction_Flexible`, which allows the caller to choose the target DAO and action at runtime, this mandate hardcodes the destination. It is useful for setting up permanent links or routine interactions between organizations, such as a child DAO reporting to a parent, or one department triggering a specific process in another.
+
+## Configuration
+
+When adopting a PowersAction_Simple instance, the following parameters are required:
+
+1.  `PowersTarget` (address): The fixed address of the target Powers contract.
+2.  `MandateIdTarget` (uint16): The fixed ID of the mandate to execute on the target contract.
+3.  `Params` (string[]): UI hints describing the input parameters required by the target mandate.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the input (`mandateCalldata`) must contain the encoded arguments expected by the target mandate.
+
+### Execution Flow
+
+1.  **Request Generation**
+    *   Generates a call to `IPowers.request` on the configured `PowersTarget`.
+    *   Passes the configured `MandateIdTarget`, the provided `mandateCalldata`, and the current `nonce`.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the target and mandate ID.
+-   Sets input parameters based on the provided `Params`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Encodes the `request` call.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

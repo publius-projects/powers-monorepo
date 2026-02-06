@@ -4,15 +4,18 @@ import React, { useEffect, useState } from "react";
 import { MandateBox } from "@/components/MandateBox";
 import { setAction, setError, useActionStore, useStatusStore } from "@/context/store";
 import { Action, Powers } from "@/context/types";
-import { useParams } from "next/navigation"; 
+import { useParams, useRouter } from "next/navigation"; 
 import { MandateActions } from "./MandateActions";
 import { TitleText } from "@/components/StandardFonts";
 import { Voting } from "@/components/Voting"; 
 import { usePowersStore  } from "@/context/store";
+import { Button } from "@/components/Button";
+import { ArrowUpRightIcon } from "@heroicons/react/24/outline";
 
 const Page = () => {
   const action = useActionStore();  
   const { mandateId } = useParams<{ mandateId: string }>()  
+  const router = useRouter();
   const powers = usePowersStore();
   const statusPowers = useStatusStore();
   const mandate = powers?.mandates?.find(mandate => BigInt(mandate.index) == BigInt(mandateId)) 
@@ -59,15 +62,22 @@ const Page = () => {
   // resetting DynamicForm and fetching executions when switching mandates: 
   useEffect(() => {
     if (mandate) {
-      // console.log("useEffect triggered at Mandate page:", action.dataTypes, dataTypes)
-      const dissimilarTypes = action.dataTypes && action.dataTypes.length != 0 ? action.dataTypes.map((type, index) => type != mandate.params?.[index]?.dataType) : [true] 
-      console.log("useEffect triggered at Mandate page:", {dissimilarTypes, action, mandate})
+      const mandateParams = mandate.params || [];
+      const mandateDataTypes = mandateParams.map(param => param.dataType);
+      const actionDataTypes = action.dataTypes || [];
+
+      // Check if data types are different
+      const isDifferentLength = actionDataTypes.length !== mandateDataTypes.length;
+      const isDifferentContent = !isDifferentLength && actionDataTypes.some((type, index) => type !== mandateDataTypes[index]);
+      const shouldReset = isDifferentLength || isDifferentContent;
       
-      if (dissimilarTypes.find(type => type == true) || !action.dataTypes) {
+      console.log("useEffect triggered at Mandate page:", {shouldReset, action, mandate})
+      
+      if (shouldReset) {
         console.log("useEffect triggered at Mandate page, action.dataTypes != dataTypes")
         setAction({
           mandateId: mandate.index,
-          dataTypes: mandate.params?.map(param => param.dataType),
+          dataTypes: mandateDataTypes,
           paramValues: [],
           nonce: '0',
           callData: '0x0',
@@ -146,6 +156,28 @@ const Page = () => {
           
           {/* Latest actions */}
           {mandate && <MandateActions mandateId = {mandate.index} powers = {powers} />}
+
+          {/* Go to Forum button in case there is a vote */}
+          {Number(mandate?.conditions?.quorum) > 0 && populatedAction?.state != 0 && populatedAction?.state != 8 && (
+          <section className="w-full flex justify-center items-center py-4 text-slate-800 opacity-75 hover:opacity-100">
+               <div className="w-full">
+                 <Button 
+                   size={0} 
+                   showBorder={true} 
+                   role={6}
+                   filled={false}
+                   selected={true}
+                   onClick={() => router.push(`/forum`)}
+                   statusButton="idle"
+                 > 
+                   <div className="flex flex-row gap-1 items-center justify-center">
+                     Go to forum
+                     <ArrowUpRightIcon className="w-4 h-4" />
+                   </div>
+                 </Button>
+               </div>
+             </section>
+          )}
         </div>        
     </main>
   )

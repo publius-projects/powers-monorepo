@@ -1,0 +1,50 @@
+# StatementOfIntent
+
+StatementOfIntent is an executive mandate that allows a role to record a proposal or statement on-chain without triggering any execution logic.
+
+## Overview
+
+This mandate serves as a signaling mechanism. It allows a governance body or role to formalize an intent, make a declaration, or pass a "soft vote" where the outcome is recorded in the Powers protocol history but no contract calls are made. It can be used for:
+*   Ratifying off-chain decisions.
+*   Signaling agreement on a strategy.
+*   Publishing a statement or manifesto.
+
+## Configuration
+
+When adopting a StatementOfIntent instance, the following parameter is required:
+
+1.  `inputParams` (string[]): An array of strings describing the data fields that the statement should contain (e.g., `["string Title", "string Content"]`). This guides the UI on what inputs to request from the proposer.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the input (`mandateCalldata`) should contain the encoded values corresponding to the configured `inputParams`. These values are stored in the action history.
+
+### Execution Flow
+
+1.  **No-Op**
+    *   The mandate receives the input but intentionally does not generate any execution calls.
+    *   It returns empty arrays (`targets`, `values`, `calldatas`), signifying a successful "execution" that results in no state changes beyond the recording of the action itself.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Sets input parameters to the provided `inputParams`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public pure override returns (...)
+```
+-   Returns empty execution arrays.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

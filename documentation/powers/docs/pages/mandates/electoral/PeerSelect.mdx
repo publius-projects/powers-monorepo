@@ -1,0 +1,83 @@
+# PeerSelect
+
+PeerSelect is an electoral mandate that allows members of a group to vote on a slate of nominees, directly assigning or revoking roles based on the collective selection.
+
+## Overview
+
+This mandate enables a more granular and interactive selection process than `DelegateTokenSelect`. Instead of relying on token weight, it allows authorized callers (usually holding a specific "voter" role via the mandate's permissions) to:
+1.  View the list of current nominees (from a `Nominees` contract).
+2.  Submit a selection (a set of votes) for multiple nominees.
+3.  Directly assign the role to selected nominees who don't have it.
+4.  Directly revoke the role from selected nominees who already have it.
+
+This is effectively a "toggle" mechanism where the voter can curate the list of role holders, subject to a maximum cap on total holders.
+
+## Configuration
+
+When adopting a PeerSelect instance, the following parameters are required:
+
+1.  `maxRoleHolders` (uint256): The absolute maximum number of accounts that can hold the role at any time. Assignments that would exceed this limit will revert.
+2.  `roleId` (uint256): The role ID to be assigned or revoked.
+3.  `maxVotes` (uint8): The maximum number of nominees a voter can select in a single transaction.
+4.  `NomineesContract` (address): The address of the Nominees helper contract providing the list of candidates.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, one parameter must be provided:
+
+1.  `selection` (bool[]): An array of booleans corresponding to the list of nominees fetched from the `NomineesContract`.
+    *   `true`: Select this nominee (Assign if they don't have the role, Revoke if they do).
+    *   `false`: Do nothing for this nominee.
+
+The length of this array must match the current number of nominees.
+
+### Execution Flow
+
+1.  **Validation**
+    *   Verifies that the `selection` array length matches the nominee list.
+    *   Verifies that the number of `true` selections is between 1 and `maxVotes`.
+
+2.  **Processing Selections**
+    *   Iterates through the selections.
+    *   For each selected nominee:
+        *   **If they have the role:** Revokes it.
+        *   **If they don't have the role:** Assigns it (incrementing the holder count).
+
+3.  **Capacity Check**
+    *   If any assignments are made, checks if the new total of role holders would exceed `maxRoleHolders`. If so, reverts.
+
+4.  **Execution**
+    *   Batches all `assignRole` and `revokeRole` calls and returns them for execution by the Powers contract.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes configuration.
+-   Fetches the nominee list to generate the input parameter description (UI hint).
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Implements the toggle logic and validation.
+
+### Error Conditions
+
+1.  **Validation Errors**
+    *   "Invalid selection length.": Input array doesn't match nominee count.
+    *   "Must select at least one nominee."
+    *   "Too many selections. Exceeds maxVotes limit."
+    *   "Too many assignments. Would exceed max role holders."
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

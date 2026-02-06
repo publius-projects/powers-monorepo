@@ -105,6 +105,16 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         bytes electionParams;
         bool[] votes;
         uint256[] roleIds;
+        // Added for test_IdeasSubDAO_MembershipAndModeration
+        uint256 amountRoleHolders;
+        address moderator;
+        address applicant;
+        uint16 assignModeratorId;
+        uint16 applyMembershipId;
+        uint16 assignMembershipId;
+        uint16 revokeMembershipId;
+        uint16 revokeModeratorId;
+        bytes appParams;
     }
     Mem mem;
 
@@ -153,8 +163,9 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         vm.prank(mem.digitalSubDAOAddr);
         digitalSubDAO.assignRole(2, cedars); // Assign Role 2 to Cedars AT THE DIGITAL DAO. (so that cedars can act there as convener as well.)
 
-        ///////////////////////////// 
-        // find mandate IDs using findMandateIdInOrg function if needed //
+        /////////////////////////////////////////////////////////////////// 
+        // find mandate IDs using findMandateIdInOrg function if needed  //
+        ///////////////////////////////////////////////////////////////////
         mem.initiateIdeasMandateId = findMandateIdInOrg("Initiate Ideas sub-DAO: Initiate creation of Ideas sub-DAO", primaryDAO);
         mem.createIdeasMandateId = findMandateIdInOrg("Create Ideas sub-DAO: Execute Ideas sub-DAO creation", primaryDAO);
         mem.assignRoleMandateId = findMandateIdInOrg("Assign role Id to DAO: Assign role id 4 (Ideas sub-DAO) to the new DAO", primaryDAO);
@@ -210,15 +221,22 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         console.log("Initiating Ideas sub-DAO...");
         // Propose
         mem.actionId = primaryDAO.propose(mem.initiateIdeasMandateId, mem.params, mem.nonce, "");
+        vm.stopPrank();
 
         // Vote
-        primaryDAO.castVote(mem.actionId, 1); // 1 = For
+        uint256 amountRole1Holders = primaryDAO.getAmountRoleHolders(1);
+        for (uint256 i = 0; i < amountRole1Holders; i++) {
+            address roleHolder = primaryDAO.getRoleHolderAtIndex(1, i);
+            vm.prank(roleHolder);
+            primaryDAO.castVote(mem.actionId, 1); // 1 = For
+        }
 
         // Wait for voting period
         mem.votingPeriod = primaryDAO.getConditions(mem.initiateIdeasMandateId).votingPeriod;
         vm.roll(block.number + mem.votingPeriod + 1);
 
         // Execute (Request)
+        vm.startPrank(mem.admin);
         primaryDAO.request(mem.initiateIdeasMandateId, mem.params, mem.nonce, "");
         vm.stopPrank();
 
@@ -573,7 +591,8 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
     }
 
     function test_JoinPrimeDAO() public {
-        vm.skip(true); // Remove this line to run the test
+        // NB! This test fails because it is indeed impossible at the moment to joint the PRimary DAO! 
+        vm.skip(true); 
         mem.claimStep1Id = findMandateIdInOrg("Request Membership Step 1: 2 POAPS from physical DAO and 20 activity tokens from ideas DAOs needed that are not older than 6 months.", primaryDAO);
         mem.claimStep2Id = findMandateIdInOrg("Request Membership Step 2: 2 POAPS from physical DAO and 20 activity tokens from ideas DAOs needed that are not older than 6 months.", primaryDAO);
 
@@ -584,7 +603,16 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
 
         // Initiate
         mem.actionId = primaryDAO.propose(mem.initiateIdeasMandateId, mem.params, mem.nonce, "");
-        primaryDAO.castVote(mem.actionId, 1);
+        vm.stopPrank();
+
+        uint256 amountRole1Holders = primaryDAO.getAmountRoleHolders(1);
+        for (uint256 i = 0; i < amountRole1Holders; i++) {
+            address roleHolder = primaryDAO.getRoleHolderAtIndex(1, i);
+            vm.prank(roleHolder);
+            primaryDAO.castVote(mem.actionId, 1); // 1 = For
+        }
+
+        vm.startPrank(mem.admin);
         vm.roll(block.number + primaryDAO.getConditions(mem.initiateIdeasMandateId).votingPeriod + 1);
         primaryDAO.request(mem.initiateIdeasMandateId, mem.params, mem.nonce, "");
 
@@ -621,16 +649,16 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         mem.tokenIds = new uint256[](22);
         mem.params = abi.encode(mem.user);
 
-        console.log("Minting 20 Activity tokens for user: %s", mem.user);
-        // Mandate 2: Mint activity token (Public)
-        mem.nonce = 1000;
-        mem.mintActivityId = findMandateIdInOrg("Mint activity token: Anyone can mint an Active Ideas token. One token is available per 5 minutes.", Powers(mem.ideasSubDAOAddress));
-        for (uint256 i = 0; i < 20; i++) {
-            mem.nonce++;
-            mem.nonces[i] = mem.nonce;
-            Powers(mem.ideasSubDAOAddress).request(mem.mintActivityId, mem.params, mem.nonce, "");
-            vm.roll(block.number + deployScript.minutesToBlocks(6, config.BLOCKS_PER_HOUR)); // Advance 6 minutes between mints
-        }
+        // console.log("Minting 20 Activity tokens for user: %s", mem.user);
+        // // Mandate 2: Mint activity token (Public)
+        // mem.nonce = 1000;
+        // mem.mintActivityId = findMandateIdInOrg("Mint activity token: Anyone can mint an Active Ideas token. One token is available per 5 minutes.", Powers(mem.ideasSubDAOAddress));
+        // for (uint256 i = 0; i < 20; i++) {
+        //     mem.nonce++;
+        //     mem.nonces[i] = mem.nonce;
+        //     Powers(mem.ideasSubDAOAddress).request(mem.mintActivityId, mem.params, mem.nonce, "");
+        //     vm.roll(block.number + deployScript.minutesToBlocks(6, config.BLOCKS_PER_HOUR)); // Advance 6 minutes between mints
+        // }
 
         // --- Step 4: Mint 2 POAPs via Mock Physical sub-DAO ---
         console.log("Minting 2 POAPs for user via Mock Physical DAO: %s", mem.user);
@@ -690,15 +718,22 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         console.log("Initiating Ideas sub-DAO...");
         // Propose
         mem.actionId = primaryDAO.propose(mem.initiateIdeasMandateId, mem.params, mem.nonce, "");
+        vm.stopPrank();
 
         // Vote
-        primaryDAO.castVote(mem.actionId, 1); // 1 = For
+        uint256 amountRole1Holders = primaryDAO.getAmountRoleHolders(1); 
+        for (uint256 i = 0; i < amountRole1Holders; i++) {
+            address roleHolder = primaryDAO.getRoleHolderAtIndex(1, i); 
+            vm.prank(roleHolder);
+            primaryDAO.castVote(mem.actionId, 1); // 1 = For
+        }
 
         // Wait for voting period
         mem.votingPeriod = primaryDAO.getConditions(mem.initiateIdeasMandateId).votingPeriod;
         vm.roll(block.number + mem.votingPeriod + 1);
 
         // Execute (Request)
+        vm.startPrank(mem.admin);
         primaryDAO.request(mem.initiateIdeasMandateId, mem.params, mem.nonce, "");
         vm.stopPrank();
 
@@ -770,9 +805,9 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
 
         // 4. Vote (Mandate = voteMandateId)
         console.log("Voting...");
-        mem.votes = new bool[](1);
-        mem.votes[0] = true;
-        mem.params = abi.encode(mem.votes);
+        // mem.votes = new bool[](1);
+        // mem.votes[0] = true;
+        mem.params = abi.encode(true);
 
         Powers(mem.ideasSubDAOAddress).request(uint16(mem.voteMandateId), mem.params, mem.nonce, "");
 
@@ -802,171 +837,135 @@ contract CulturalStewardsDAO_IntegrationTest is Test {
         assertTrue(Powers(mem.ideasSubDAOAddress).hasRoleSince(mem.user, 2) != 0, "User should have Role 2 (Convener)");
     }
 
-    
-    function test_WorkingGroupFlow() public {
-        vm.skip(true); // Remove this line to run the test
-        // --- Step 1: Create Ideas sub-DAO ---
+    function test_IdeasSubDAO_MembershipAndModeration() public {
+        // --- Setup: Create Ideas sub-DAO ---
         vm.startPrank(mem.admin);
         mem.params = abi.encode("Ideas sub-DAO", "ipfs://ideas");
         mem.nonce = 1;
 
         // Initiate
         mem.actionId = primaryDAO.propose(mem.initiateIdeasMandateId, mem.params, mem.nonce, "");
-        primaryDAO.castVote(mem.actionId, 1);
+        vm.stopPrank();
+
+        mem.amountRoleHolders = primaryDAO.getAmountRoleHolders(1);
+        for (uint256 i = 0; i < mem.amountRoleHolders; i++) {
+            mem.member = primaryDAO.getRoleHolderAtIndex(1, i);
+            vm.prank(mem.member);
+            primaryDAO.castVote(mem.actionId, 1);
+        }
+
         vm.roll(block.number + primaryDAO.getConditions(mem.initiateIdeasMandateId).votingPeriod + 1);
+        
+        vm.prank(mem.admin);
         primaryDAO.request(mem.initiateIdeasMandateId, mem.params, mem.nonce, "");
 
         // Create
+        vm.startPrank(mem.admin);
         mem.actionId = primaryDAO.propose(mem.createIdeasMandateId, mem.params, mem.nonce, "");
         primaryDAO.castVote(mem.actionId, 1);
+        
         vm.roll(block.number + primaryDAO.getConditions(mem.createIdeasMandateId).votingPeriod + 1);
+        
         mem.actionId = primaryDAO.request(mem.createIdeasMandateId, mem.params, mem.nonce, "");
-
-        // Get address
         mem.ideasSubDAOAddress = abi.decode(primaryDAO.getActionReturnData(mem.actionId, 0), (address));
         console.log("Ideas sub-DAO created at: %s", mem.ideasSubDAOAddress);
 
-        // Assign Role
+        // Assign Role 4 to the new DAO (in Primary DAO)
         primaryDAO.request(mem.assignRoleMandateId, mem.params, mem.nonce, "");
         vm.stopPrank();
 
-        // --- Step 2: Setup Users ---
-        mem.convener = address(0x200);
-        mem.member = address(0x100);
+        // --- Step 1: Assign Moderator Role & execute setup ---
+        mem.moderator = address(0xCAFE);
+        mem.applicant = address(0xDEAF);
+        Powers(mem.ideasSubDAOAddress).request(1, "", 0, "");
 
-        // Assign Roles in Ideas DAO (Admin is Ideas DAO itself)
-        vm.startPrank(address(mem.ideasSubDAOAddress));
-        Powers(mem.ideasSubDAOAddress).assignRole(2, mem.convener); // Role 2 = Convener
-        Powers(mem.ideasSubDAOAddress).assignRole(1, mem.member);   // Role 1 = Member
-        vm.stopPrank();
+        mem.assignModeratorId = findMandateIdInOrg("Assign Moderator Role: Conveners can assign the Moderator role to an account.", Powers(mem.ideasSubDAOAddress));
+        mem.applyMembershipId = findMandateIdInOrg("Apply for Membership: Anyone can apply for membership to the DAO by submitting an application.", Powers(mem.ideasSubDAOAddress));
+        mem.assignMembershipId = findMandateIdInOrg("Assess and Assign Membership: Moderators can assess applications and assign membership to applicants.", Powers(mem.ideasSubDAOAddress));
+        mem.revokeMembershipId = findMandateIdInOrg("Revoke Membership: Moderators can revoke membership from members.", Powers(mem.ideasSubDAOAddress));
+        mem.revokeModeratorId = findMandateIdInOrg("Revoke Moderator Role: Conveners can revoke the Moderator role from an account.", Powers(mem.ideasSubDAOAddress));
 
-        // --- Step 3: Convener Initiates Request for Physical DAO ---
-        vm.startPrank(mem.convener);
-        mem.params = abi.encode("Physical sub-DAO", "ipfs://physical");
+        mem.params = abi.encode(mem.moderator);
         mem.nonce = 100;
 
-        console.log("Convener initiating request for Physical sub-DAO...");
-        mem.initiateRequestId = findMandateIdInOrg("Initiate request new Physical sub-DAO: Conveners can request creation new Physical sub-DAO.", Powers(mem.ideasSubDAOAddress));
+        vm.startPrank(cedars);
+        console.log("Assigning Moderator...");
         
-        // This is a StatementOfIntent, likely has voting period if defined in script.
-        // Script: votingPeriod = 10 mins, quorum = 51%, succeedAt = 51%.
-        mem.actionId = Powers(mem.ideasSubDAOAddress).propose(mem.initiateRequestId, mem.params, mem.nonce, "");
-        
-        // Vote
-        Powers(mem.ideasSubDAOAddress).castVote(mem.actionId, 1);
-
-        // Wait
-        mem.votingPeriod = Powers(mem.ideasSubDAOAddress).getConditions(mem.initiateRequestId).votingPeriod;
-        vm.roll(block.number + mem.votingPeriod + 1);
-
-        // Execute
-        Powers(mem.ideasSubDAOAddress).request(mem.initiateRequestId, mem.params, mem.nonce, "");
-        vm.stopPrank();
-
-        // --- Step 4: Convener Creates Working Group ---
-        vm.startPrank(mem.convener);
-        mem.nonce++;
-        console.log("Convener creating Working Group...");
-
-        mem.createWGId = findMandateIdInOrg("Create new Working group: Conveners can create new Working group.", Powers(mem.ideasSubDAOAddress));
-        
-        // Prepare Role IDs for the new mandates
-        mem.roleIds = new uint256[](2);
-        mem.roleIds[0] = 2;
-        mem.roleIds[1] = 1;
-        mem.params = abi.encode(mem.roleIds);
-
-        // This is Mandates_Prepackaged. 
-        // Script: votingPeriod = 5 mins, quorum = 51%.
-        mem.actionId = Powers(mem.ideasSubDAOAddress).propose(mem.createWGId, mem.params, mem.nonce, "");
+        mem.actionId = Powers(mem.ideasSubDAOAddress).propose(mem.assignModeratorId, mem.params, mem.nonce, "");
         Powers(mem.ideasSubDAOAddress).castVote(mem.actionId, 1);
         
-        mem.votingPeriod = Powers(mem.ideasSubDAOAddress).getConditions(mem.createWGId).votingPeriod;
+        mem.votingPeriod = Powers(mem.ideasSubDAOAddress).getConditions(mem.assignModeratorId).votingPeriod;
         vm.roll(block.number + mem.votingPeriod + 1);
-
-        Powers(mem.ideasSubDAOAddress).request(mem.createWGId, mem.params, mem.nonce, "");
+        
+        Powers(mem.ideasSubDAOAddress).request(mem.assignModeratorId, mem.params, mem.nonce, "");
         vm.stopPrank();
 
-        // --- Step 5: Member Starts WG Election ---
-        vm.startPrank(mem.member);
+        assertTrue(Powers(mem.ideasSubDAOAddress).hasRoleSince(mem.moderator, 3) > 0, "Moderator should have Role 3");
+
+        // --- Step 2: Apply and Assign Membership ---
+        mem.appParams = abi.encode(mem.applicant, "ipfs://application");
         mem.nonce++;
-        console.log("Member starting WG Election...");
-
-        // Find new mandate ID for "Create an WG election"
-        mem.createWGElectionId = findMandateIdInOrg("Create an WG election: an election can be initiated be any member.", Powers(mem.ideasSubDAOAddress));
         
-        mem.startBlock = uint48(block.number + 50);
-        mem.endBlock = uint48(block.number + 100);
-        mem.electionParams = abi.encode("WG Election", mem.startBlock, mem.endBlock);
-
-        Powers(mem.ideasSubDAOAddress).request(mem.createWGElectionId, mem.electionParams, mem.nonce, "");
-
-        // --- Step 6: Nominate ---
-        console.log("Nominating...");
-        mem.nominateId = findMandateIdInOrg("Nominate for WG election: any member can nominate for an election.", Powers(mem.ideasSubDAOAddress));
-        Powers(mem.ideasSubDAOAddress).request(mem.nominateId, mem.electionParams, mem.nonce, "");
-
-        // --- Step 7: Open Vote ---
-        console.log("Opening Vote...");
-        vm.roll(mem.startBlock + 1);
-        mem.openVoteId = findMandateIdInOrg("Open voting for WG election: Members can open the vote for an election. This will create a dedicated vote mandate.", Powers(mem.ideasSubDAOAddress));
-        mem.actionId = Powers(mem.ideasSubDAOAddress).request(mem.openVoteId, mem.electionParams, mem.nonce, "");
-
-        mem.returnData = Powers(mem.ideasSubDAOAddress).getActionReturnData(mem.actionId, 0);
-        mem.voteMandateId = abi.decode(mem.returnData, (uint256));
-        console.log("WG Vote Mandate ID: %s", mem.voteMandateId);
-
-        // --- Step 8: Vote ---
-        console.log("Voting...");
-        mem.votes = new bool[](1);
-        mem.votes[0] = true;
-        mem.params = abi.encode(mem.votes);
-        Powers(mem.ideasSubDAOAddress).request(uint16(mem.voteMandateId), mem.params, mem.nonce, "");
-
-        // --- Step 9: Tally ---
-        console.log("Tallying...");
-        vm.roll(mem.endBlock + 1);
-        mem.tallyId = findMandateIdInOrg("Tally elections: After an election has finished, assign the Convener role to the winners.", Powers(mem.ideasSubDAOAddress));
-        Powers(mem.ideasSubDAOAddress).request(mem.tallyId, mem.electionParams, mem.nonce, "");
-
-        // Verify Member now has Role 2
-        assertTrue(Powers(mem.ideasSubDAOAddress).hasRoleSince(mem.member, 2) != 0, "Member should have gained Role 2 (Convener)");
+        vm.startPrank(mem.applicant);
+        console.log("Applying for Membership...");
+        Powers(mem.ideasSubDAOAddress).request(mem.applyMembershipId, mem.appParams, mem.nonce, "");
         vm.stopPrank();
 
-        // --- Step 10: New Convener Requests Physical DAO ---
-        vm.startPrank(mem.member); // Now a convener
+        vm.startPrank(mem.moderator);
+        console.log("Assigning Membership...");
+        Powers(mem.ideasSubDAOAddress).request(mem.assignMembershipId, mem.appParams, mem.nonce, "");
+        vm.stopPrank();
+
+        assertTrue(Powers(mem.ideasSubDAOAddress).hasRoleSince(mem.applicant, 1) > 0, "Applicant should have Role 1 (Member)");
+
+        // --- Step 3: Revoke Membership ---
         mem.nonce++;
-        console.log("New Convener requesting Physical sub-DAO...");
-
-        mem.initiatePhysicalId = findMandateIdInOrg("Initiate request new Physical sub-DAO: Conveners can request creation new Physical sub-DAO.", Powers(mem.ideasSubDAOAddress));
-        mem.requestPhysicalId = findMandateIdInOrg("Request new Physical sub-DAO: Working group members can request creation new Physical sub-DAO.", Powers(mem.ideasSubDAOAddress));
+        mem.revokeParams = abi.encode(mem.applicant);
         
-        // step 1: conveners initiate the request to create Physical sub-DAO 
-        mem.params = abi.encode("Physical sub-DAO", "ipfs://physical");
-        
-
-        // step 2: WG members complete the request the Physical sub-DAO creation
-
-        
-        Powers(mem.ideasSubDAOAddress).request(mem.requestPhysicalId, mem.params, mem.nonce, "");
-        vm.stopPrank();
-
-
-        vm.startPrank(mem.admin); // Primary DAO Exec
-        mem.nonce = 200;
-        console.log("Primary DAO executing Create Physical sub-DAO...");
-        
-        // Propose
-        mem.actionId = primaryDAO.propose(mem.createPhysicalId, mem.params, mem.nonce, "");
-        primaryDAO.castVote(mem.actionId, 1);
-        
-        vm.roll(block.number + primaryDAO.getConditions(mem.createPhysicalId).votingPeriod + 1);
-        
-        // This request will revert if Mandate 11 was not fulfilled.
-        primaryDAO.request(mem.createPhysicalId, mem.params, mem.nonce, "");
+        vm.startPrank(mem.moderator);
+        console.log("Revoking Membership...");
+        mem.actionId = Powers(mem.ideasSubDAOAddress).propose(mem.revokeMembershipId, mem.revokeParams, mem.nonce, "");
         vm.stopPrank();
         
-        console.log("Physical sub-DAO successfully created via WG flow!");
+        mem.amountRoleHolders = Powers(mem.ideasSubDAOAddress).getAmountRoleHolders(3);
+        for (uint256 i = 0; i < mem.amountRoleHolders; i++) {
+            mem.member = Powers(mem.ideasSubDAOAddress).getRoleHolderAtIndex(3, i);
+            vm.prank(mem.member);
+            Powers(mem.ideasSubDAOAddress).castVote(mem.actionId, 1);
+        }
+        
+        mem.votingPeriod = Powers(mem.ideasSubDAOAddress).getConditions(mem.revokeMembershipId).votingPeriod;
+        mem.timelock = Powers(mem.ideasSubDAOAddress).getConditions(mem.revokeMembershipId).timelock;
+        vm.roll(block.number + mem.votingPeriod + mem.timelock + 1);
+        
+        vm.prank(mem.moderator);
+        Powers(mem.ideasSubDAOAddress).request(mem.revokeMembershipId, mem.revokeParams, mem.nonce, "");
+ 
+        assertTrue(Powers(mem.ideasSubDAOAddress).hasRoleSince(mem.applicant, 1) == 0, "Applicant should NOT have Role 1 anymore");
+
+        // --- Step 4: Revoke Moderator ---
+        mem.nonce++;
+        mem.revokeParams = abi.encode(mem.moderator);
+        
+        vm.startPrank(cedars);
+        console.log("Revoking Moderator...");
+        mem.actionId = Powers(mem.ideasSubDAOAddress).propose(mem.revokeModeratorId, mem.revokeParams, mem.nonce, "");
+        vm.stopPrank();
+
+        mem.amountRoleHolders = Powers(mem.ideasSubDAOAddress).getAmountRoleHolders(2);
+        for (uint256 i = 0; i < mem.amountRoleHolders; i++) {
+            mem.member = Powers(mem.ideasSubDAOAddress).getRoleHolderAtIndex(2, i);
+            vm.prank(mem.member);
+            Powers(mem.ideasSubDAOAddress).castVote(mem.actionId, 1);
+        }
+        
+        mem.votingPeriod = Powers(mem.ideasSubDAOAddress).getConditions(mem.revokeModeratorId).votingPeriod;
+        vm.roll(block.number + mem.votingPeriod + 1);
+        
+        vm.prank(cedars);
+        Powers(mem.ideasSubDAOAddress).request(mem.revokeModeratorId, mem.revokeParams, mem.nonce, "");
+ 
+        assertTrue(Powers(mem.ideasSubDAOAddress).hasRoleSince(mem.moderator, 3) == 0, "Moderator should NOT have Role 3 anymore");
     }
 
     //////////////////////////////////////////////////////////////////////////////////

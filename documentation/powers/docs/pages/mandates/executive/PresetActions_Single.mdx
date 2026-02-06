@@ -1,0 +1,54 @@
+# PresetActions_Single
+
+PresetActions_Single is an executive mandate that executes a predefined set of actions unconditionally.
+
+## Overview
+
+This mandate acts as a trigger for a specific, hardcoded sequence of events. When executed, it sends a pre-configured set of calls to pre-configured targets. This is ideal for routine maintenance tasks, standard operating procedures, or any action where the details are fixed and only the authorization to proceed is needed.
+
+## Configuration
+
+When adopting a PresetActions_Single instance, the following parameters are required:
+
+1.  `targets` (address[]): An array of target contracts to call.
+2.  `values` (uint256[]): An array of ETH values to send.
+3.  `calldatas` (bytes[]): An array of encoded function calls.
+
+All arrays must be of equal length.
+
+## Usage
+
+### Proposing an Action
+
+This mandate does not require any input parameters. When called, it unconditionally executes the configured actions.
+
+### Execution Flow
+
+1.  **Retrieval**
+    *   Retrieves the stored `targets`, `values`, and `calldatas` from the configuration.
+
+2.  **Execution**
+    *   Returns the batch of calls directly to the Powers contract for execution.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the action arrays.
+-   Sets input parameters to empty.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Returns the preset actions.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

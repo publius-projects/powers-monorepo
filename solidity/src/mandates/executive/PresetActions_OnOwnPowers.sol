@@ -17,8 +17,7 @@ import { MandateUtilities } from "../../libraries/MandateUtilities.sol";
 contract PresetActions_OnOwnPowers is Mandate {
     struct Mem {
         uint256 i;
-        uint256 j;
-        bytes4[] functionSelectors;
+        uint256 j; 
         bytes[] callDatas;
         uint256[] valuesConfig;
         bytes[] calldatasConfig;
@@ -28,31 +27,13 @@ contract PresetActions_OnOwnPowers is Mandate {
 
     /// @notice Constructor of the PresetActions_Multiple mandate
     constructor() {
-        bytes memory configParams =
-            abi.encode("bytes4 FunctionSelectors[]", "bytes[] callDatas[]");
+        bytes memory configParams = abi.encode("bytes[] callDatas[]");
         emit Mandate__Deployed(configParams);
     }
-
-    function initializeMandate(
-        uint16 index,
-        string memory nameDescription,
-        bytes memory inputParams,
-        bytes memory config
-    ) public override {
-        // quick validation of config
-        Mem memory mem;
-        (mem.functionSelectors, mem.callDatas) = abi.decode(config, (bytes4[], bytes[]));
-        if (mem.functionSelectors.length != mem.callDatas.length) {
-            revert ("PresetActions_OnOwnPowers: invalid Config");
-        }
  
-        super.initializeMandate(index, nameDescription, inputParams, config);
-    }
-
     /// @notice Execute the mandate by executing selected preset actions
     function handleRequest(
-        address,
-        /*caller*/
+        address, /*caller*/
         address powers,
         uint16 mandateId,
         bytes memory mandateCalldata,
@@ -65,7 +46,7 @@ contract PresetActions_OnOwnPowers is Mandate {
     {
         Mem memory mem;
         actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
-        (mem.functionSelectors, mem.callDatas) = abi.decode(getConfig(powers, mandateId), (bytes4[], bytes[]));
+        (mem.callDatas) = abi.decode(getConfig(powers, mandateId), (bytes[]));
 
         (targets, values, calldatas) = MandateUtilities.createEmptyArrays(mem.callDatas.length);
 

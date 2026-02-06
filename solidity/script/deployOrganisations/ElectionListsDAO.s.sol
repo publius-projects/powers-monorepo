@@ -71,6 +71,7 @@ contract ElectionListsDAO is DeploySetup {
     }
 
     function createConstitution() internal returns (uint256 constitutionLength) {
+        uint16 mandateCount = 0;
         // Mandate 1: Initial Setup
         targets = new address[](3);
         values = new uint256[](3);
@@ -80,8 +81,9 @@ contract ElectionListsDAO is DeploySetup {
         }
         calldatas[0] = abi.encodeWithSelector(IPowers.labelRole.selector, 1, "Voters");
         calldatas[1] = abi.encodeWithSelector(IPowers.labelRole.selector, 2, "Delegates");
-        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, 1); // revoke mandate 1 after use.
+        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1); // revoke mandate 1 after use.
 
+        mandateCount++;
         conditions.allowedRole = 0; // = admin.
         constitution.push(
             PowersTypes.MandateInitData({
@@ -93,41 +95,56 @@ contract ElectionListsDAO is DeploySetup {
         );
         delete conditions;
 
-        // Mandate 2: Nominate for Delegates
-        conditions.allowedRole = 1; // = Voters
-        constitution.push(
-            PowersTypes.MandateInitData({
-                nameDescription: "Nominate for Delegates: Members can nominate themselves for the Token Delegate role.",
-                targetMandate: initialisePowers.getInitialisedAddress("Nominate"),
-                config: abi.encode(address(openElection)),
-                conditions: conditions
-            })
-        );
-        delete conditions;
+        // ELECT DELEGATES //
+        string[] memory inputParams = new string[](3);
+        inputParams[0] = "string Title";
+        inputParams[1] = "uint48 StartBlock";
+        inputParams[2] = "uint48 EndBlock";
 
-        // Mandate 3: Start an election
+        // Members: create election
+        mandateCount++;
         conditions.allowedRole = 1; // = Voters
+        conditions.throttleExecution = minutesToBlocks(120, config.BLOCKS_PER_HOUR); // = once every 2 hours
         constitution.push(
             PowersTypes.MandateInitData({
-                nameDescription: "Start an election: an election can be initiated be voters once every 2 hours. The election will last 10 minutes.",
-                targetMandate: initialisePowers.getInitialisedAddress("ElectionList_Create"),
+                nameDescription: "Create an election: an election can be initiated be any voter.",
+                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_Simple"),
                 config: abi.encode(
-                    address(openElection),
-                    initialisePowers.getInitialisedAddress("ElectionList_Vote"), // Vote mandate address
-                    minutesToBlocks(10, config.BLOCKS_PER_HOUR), // 10 minutes in blocks (approx)
-                    1 // Voter role id
+                    address(openElection), // election list contract
+                    ElectionList.createElection.selector, // selector
+                    inputParams
                 ),
                 conditions: conditions
             })
         );
         delete conditions;
 
-        // Mandate 4: End and Tally elections
+        // Members: Open Vote for election
+        mandateCount++;
         conditions.allowedRole = 1; // = Voters
-        conditions.needFulfilled = 3; // = Mandate 3 (Start election)
+        conditions.needFulfilled = mandateCount - 1; // = Create election
         constitution.push(
             PowersTypes.MandateInitData({
-                nameDescription: "End and Tally elections: After an election has finished, assign the Delegate role to the winners.",
+                nameDescription: "Open voting for election: Voters can open the vote for an election. This will create a dedicated vote mandate.",
+                targetMandate: initialisePowers.getInitialisedAddress("ElectionList_CreateVoteMandate"),
+                config: abi.encode(
+                    address(openElection), // election list contract
+                    initialisePowers.getInitialisedAddress("ElectionList_Vote"), // the vote mandate address
+                    1, // the max number of votes a voter can cast
+                    1 // the role Id allowed to vote (Voters)
+                ),
+                conditions: conditions
+            })
+        );
+        delete conditions;
+
+        // Members: Tally election
+        mandateCount++;
+        conditions.allowedRole = 1; // = Voters
+        conditions.needFulfilled = mandateCount - 1; // = Open Vote election
+        constitution.push(
+            PowersTypes.MandateInitData({
+                nameDescription: "Tally elections: After an election has finished, assign the Delegate role to the winners.",
                 targetMandate: initialisePowers.getInitialisedAddress("ElectionList_Tally"),
                 config: abi.encode(
                     address(openElection),
@@ -139,11 +156,65 @@ contract ElectionListsDAO is DeploySetup {
         );
         delete conditions;
 
-        // Mandate 5: Admin assign role
+        // Members: clean up election
+        mandateCount++;
+        conditions.allowedRole = 1; // = Voters
+        conditions.needFulfilled = mandateCount - 1; // = Tally election
+        constitution.push(
+            PowersTypes.MandateInitData({
+                nameDescription: "Clean up election: After an election has finished, clean up related mandates.",
+                targetMandate: initialisePowers.getInitialisedAddress("BespokeAction_OnReturnValue"),
+                config: abi.encode(
+                    address(powers), // target contract
+                    IPowers.revokeMandate.selector, // function selector to call
+                    abi.encode(), // params before
+                    inputParams, // dynamic params (the input params of the parent mandate)
+                    mandateCount - 2, // parent mandate id (the open vote mandate)
+                    abi.encode() // no params after
+                ),
+                conditions: conditions
+            })
+        );
+        delete conditions;
+
+        // Members: Nominate for Delegate election
+        mandateCount++;
+        conditions.allowedRole = 1; // = Voters
+        constitution.push(
+            PowersTypes.MandateInitData({
+                nameDescription: "Nominate for election: any voter can nominate for an election.",
+                targetMandate: initialisePowers.getInitialisedAddress("ElectionList_Nominate"),
+                config: abi.encode(
+                    address(openElection), // election list contract
+                    true // nominate as candidate
+                ),
+                conditions: conditions
+            })
+        );
+        delete conditions;
+
+        // Members revoke nomination for Delegate election.
+        mandateCount++;
+        conditions.allowedRole = 1; // = Voters
+        constitution.push(
+            PowersTypes.MandateInitData({
+                nameDescription: "Revoke nomination for election: any voter can revoke their nomination for an election.",
+                targetMandate: initialisePowers.getInitialisedAddress("ElectionList_Nominate"),
+                config: abi.encode(
+                    address(openElection), // election list contract
+                    false // revoke nomination
+                ),
+                conditions: conditions
+            })
+        );
+        delete conditions;
+
+        // Mandate: Admin assign role
         dynamicParams = new string[](2);
         dynamicParams[0] = "uint256 roleId";
         dynamicParams[1] = "address account";
 
+        mandateCount++;
         conditions.allowedRole = 0; // = Admin
         constitution.push(
             PowersTypes.MandateInitData({
@@ -155,9 +226,12 @@ contract ElectionListsDAO is DeploySetup {
         );
         delete conditions;
 
-        // Mandate 6: Delegate revoke role
+        // Mandate: Delegate revoke role
+        // Note: TS file says "A delegate can revoke..." but allowedRole is 2 (Funders).
+        // Transposing the value allowedRole = 2.
+        mandateCount++;
         conditions.allowedRole = 2; // = Delegates
-        conditions.needFulfilled = 5; // = Mandate 5 (Admin assign role)
+        conditions.needFulfilled = mandateCount - 1; // = Mandate Admin assign role
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "A delegate can revoke a role: For this demo, any delegate can revoke previously assigned roles.",

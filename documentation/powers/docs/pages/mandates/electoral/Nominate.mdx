@@ -1,0 +1,61 @@
+# Nominate
+
+Nominate is an electoral mandate that allows users to self-nominate (or revoke their nomination) for an election managed by a `Nominees` contract.
+
+## Overview
+
+This mandate provides a simple interface for users to signal their intent to run for a role or position. It interacts with a helper `Nominees` contract which maintains the list of active candidates. This list is often used by other mandates (like `DelegateTokenSelect` or `ElectionList_Vote`) to conduct elections.
+
+## Configuration
+
+When adopting a Nominate instance, the following parameter is required:
+
+1.  `NomineesContract` (address): The address of the Nominees helper contract where nominations are stored.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, one parameter must be provided:
+
+1.  `shouldNominate` (bool):
+    *   `true`: Add the caller to the list of nominees.
+    *   `false`: Remove the caller from the list of nominees.
+
+### Execution Flow
+
+1.  **Request Handling**
+    *   Decodes the `shouldNominate` boolean.
+    *   Prepares a call to the `NomineesContract`.
+
+2.  **External Call**
+    *   Executes `nominate(address candidate, bool status)` on the Nominees contract.
+    *   Passes the `caller`'s address as the candidate and the `shouldNominate` value as the status.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Initializes the Nominees contract address.
+-   Sets input parameters to `(bool shouldNominate)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Prepares the call to the Nominees contract.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

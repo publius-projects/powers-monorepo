@@ -50,7 +50,7 @@ export function DynamicInput({dataType, varName, values, onChange, index}: Input
     const currentInput = parseInput(event, dataType)
     if (currentInput == 'Incorrect input data') {
       setError({error: currentInput}) 
-    } else if(typeof onChange === 'function'){
+    } else if(typeof onChange === 'function') {
       setError({error: "no error"})
       const currentArray = [...inputArray] // Create a copy to avoid mutating state
       if (array) {  
@@ -123,10 +123,12 @@ export function DynamicInput({dataType, varName, values, onChange, index}: Input
             inputType == "number" ? 
               <div className="w-full flex text-xs items-center rounded-md bg-white pl-2 outline outline-1 outline-gray-300">  
                 <input 
-                  type="number" 
+                  type="text" 
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   name={`input${item}`} 
                   id={`input${item}`}
-                  value = {inputArray[item] ? Number(inputArray[item]) : 0}
+                  value = {inputArray[item] ? inputArray[item].toString() : "0"}
                   className="w-full h-8 pe-2 text-xs font-mono text-slate-500 placeholder:text-gray-400 focus:outline focus:outline-0" 
                   placeholder={`Enter ${dataType.replace(/[\[\]']+/g, '')} value here.`}
                   onChange={(event) => handleChange({event, item})}

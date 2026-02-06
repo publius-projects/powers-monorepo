@@ -1,0 +1,67 @@
+# ElectionList_Tally
+
+ElectionList_Tally is an integration mandate that concludes an election, calculates the winners, and updates the role assignments accordingly.
+
+## Overview
+
+This mandate is the final step in the PowerLabs election lifecycle. Once an election period has ended, this mandate can be called to:
+1.  Verify that the election is officially closed.
+2.  Retrieve the ranked list of nominees from the `ElectionList` contract based on votes cast.
+3.  Revoke the role from all current holders (effectively clearing the slate).
+4.  Assign the role to the top *N* candidates from the election, where *N* is the configured maximum.
+
+## Configuration
+
+When adopting an ElectionList_Tally instance, the following parameters are required:
+
+1.  `electionContract` (address): The address of the ElectionList helper contract.
+2.  `RoleId` (uint256): The role ID to be updated based on the election results.
+3.  `MaxRoleHolders` (uint256): The maximum number of winners to elect (the top candidates).
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the inputs must identify the specific election to tally:
+
+1.  `Title` (string): The title of the election.
+2.  `StartBlock` (uint48): The start block of the election.
+3.  `EndBlock` (uint48): The end block of the election.
+
+### Execution Flow
+
+1.  **Verification**
+    *   Computes the unique `electionId`.
+    *   Checks the `ElectionList` contract to ensure the election is closed (current block > `EndBlock`). Reverts if the election is still ongoing.
+
+2.  **Tallying**
+    *   Retrieves the nominee ranking from the ElectionList.
+    *   Selects the top candidates up to `MaxRoleHolders`.
+
+3.  **Role Updates**
+    *   Generates `revokeRole` calls for all existing role holders.
+    *   Generates `assignRole` calls for the newly elected candidates.
+    *   Returns the batch of updates for execution.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the tally configuration.
+-   Sets input parameters to `(string Title, uint48 StartBlock, uint48 EndBlock)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Performs the validation, tallying, and state transition logic.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

@@ -1,0 +1,81 @@
+# RevokeInactiveAccounts
+
+RevokeInactiveAccounts is an electoral mandate that automatically revokes a role from accounts that have not participated in recent governance actions.
+
+## Overview
+
+This mandate enforces participation requirements for role holders. It analyzes the recent activity of a specific role by:
+1.  Identifying all mandates that are restricted to that role.
+2.  Sampling a configurable number of recent actions executed via those mandates.
+3.  Checking if each role holder participated in those actions (either by initiating the action or voting on it).
+4.  Revoking the role from any account that fails to meet a minimum participation threshold.
+
+This ensures that governance roles are held by active and engaged members.
+
+## Configuration
+
+When adopting a RevokeInactiveAccounts instance, the following parameters are required:
+
+1.  `RoleId` (uint256): The role ID to monitor and potentially revoke.
+2.  `minimumActionsNeeded` (uint256): The minimum number of actions an account must have participated in (within the sample window) to keep their role.
+3.  `numberActionsToCheck` (uint256): The total number of recent actions to sample and check participation against.
+
+## Usage
+
+### Proposing an Action
+
+This mandate does not require any input parameters. When called, it automatically performs the activity check and revocation logic.
+
+### Execution Flow
+
+1.  **Scope Definition**
+    *   Scans the Powers contract to find all mandates where `allowedRole` matches the configured `RoleId`.
+    *   Calculates the total number of actions available across these relevant mandates.
+
+2.  **Sampling**
+    *   Selects a sample of `numberActionsToCheck` recent actions from the relevant mandates.
+    *   Prioritizes the most recent actions.
+
+3.  **Activity Verification**
+    *   Iterates through every current holder of the `RoleId`.
+    *   For each holder, checks if they participated in the sampled actions. Participation counts if:
+        *   They were the `caller` who initiated the action.
+        *   They voted on the action (if voting tracking is available/applicable).
+
+4.  **Revocation**
+    *   Compares each holder's participation count against `minimumActionsNeeded`.
+    *   Generates a `revokeRole` call for any account that falls below the threshold.
+    *   Returns the batch of revocation calls for execution.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Initializes the configuration parameters.
+-   Sets input parameters to empty (none required).
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Performs the complex logic of finding mandates, sampling actions, checking participation, and determining revocations.
+
+### Error Conditions
+
+1.  **No Action**
+    *   If no accounts are found to be inactive (or if there are no role holders), the mandate returns empty arrays.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

@@ -1,0 +1,58 @@
+# BespokeAction_Advanced
+
+BespokeAction_Advanced is an executive mandate that enables the execution of a custom function call on a target contract, allowing for complex parameter composition.
+
+## Overview
+
+This mandate is designed for situations where a function call requires a mix of static parameters (pre-defined at deployment) and dynamic parameters (provided by the user at execution time). It allows you to "sandwich" the user's input between two blocks of static data.
+
+## Configuration
+
+When adopting a BespokeAction_Advanced instance, the following parameters are required:
+
+1.  `TargetContract` (address): The address of the contract to call.
+2.  `TargetFunction` (bytes4): The function selector (first 4 bytes of the hash) of the function to call.
+3.  `staticParamsBefore` (bytes): Encoded data to place *before* the user's input.
+4.  `dynamicParams` (string[]): UI hints describing the dynamic parameters the user should provide.
+5.  `staticParamsAfter` (bytes): Encoded data to place *after* the user's input.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, the input (provided as `mandateCalldata`) represents the dynamic parameters.
+
+### Execution Flow
+
+1.  **Parameter Assembly**
+    *   The mandate concatenates the components in this order:
+        1.  `TargetFunction` (Selector)
+        2.  `staticParamsBefore`
+        3.  `mandateCalldata` (User input)
+        4.  `staticParamsAfter`
+
+2.  **Execution**
+    *   Calls the `TargetContract` with the assembled data.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes the contract, selector, and parameter blocks.
+-   Sets input parameters to the provided `dynamicParams`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view override returns (...)
+```
+-   Performs the concatenation: `abi.encodePacked(targetFunction, staticParamsBefore, mandateCalldata, staticParamsAfter)`.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

@@ -45,6 +45,9 @@ import { BespokeAction_Simple } from "@src/mandates/executive/BespokeAction_Simp
 import { PowersAction_Simple } from "@src/mandates/executive/PowersAction_Simple.sol";
 import { PowersAction_Flexible } from "@src/mandates/executive/PowersAction_Flexible.sol";
 import { Mandates_Prepackaged } from "@src/mandates/executive/Mandates_Prepackaged.sol";
+import { PresetActions_OnOwnPowers } from "@src/mandates/executive/PresetActions_OnOwnPowers.sol";
+import { BespokeAction_OnOwnPowers_Advanced } from "@src/mandates/executive/BespokeAction_OnOwnPowers_Advanced.sol";
+import { BespokeAction_OnOwnPowers_OnReturnValue } from "@src/mandates/executive/BespokeAction_OnOwnPowers_OnReturnValue.sol";
 
 // Integration Mandates
 import { Governor_CreateProposal } from "@src/mandates/integrations/Governor_CreateProposal.sol";
@@ -69,9 +72,6 @@ import { ElectionList_CleanUpVoteMandate } from "@src/mandates/integrations/Elec
 import { ElectionList } from "@src/helpers/ElectionList.sol";
 import { Erc20Taxed } from "@mocks/Erc20Taxed.sol"; // though technically not a singleton, deployed here for convenience.
 import { OnchainIdRegistryMock, IdentityRegistryMock, ComplianceRegistryMock, RwaMock } from "@mocks/RwaMock.sol";
-
-// Mandate packages 
-import { CulturalStewards_PaymentSequence } from "@src/packaged-mandates/CulturalStewards_PaymentSequence.sol";
 
 /// @title InitialisePowers
 /// @notice Deploys all library and mandate contracts deterministically using CREATE2
@@ -106,8 +106,6 @@ contract InitialisePowers is Script {
         helperConfig = new Configurations();
         config = helperConfig.getConfig();
         outputJson = deployAndRecordMandates(config);
-
-        deployMandatePackages(config); // Deploy mandate packages after individual mandates
 
         string memory finalJson = vm.serializeString(obj1, "mandates", outputJson);
 
@@ -260,6 +258,18 @@ contract InitialisePowers is Script {
         creationCodes.push(type(Mandates_Prepackaged).creationCode);
         constructorArgs.push(abi.encode("Mandates_Prepackaged"));
 
+        names.push("PresetActions_OnOwnPowers");
+        creationCodes.push(type(PresetActions_OnOwnPowers).creationCode);
+        constructorArgs.push(abi.encode("PresetActions_OnOwnPowers"));
+
+        names.push("BespokeAction_OnOwnPowers_Advanced");
+        creationCodes.push(type(BespokeAction_OnOwnPowers_Advanced).creationCode);
+        constructorArgs.push(abi.encode("BespokeAction_OnOwnPowers_Advanced"));
+
+        names.push("BespokeAction_OnOwnPowers_OnReturnValue");
+        creationCodes.push(type(BespokeAction_OnOwnPowers_OnReturnValue).creationCode);
+        constructorArgs.push(abi.encode("BespokeAction_OnOwnPowers_OnReturnValue"));
+
         //////////////////////////////////////////////////////////////////////////
         //                      Integrations Mandates                           //
         //////////////////////////////////////////////////////////////////////////
@@ -363,33 +373,6 @@ contract InitialisePowers is Script {
         outputJson = vm.serializeUint(obj2, "chainId", uint256(block.chainid));
     }
 
-    
-
-    //////////////////////////////////////////////////////////////////////////
-    //                    DEPLOYING MANDATE PACKAGES                        //
-    //////////////////////////////////////////////////////////////////////////
-    function deployMandatePackages(Configurations.NetworkConfig memory config_) internal {
-        address[] memory _mandateAddresses; // to be filled with the addresses of mandates included in the package.
-        
-        // CulturalStewards_PaymentSequence
-        _mandateAddresses = new address[](2);
-        _mandateAddresses[0] = getInitialisedAddress("SafeAllowance_Transfer");
-        _mandateAddresses[1] = getInitialisedAddress("StatementOfIntent");
-
-        namePackages.push("CulturalStewards_PaymentSequence");
-        creationCodesPackages.push(type(CulturalStewards_PaymentSequence).creationCode);
-        constructorArgsPackages.push(abi.encode(_mandateAddresses, config_));
-        delete _mandateAddresses;
-
-        //////////////////////////////////////////////////////////////////////////
-        //                          DEPLOY SEQUENCE                             //
-        //////////////////////////////////////////////////////////////////////////
-        for (uint256 i = 0; i < namePackages.length; i++) {
-            address packageAddr = deploy(creationCodesPackages[i], constructorArgsPackages[i]);
-            addressPackages.push(packageAddr); 
-        }
-    }
-
     /// @dev Deploys a mandate using CREATE2. Salt is derived from constructor arguments.
     function deploy(bytes memory creationCode, bytes memory constructorArg) internal returns (address) {
         bytes32 salt = bytes32(abi.encodePacked(constructorArg));
@@ -434,19 +417,5 @@ contract InitialisePowers is Script {
             }
         }
         return address(0);
-    }
-
-    function getInitialisedPackageAddress(string memory packageName) external view returns (address) {
-        bytes32 packageHash = keccak256(abi.encodePacked(packageName));
-        console2.log("Searching for package:", packageName);
-        console2.log("Total packages:", namePackages.length);
-        for (uint256 i = 0; i < namePackages.length; i++) {
-            bytes32 nameHash = keccak256(abi.encodePacked(namePackages[i]));
-            console2.log("Checking package:", namePackages[i]);
-            if (nameHash == packageHash) {
-                return addressPackages[i];
-            }
-        }
-        revert("Package not found");
     }
 }

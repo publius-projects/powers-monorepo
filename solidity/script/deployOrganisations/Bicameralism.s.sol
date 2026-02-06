@@ -64,6 +64,7 @@ contract Bicameralism is DeploySetup {
     }
 
     function createConstitution() internal returns (uint256 constitutionLength) {
+        uint16 mandateCount = 0;
         // Mandate 1: Initial Setup
         targets = new address[](3);
         values = new uint256[](3);
@@ -73,8 +74,9 @@ contract Bicameralism is DeploySetup {
         }
         calldatas[0] = abi.encodeWithSelector(IPowers.labelRole.selector, 1, "Delegates");
         calldatas[1] = abi.encodeWithSelector(IPowers.labelRole.selector, 2, "Funders");
-        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, 1); // revoke mandate 1 after use.
+        calldatas[2] = abi.encodeWithSelector(IPowers.revokeMandate.selector, mandateCount + 1); // revoke mandate 1 after use.
 
+        mandateCount++;
         conditions.allowedRole = 0; // = admin.
         constitution.push(
             PowersTypes.MandateInitData({
@@ -88,10 +90,11 @@ contract Bicameralism is DeploySetup {
 
         // Mandate 2: Initiate action (StatementOfIntent)
         inputParams = new string[](3);
-        inputParams[0] = "targets address[]";
-        inputParams[1] = "values uint256[]";
-        inputParams[2] = "calldatas bytes[]";
+        inputParams[0] = "address[] targets";
+        inputParams[1] = "uint256[] values";
+        inputParams[2] = "bytes[] calldatas";
 
+        mandateCount++;
         conditions.allowedRole = 1; // = Delegates
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR); // = 5 minutes approx (depends on block time, 300 is ~5 mins on 1s chain, 1h on 12s)
         conditions.succeedAt = 51; // = 51% majority
@@ -107,10 +110,11 @@ contract Bicameralism is DeploySetup {
         delete conditions;
 
         // Mandate 3: Execute action (OpenAction)
+        mandateCount++;
         conditions.allowedRole = 2; // = Funders
         conditions.votingPeriod = minutesToBlocks(5, config.BLOCKS_PER_HOUR);
         conditions.succeedAt = 51;
-        conditions.needFulfilled = 2; // = Mandate 2 (Initiate action)
+        conditions.needFulfilled = mandateCount - 1; // = Mandate 2 (Initiate action)
         conditions.quorum = 33;
         constitution.push(
             PowersTypes.MandateInitData({
@@ -127,6 +131,7 @@ contract Bicameralism is DeploySetup {
         dynamicParams[0] = "uint256 roleId";
         dynamicParams[1] = "address account";
 
+        mandateCount++;
         conditions.allowedRole = 0; // = Admin
         constitution.push(
             PowersTypes.MandateInitData({
@@ -141,8 +146,9 @@ contract Bicameralism is DeploySetup {
         // Mandate 5: Delegate revoke role (BespokeAction_Simple)
         // Note: TS file says "A delegate can revoke..." but allowedRole is 2 (Funders).
         // Transposing the value allowedRole = 2.
+        mandateCount++;
         conditions.allowedRole = 1; // = Delegates
-        conditions.needFulfilled = 4; // = Mandate 4 (Admin assign role)
+        conditions.needFulfilled = mandateCount - 1; // = Mandate 4 (Admin assign role)
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "A delegate can revoke a role: For this demo, any delegate can revoke previously assigned roles.",

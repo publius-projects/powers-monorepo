@@ -8,8 +8,7 @@ import { Governor_CreateProposal } from "@src/mandates/integrations/Governor_Cre
 import { Governor_ExecuteProposal } from "@src/mandates/integrations/Governor_ExecuteProposal.sol";
 
 import { SafeAllowance_Transfer } from "@src/mandates/integrations/SafeAllowance_Transfer.sol";
-import { Safe_ExecTransaction } from "@src/mandates/integrations/Safe_ExecTransaction.sol";
-import { PowersFactory_AssignRole } from "@src/mandates/integrations/PowersFactory_AssignRole.sol";
+import { Safe_ExecTransaction } from "@src/mandates/integrations/Safe_ExecTransaction.sol"; 
 import { Soulbound1155_GatedAccess } from "@src/mandates/integrations/Soulbound1155_GatedAccess.sol";
 import { Mandate } from "@src/Mandate.sol";
 import { IPowers } from "@src/interfaces/IPowers.sol";
@@ -508,12 +507,8 @@ contract ElectionListIntegrationTest is TestSetupIntegrations {
         console2.log("Voting for Alice...");
 
         // Nominees: [alice]
-        // Vote for alice: [true]
-        votes = new bool[](1);
-        votes[0] = true;
-
         vm.prank(alice);
-        daoMock.request(voteMandateId, abi.encode(votes), nonce, "Vote for Alice");
+        daoMock.request(voteMandateId, abi.encode(true), nonce, "Vote for Alice");
 
         assertEq(ElectionList(electionListAddress).getVoteCount(electionId, alice), 1);
 

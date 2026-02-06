@@ -1,0 +1,73 @@
+# TaxSelect
+
+TaxSelect is an electoral mandate that assigns or revokes roles based on the amount of tax an account has paid in a specific ERC20 token system.
+
+## Overview
+
+This mandate integrates with a tax-collecting ERC20 token (implementing the `Erc20Taxed` interface). It checks an account's tax contribution in the *previous* epoch.
+*   If the account paid enough tax, they are granted the role.
+*   If they failed to pay enough tax, the role is revoked.
+
+This mechanism creates a "pay-to-stay" or performance-based membership system based on economic activity.
+
+## Configuration
+
+When adopting a TaxSelect instance, the following parameters are required:
+
+1.  `erc20TaxedMock` (address): The address of the taxed ERC20 token contract.
+2.  `thresholdTaxPaid` (uint256): The minimum amount of tax that must have been paid in the previous epoch to hold the role.
+3.  `roleIdToSet` (uint256): The role ID to be assigned or revoked.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, one parameter must be provided:
+
+1.  `account` (address): The account to assess. This can be any address, allowing anyone to trigger an update for themselves or others.
+
+### Execution Flow
+
+1.  **Data Retrieval**
+    *   Queries the `erc20TaxedMock` contract to get the current epoch duration.
+    *   Calculates the previous epoch index.
+    *   Retrieves the amount of tax paid by the `account` during that previous epoch.
+
+2.  **Logic Check**
+    *   Checks if the `account` currently holds the `roleIdToSet`.
+    *   **Revocation:** If the account *has* the role but paid less than `thresholdTaxPaid`, generates a `revokeRole` call.
+    *   **Assignment:** If the account *does not have* the role but paid at least `thresholdTaxPaid`, generates an `assignRole` call.
+    *   **No Action:** If the status aligns with the tax payment (e.g., has role and paid enough), no action is taken.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(
+    uint16 index,
+    string memory nameDescription,
+    bytes memory inputParams,
+    bytes memory config
+) public override
+```
+-   Initializes the tax token, threshold, and role.
+-   Sets input parameters to `(address Account)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Performs the tax check logic.
+
+### Error Conditions
+
+1.  **Validation Errors**
+    *   "No finished epoch yet.": Cannot assess tax if the first epoch hasn't completed.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

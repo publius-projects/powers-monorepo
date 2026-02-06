@@ -1,0 +1,56 @@
+# PowersAction_Flexible
+
+PowersAction_Flexible is an executive mandate that allows the current Powers contract to execute a governance action on *another* Powers contract. The target contract and mandate are chosen at runtime.
+
+## Overview
+
+This mandate facilitates inter-DAO governance. It enables one organization (the caller) to trigger actions in another organization (the target). Because it is "flexible," the specific target DAO and the specific action (mandate) to be executed are provided as input parameters when the proposal is made, rather than being hardcoded.
+
+## Configuration
+
+When adopting a PowersAction_Flexible instance, the following parameter is required:
+
+1.  `Params` (string[]): An array of strings describing the additional parameters that might be required by the target mandates. This is primarily for UI guidance, as the first two parameters are always `address PowersTarget` and `uint16 MandateIdTarget`.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, three decoded parameters must be provided (encoded in `mandateCalldata`):
+
+1.  `powersTarget` (address): The address of the target Powers contract.
+2.  `mandateIdTarget` (uint16): The ID of the mandate to execute on the target contract.
+3.  `callData` (bytes): The encoded input parameters for the target mandate.
+
+### Execution Flow
+
+1.  **Decoding**
+    *   Decodes the target address, mandate ID, and call data from the input.
+
+2.  **External Request**
+    *   Generates a call to `IPowers.request` on the `powersTarget` address.
+    *   Passes the `mandateIdTarget`, `callData`, and the current `nonce` to the target.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Initializes configuration.
+-   Sets input parameters to include `address PowersTarget` and `uint16 MandateIdTarget` plus the configured `Params`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public view virtual override returns (...)
+```
+-   Decodes the input.
+-   Encodes the `request` call to the target Powers contract.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

@@ -1,0 +1,63 @@
+# Mandates_Adopt
+
+Mandates_Adopt is an executive mandate designed to streamline the "Reform" process. It allows for the bulk adoption of multiple new mandates in a single action.
+
+## Overview
+
+This mandate simplifies governance upgrades by allowing a single proposal to install multiple new mandates simultaneously. It enforces a standard configuration for these adoptions:
+*   All adopted mandates are given the name "Reform mandate".
+*   All adopted mandates are initialized with empty configuration bytes.
+*   Each adopted mandate is assigned a specific `allowedRole` (access control) defined in the input.
+
+This is particularly useful for upgrading a set of governance capabilities or installing a new module of functionality.
+
+## Configuration
+
+When adopting a Mandates_Adopt instance, no configuration parameters are required.
+
+## Usage
+
+### Proposing an Action
+
+When calling the mandate, two parameters must be provided:
+
+1.  `mandateAddress` (address[]): An array of addresses for the new mandate contracts to be adopted.
+2.  `roleIds` (uint256[]): An array of role IDs. `roleIds[i]` specifies the role that will be allowed to call the mandate at `mandateAddress[i]`.
+
+The arrays must be of equal length.
+
+### Execution Flow
+
+1.  **Iterative Construction**
+    *   Iterates through the provided arrays.
+    *   For each entry, constructs the `MandateInitData` struct:
+        *   Sets the name to "Reform mandate".
+        *   Sets the target contract to the provided address.
+        *   Sets the configuration to empty bytes.
+        *   Sets the `allowedRole` condition to the provided role ID.
+
+2.  **Execution**
+    *   Generates a call to `IPowers.adoptMandate` for each constructed item.
+    *   Returns the batch of adoption calls for execution.
+
+## Technical Specifications
+
+### Functions
+
+#### `initializeMandate`
+```solidity
+function initializeMandate(...) public override
+```
+-   Sets input parameters to `(address[] mandateAddress, uint256[] roleIds)`.
+
+#### `handleRequest`
+```solidity
+function handleRequest(...) public pure override returns (...)
+```
+-   Encodes the batch `adoptMandate` logic.
+
+## Current Deployments
+
+| Chain ID | Chain Name | Address |
+| :--- | :--- | :--- |
+| | | |

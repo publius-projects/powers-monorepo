@@ -295,19 +295,20 @@ OPT_SEPOLIA_DEPLOY_ARGS := --rpc-url $(OPT_SEPOLIA_RPC_URL) --account dev_3 --se
 fork-anvil :
 	anvil --fork-url $(OPT_SEPOLIA_RPC_URL) --block-time 1 --chain-id 31337   
 
-deploy-allowance-module :; forge script script/DeployAllowanceModule.s.sol:DeployAllowanceModule $(OPT_SEPOLIA_DEPLOY_ARGS) 
-
 # Deploy an organisation to a single chain. 
 # Adjust the ANVIL_DEPLOY_ARGS, SEPOLIA_DEPLOY_ARGS, OPT_SEPOLIA_DEPLOY_ARGS, ARB_SEPOLIA_DEPLOY_ARGS variables above to change network and deployment settings.
 # Adjust the script path and contract name below to change which organisation is deployed.
 # NOTE: all mandates and helper contracts will be deployed as part of the organisation deployment script. 
 deploy-organisation : 
 	@echo "Deploying organisation..."
-	forge script script/deployOrganisations/TestRig.s.sol:TestRig $(ANVIL_DEPLOY_ARGS)
+	forge script script/deployOrganisations/CulturalStewardsDAO.s.sol:CulturalStewardsDAO $(OPT_SEPOLIA_DEPLOY_ARGS)
 
 initialise-powers :
 	@echo "Initialising Powers contract..."
 	forge script script/InitialisePowers.s.sol:InitialisePowers $(SEPOLIA_DEPLOY_ARGS)
+
+# deploy allowance module to Sepolia. Only needs to be done once.
+deploy-allowance-module :; forge script script/DeployAllowanceModule.s.sol:DeployAllowanceModule $(OPT_SEPOLIA_DEPLOY_ARGS) 
 
 # Verify Contracts
 # sepoliaVerifyContract :; forge verify-contract --etherscan-api-key $(ETHERSCAN_API_KEY) --chain 11155111 --verifier etherscan 0x05c0379565ef0ebb1bD21C0Ab463ca5CE5211D3A src/Powers.sol:Powers --watch
