@@ -1,1 +1,2 @@
 TBI. 
+THESE ARE THE SPECS FOR THE 'Blank forum'.

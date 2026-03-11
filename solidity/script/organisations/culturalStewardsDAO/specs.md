@@ -118,12 +118,13 @@ The Primary DAO can take the following actions:
 * It can remove inactive elected executives.   
 * It can adopt new mandates (and as a consequence also revoke old ones). 
 
-### ***Roles***
+### ***Roles*** 
 
 | Role Id | Role name | Selection criteria |
 | :---- | :---- | :---- |
 | 0 | Admin | Revoked at construction. |
-| 1 | Members | Membership in Sub-DAO \#1, \#2, or \#3). |
+| 1 | Members | Membership in Sub-DAO \#1, \#2, or \#3). [comment]: <> (strange, shouldn't there also be a membership role for PrimaryDAO?)
+ |
 | 2 | Executives | Elected every N-months from among Members. |
 | 3 | Physical Sub-DAOs | Assigned at creation of a Sub-DAO. Can be removed by Executives. |
 | 4 | Ideas Sub-DAOs | Assigned at creation of a Sub-DAO. Can be removed by Executives. |
@@ -136,7 +137,7 @@ The Primary DAO can take the following actions:
 
 #### Create and revoke Ideas Sub-DAO
 
-Members have the right to initiate new Ideas Sub-DAOs, while each idea has to be ok-ed by elected executives.
+Members have the right to initiate new Ideas Sub-DAOs, while each idea has to be ok-ed by elected executives. [comment]: <> (unsure of this one, it is not clear what 'veto' refers to)   
 
 | Role | Name | Base contract | User Input | Executable Output | Conditions |
 | :---- | :---- | :---- | :---- | :---- | :---- |
