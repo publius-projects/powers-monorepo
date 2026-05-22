@@ -3,62 +3,43 @@ title: Nominate
 description: Guide for using the Nominate mandate in the Powers protocol
 ---
 
-Nominate is an electoral mandate that allows users to self-nominate (or revoke their nomination) for an election managed by a `Nominees` contract.
+The **Nominate** mandate lets any user put themselves forward as a candidate for a role or election — or withdraw their name at any time. It works by updating a shared list of nominees managed by a `Nominees` helper contract.
 
-## Overview
+This mandate is typically the first step in an electoral process. Other mandates, such as `DelegateTokenSelect` or `ElectionList_Vote`, then use that list to run the actual election.
 
-This mandate provides a simple interface for users to signal their intent to run for a role or position. It interacts with a helper `Nominees` contract which maintains the list of active candidates. This list is often used by other mandates (like `DelegateTokenSelect` or `ElectionList_Vote`) to conduct elections.
+## What it does
 
-## Configuration
+When a user calls this mandate, they are either:
+- **Adding themselves** to the list of active nominees (`shouldNominate = true`)
+- **Removing themselves** from that list (`shouldNominate = false`)
 
-When adopting a Nominate instance, the following parameter is required:
+The mandate passes the caller's address directly to the `Nominees` contract — users can only nominate or withdraw themselves, not others.
 
-1.  `NomineesContract` (address): The address of the Nominees helper contract where nominations are stored.
+## Setup
 
-## Usage
+When an organisation adopts this mandate, one configuration value must be provided:
 
-### Proposing an Action
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `NomineesContract` | address | The Nominees contract that holds the list of candidates for this election |
 
-When calling the mandate, one parameter must be provided:
+## Calling the mandate
 
-1.  `shouldNominate` (bool):
-    *   `true`: Add the caller to the list of nominees.
-    *   `false`: Remove the caller from the list of nominees.
+When submitting a request, one input is required:
 
-### Execution Flow
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `shouldNominate` | bool | `true` to add yourself as a nominee, `false` to withdraw |
 
-1.  **Request Handling**
-    *   Decodes the `shouldNominate` boolean.
-    *   Prepares a call to the `NomineesContract`.
+## How it works
 
-2.  **External Call**
-    *   Executes `nominate(address candidate, bool status)` on the Nominees contract.
-    *   Passes the `caller`'s address as the candidate and the `shouldNominate` value as the status.
-
-## Technical Specifications
-
-### Functions
-
-#### `initializeMandate`
-```solidity
-function initializeMandate(
-    uint16 index,
-    string memory nameDescription,
-    bytes memory inputParams,
-    bytes memory config
-) public override
-```
--   Initializes the Nominees contract address.
--   Sets input parameters to `(bool shouldNominate)`.
-
-#### `handleRequest`
-```solidity
-function handleRequest(...) public view override returns (...)
-```
--   Prepares the call to the Nominees contract.
+1. The mandate reads the `shouldNominate` value from the submitted calldata.
+2. It looks up the configured `Nominees` contract address.
+3. It prepares a call to `Nominees.nominate(callerAddress, shouldNominate)`.
+4. The Powers protocol executes that call, updating the nominee list accordingly.
 
 ## Current Deployments
 
 | Chain ID | Chain Name | Address |
 | :--- | :--- | :--- |
-| | | |
+| — | — | Not yet deployed |
