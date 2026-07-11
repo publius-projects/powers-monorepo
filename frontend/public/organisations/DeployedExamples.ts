@@ -9,6 +9,16 @@ export const DeployedExamples = [
     //     description: "Governed 721 is an example of an organisation that governs specific functionality in a Protocol. In this case: setting payment split for royalties of NFT sales. It has a policy setting (the split) and enforcement (blacklisting of addresses). This type of organisation can be used to govern specific parameters or functionalities in a larger ecosystem, such as a protocol or platform.",
     //     chainId: arbitrumSepolia.id,
     //     address: '0xaa3146fBa89b6e93303c397f76B2cC36545372D0'
+    // },
+    {
+        id: "staking-pool-governance",
+        title: "Staking Pool Governance",
+        uri: "https://aqua-famous-sailfish-288.mypinata.cloud/ipfs/bafkreiejezgv4itvryovwbuatrxjbsxt4p536bcp6fepdzh5z2n3aqjici",
+        banner: "https://aqua-famous-sailfish-288.mypinata.cloud/ipfs/bafybeiazll4pqkkhhpzrxv7vljfkhx4ez4i5ors7u4np7l26zjxg3sxybu",
+        description: "Staking Pool Governance is a demonstration organisation in which the Powers protocol owns and governs a SimpleStakingPool — an on-chain pool where users stake one token and earn another. Powers drives the pool's privileged knobs (reward rate, emergency pause, token sweep, reward funding) through mandates, distributing power across five roles with deliberate checks and balances: the Rate Committee proposes rate changes and sweeps, Stakers hold a veto and a timelock, and a Guardian and Compliance Monitor can pause staking instantly while un-pausing requires a Staker vote. An ERC-4337 paymaster sponsors gas so members can participate without holding ETH. NOTE: this is a reference/demonstration design, not a compliant production system.",
+        chainId: arbitrumSepolia.id,
+        address: '0x7F7A41CC2176c7b5e014d5cfC0dbE8c0b1f3dE97'
+    },
     // }, 
     {
         id: "bicameralism",

@@ -1,0 +1,32 @@
+{
+  "icon": "",
+  "banner": "https://aqua-famous-sailfish-288.mypinata.cloud/ipfs/bafybeiazll4pqkkhhpzrxv7vljfkhx4ez4i5ors7u4np7l26zjxg3sxybu",
+  "description":
+    "Staking Pool Governance is a demonstration organisation in which the Powers protocol owns and governs a SimpleStakingPool — an on-chain pool where users stake one token and earn another. Powers drives the pool's four privileged knobs (reward rate, emergency pause, token sweep, reward funding) through mandates, distributing power across five roles with deliberate checks and balances. The Rate Committee proposes reward-rate changes and sweeps, but Stakers hold a veto and a timelock stands between approval and execution; a Guardian and a Compliance Monitor can pause new staking instantly, while un-pausing requires a Staker vote. Stakers and the Committee are peer-elected, governance reform sits with the Stakers at a supermajority, and a signal-only Compliance Monitor records findings on-chain. An ERC-4337 PowersPaymaster sponsors gas so members can participate without holding ETH. NOTE: this is a reference/demonstration design and is NOT a UK-compliant production system — the underlying staking pool is a mock, governance cannot gate who stakes, and qualified legal counsel is required before any real-money use.",
+  "website": "https://github.com/publius-projects/powers-monorepo/tree/main/frontend/organisations",
+  "codeOfConduct": "https://github.com/publius-projects/powers-monorepo/blob/main/CODE_OF_CONDUCT.md",
+  "disputeResolution": "",
+  "xmtpAgentAddress": "0xe65d5d40c878339596423b929058a13147f925e1",
+  "communicationChannels": {
+      "discord": "https://discordapp.com/users/1006928106487021638",
+      "telegram": "https://t.me/thd83",
+      "x": "https://x.com/7__Cedars",
+      "paragraph": "",
+      "youtube": "",
+      "facebook": "",
+      "github": "https://github.com/publius-projects/powers-monorepo",
+      "forum": "",
+      "documentation": "https://powers-docs.vercel.app/"
+  },
+  "parentContracts": [ ],
+  "childContracts": [ ],
+  "attributes": [
+    { "trait_type": "Governance Model", "value": "Role-based checks and balances (staking protocol)" },
+    { "trait_type": "Roles", "value": "Admin, Stakers, Rate Committee, Guardian, Compliance Monitor, Public" },
+    { "trait_type": "Governed Protocol", "value": "SimpleStakingPool (Ownable)" },
+    { "trait_type": "Key Checks", "value": "Propose-veto-timelock, instant pause / deliberate un-pause" },
+    { "trait_type": "Paymaster", "value": "ERC-4337 PowersPaymaster" },
+    { "trait_type": "Flows", "value": "Staker Membership, Elect Committee, Admin Roles, Set Reward Rate, Emergency Pause, Compliance Monitoring, Sweep, Reform, Fund/Withdraw Paymaster" },
+    { "trait_type": "Status", "value": "Demonstration / reference — not a compliant production system" }
+  ]
+}
