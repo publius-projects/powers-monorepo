@@ -227,7 +227,12 @@ abstract contract SafeTestBase is TestSetupIntegrations {
     address public allowanceModule;
 
     function setUp() public virtual override {
-        vm.selectFork(vm.createFork(vm.envString("SEPOLIA_RPC_URL")));
+        string memory sepoliaRpcUrl = vm.envOr("SEPOLIA_RPC_URL", string(""));
+        if (bytes(sepoliaRpcUrl).length == 0) {
+            vm.skip(true);
+            return;
+        }
+        vm.selectFork(vm.createFork(sepoliaRpcUrl));
 
         super.setUp();
 
@@ -1064,8 +1069,11 @@ contract ZKPassport_CheckTest is TestSetupIntegrations {
 
     function setUp() public override {
         // The only robust approach is to create fork BEFORE setup is run.
-        uint256 sepoliaFork = vm.createFork(vm.envString("SEPOLIA_RPC_URL"));
-        vm.selectFork(sepoliaFork);
+        string memory sepoliaRpcUrl = vm.envOr("SEPOLIA_RPC_URL", string(""));
+        if (bytes(sepoliaRpcUrl).length > 0) {
+            uint256 sepoliaFork = vm.createFork(sepoliaRpcUrl);
+            vm.selectFork(sepoliaFork);
+        }
         vm.skip(true);
 
         // important:  // We created an actual proof in the registry for cedars proving he was born in 1983. So we can test the full integration on the fork, without mocking any part of the flow.

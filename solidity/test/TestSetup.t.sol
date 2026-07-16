@@ -412,14 +412,17 @@ abstract contract BaseSetup is TestVariables, TestHelperFunctions {
         MAX_FUZZ_TARGETS = 5;
         MAX_FUZZ_CALLDATA_LENGTH = 2000;
 
-        sepoliaFork = vm.createFork(vm.envString("SEPOLIA_RPC_URL"));
-        // optSepoliaFork = vm.createFork(vm.envString("OPT_SEPOLIA_RPC_URL"));
-        // arbSepoliaFork = vm.createFork(vm.envString("ARB_SEPOLIA_RPC_URL"));
+        string memory sepoliaRpcUrl = vm.envOr("SEPOLIA_RPC_URL", string(""));
+        // optSepoliaFork = vm.createFork(vm.envOr("OPT_SEPOLIA_RPC_URL", string("")));
+        // arbSepoliaFork = vm.createFork(vm.envOr("ARB_SEPOLIA_RPC_URL", string("")));
 
-        console2.log("Forks created:");
-        console2.log("Sepolia Fork ID:", sepoliaFork);
-        // console2.log("Optimism Sepolia Fork ID:", optSepoliaFork);
-        // console2.log("Arbitrum Sepolia Fork ID:", arbSepoliaFork);
+        if (bytes(sepoliaRpcUrl).length > 0) {
+            sepoliaFork = vm.createFork(sepoliaRpcUrl);
+            console2.log("Forks created:");
+            console2.log("Sepolia Fork ID:", sepoliaFork);
+            // console2.log("Optimism Sepolia Fork ID:", optSepoliaFork);
+            // console2.log("Arbitrum Sepolia Fork ID:", arbSepoliaFork);
+        }
 
         // users
         // note that when fork testing, addresses are often already taken. Therefore we loop to find addresses without code deployed on them to use as users in our tests.
@@ -1021,8 +1024,15 @@ abstract contract TestSetupGovernorProtocolFlow is BaseSetup {
 // £todo: this setup needs fixing.
 abstract contract TestSetupSafeProtocolFlow is BaseSetup {
     function setUpVariables() public override {
+        string memory sepoliaRpcUrl = vm.envOr("SEPOLIA_RPC_URL", string(""));
+        if (bytes(sepoliaRpcUrl).length == 0) {
+            vm.skip(true);
+            return;
+        }
         vm.skip(false);
-        vm.createFork(vm.envString("SEPOLIA_RPC_URL"));
+        if (sepoliaFork == 0) {
+            sepoliaFork = vm.createFork(sepoliaRpcUrl);
+        }
         vm.selectFork(sepoliaFork); // options: sepoliaFork, optSepoliaFork, arbSepoliaFork
         super.setUpVariables();
 
