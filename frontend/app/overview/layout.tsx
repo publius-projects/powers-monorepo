@@ -5,15 +5,13 @@ import { useEffect } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { usePowersStore, useStatusStore, setStatus, setError, useSavedProtocolsStore, setAction, useActionStore } from "@/context/store";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useConnection, useSwitchChain } from "wagmi";
 import { usePowers } from "@/hooks/usePowers";
 import { usePowersLive } from "@/hooks/usePowersLive";
 import { parseChainId } from "@/utils/parsers";
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ShareQrButton } from '@/components/ShareQrButton';
-import { useAddressDisplay } from "@/hooks/useAddressDisplay";
-import { ArrowRightStartOnRectangleIcon, CheckCircleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 interface OverviewLayoutProps {
   children: React.ReactNode;
@@ -25,8 +23,6 @@ export default function OverviewLayout({ children }: OverviewLayoutProps) {
     const powers = usePowersStore();
     const statusPowers = useStatusStore();
     const { savedProtocols, loadSavedProtocols, addProtocol } = useSavedProtocolsStore();
-    const { wallets, ready: walletsReady } = useWallets();
-    const {ready, authenticated, login, logout, connectWallet} = usePrivy();
     const { powers: powersAddress, chainId } = useParams<{ chainId: string, powers: string }>();
     const { fetchPowers } = usePowers();
     usePowersLive(
@@ -36,7 +32,6 @@ export default function OverviewLayout({ children }: OverviewLayoutProps) {
     const switchChain = useSwitchChain();
     const { chain } = useConnection();
     const action = useActionStore();
-    const { displayName, isLoading } = useAddressDisplay(wallets[0]?.address);
 
     const isOverviewPage = pathname === '/overview';
 
