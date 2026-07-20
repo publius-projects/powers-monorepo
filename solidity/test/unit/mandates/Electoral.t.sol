@@ -20,6 +20,7 @@ import { RevokeInactiveAccounts } from "@src/addons/mandates/electoral/RevokeIna
 import { PowersErrors } from "@src/interfaces/PowersErrors.sol";
 import { AssignExternalRole } from "@src/addons/mandates/electoral/AssignExternalRole.sol";
 import { RevokeAccountsRoleId } from "@src/addons/mandates/electoral/RevokeAccountsRoleId.sol";
+import { Strings } from "@lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 
 /// @notice Comprehensive unit tests for all electoral mandates
 /// @dev Tests all functionality of electoral mandates including initialization, execution, and edge cases
@@ -45,6 +46,31 @@ contract PeerSelectTest is TestSetupElectoral {
         assertEq(numberToSelect, 2);
         assertEq(roleId, 4);
         assertEq(configuredNominees, address(nomineesContract));
+    }
+
+    /// @notice The input fields must be derived from the *current* nominees, not snapshotted at
+    ///         constitution time (when the nominee pool is empty). Regression test for the UI
+    ///         showing no checkboxes on "Elect ..." mandates.
+    function testPeerSelectDynamicInputParams() public {
+        // Before anyone nominates, there are no input fields.
+        string[] memory paramsBefore = abi.decode(peerSelect.getInputParams(address(daoMock), mandateId), (string[]));
+        assertEq(paramsBefore.length, 0);
+
+        // Nominate three candidates.
+        vm.startPrank(address(daoMock));
+        nomineesContract.nominate(charlotte, true);
+        nomineesContract.nominate(david, true);
+        nomineesContract.nominate(eve, true);
+        vm.stopPrank();
+
+        // getInputParams now reflects the live nominee pool: one `bool <address>` field each.
+        string[] memory paramsAfter = abi.decode(peerSelect.getInputParams(address(daoMock), mandateId), (string[]));
+        address[] memory currentNominees = nomineesContract.getNominees();
+        assertEq(paramsAfter.length, 3);
+        assertEq(paramsAfter.length, currentNominees.length);
+        for (uint256 i = 0; i < currentNominees.length; i++) {
+            assertEq(paramsAfter[i], string.concat("bool ", Strings.toHexString(currentNominees[i])));
+        }
     }
 
     function testPeerSelectExecution() public {

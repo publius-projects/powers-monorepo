@@ -185,7 +185,7 @@ The minimum mandate version used in tests is declared as constants in both `Test
 ```solidity
 uint16 constant MAJOR = 0;
 uint16 constant MINOR = 1;
-uint16 constant PATCH = 8;
+uint16 constant PATCH = 9;
 ```
 
 Always look up mandate addresses via `registry.getMandateAddress(MAJOR, MINOR, PATCH, "MandateName")`. Never hardcode mandate contract addresses.

@@ -22,7 +22,7 @@ contract Safe_RecoverTokens is Mandate {
         uint256 currentIndex;
     }
 
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("address safeTreasury", "address allowanceModule");
         emit Mandate__Deployed(configParams);
     }

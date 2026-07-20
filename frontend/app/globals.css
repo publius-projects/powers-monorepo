@@ -71,26 +71,6 @@ html, body {
   50%       { box-shadow: 0 0 8px 2px rgba(205, 94, 32, 0.5); }
 }
 
-.scanlines {
-  background-image: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.015) 2px,
-    rgba(0, 0, 0, 0.015) 4px
-  );
-}
-
-.dark .scanlines {
-  background-image: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(255, 255, 255, 0.02) 2px,
-    rgba(255, 255, 255, 0.02) 4px
-  );
-}
-
 .border-pulse {
   border-color: #CD5E20;
   animation: border-pulse 2.5s ease-in-out infinite;
@@ -110,7 +90,7 @@ body {
   padding-top: env(safe-area-inset-top);      /* Standard */
   padding-bottom: constant(safe-area-inset-bottom); /* iOS < 11.2 */
   padding-bottom: env(safe-area-inset-bottom);      /* Standard */
-  background: #f1f5f9; /* slate-100 */
+  background: hsl(var(--background));
   font-family: 'Commit Mono', 'Courier New', monospace;
   color: var(--text-color);
   display: flex;

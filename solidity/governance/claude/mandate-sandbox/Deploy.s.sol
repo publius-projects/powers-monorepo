@@ -50,7 +50,7 @@ contract Deploy is DeployHelpers {
     // Select version mandates to be used.
     uint16 constant MAJOR = 0;
     uint16 constant MINOR = 1;
-    uint16 constant PATCH = 8;
+    uint16 constant PATCH = 9;
 
     address constant ENTRY_POINT = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
     address constant HANNAH = 0xc9ce1DC547C42F66464f5a7f0E3cd60EBf1C5Bd2;

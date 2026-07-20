@@ -21,7 +21,7 @@ import { MandateUtilities } from "@src/libraries/MandateUtilities.sol";
 
 contract OpenAction is Mandate {
     /// @notice Constructor function for OpenAction contract.
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         emit Mandate__Deployed("");
     }
 

@@ -1,0 +1,33 @@
+Script for pitch:  1: 
+Dao governance is collapsing and is in a total crisis. Billions on dollars have been held in DAO treasuries such as ENS DAO, uniswap, tally... hats protocol even tried to provide another system but this was too rigid ....this graph gathered from data on DeepDAO shows that the infrastructure so far has been not fit for purpose. 
+
+2:  Our target customers are blockchain startups. They want no headaches , being able to focus on their work. They fear drama, disputes, lack of security. They need something that has easy on boarding, low maintenance cost, flexibility to change things after deployment, and simply works to do what it should do. 
+
+3:  Powers Protocol is governance infrastructure that provides startups the possibility to create bespoke on-chain governance flows that allows to separate powers, create checks and balances, and encode nested relationships within organisations, and has role-based-access-control for different deliberation channels. 
+
+
+4: Until today, that was all not possible in a DAO. This is what a governance flow looks like on our front-end user interface - it is a process made up of individual mandates which are smart contracts that execute activity. Each one is customisable, and you can see that specific actions are tied to specific roles, with checks being made before one step can proceed onto the next step with the governance flow. And on top of that, in our forum each of these steps has its own deliberation channel. 
+
+5:  so you can have rules that define rights & responsibilities of the roles within your organisation.
+1 account = 1 vote + gated access to roles. There’s no token voting here…you can’t buy votes.
+Only vote on proposed actions for your roles. 
+It’s decision making and deliberation side by side, on one interface. 
+Only discuss actions for your roles. 
+All actions (including votes) go through this governance system, and so they are logged. 
+Everything is transparent and time-stamped on-chain.
+This could reduce a lot of workload, you could run scripts to analyse data about decisions that you’ve made. You can follow where the money goes.
+And lastly, it’s accessible - we have native Account Abstraction support. 
+
+6: 
+Here are our offerings, separated into 3 tiers. 
+1: free, with basic access to our catalogue of mandates which would have been pre-audited. To help us build the organisations, which previously took months, we built a Claude skill called /design-org —> it knows all about governance because we used the RAG technique where it retrieves all kinds of info from academic literature such as Elinor Ostrom’s polycentric governance and more. It can even specialise to your jurisdiction, and can pull from specific information such as different types of legal entities in the UK where it would look at legislation such as the the Companies Act 2006. 
+Tier 2: Having paid for credits, you can have full access to our whole catalogue of mandates where you can build out your organisation’s governance infrastructure and then once built, we won’t charge for running costs but if you do want to reform your organisation at a later date then you’ll need to purchase more credits to continue building. 
+Tier 3: We are a consultancy who offers bespoke solutions and legal advice on compliance. 
+
+7: Fast, affordable, has liquidity. That brings in lots of founders who are our target customer. 
+
+8: So for crypto startups we bring normal governance to crypto where governance infrastructure is lacking. But this could also be applied to the wider field: We bring crypto trust to governance where social and institutional trust is lacking. 
+
+9: You can go to our website to explore different use-cases for Powers Protocol, view them as example organisations in our front end interface, and  read our documentation. 
+
+We hope to hear from you soon!

@@ -17,7 +17,7 @@ export const DeployedExamples = [
         banner: "https://aqua-famous-sailfish-288.mypinata.cloud/ipfs/bafybeiazll4pqkkhhpzrxv7vljfkhx4ez4i5ors7u4np7l26zjxg3sxybu",
         description: "Staking Pool Governance is a demonstration organisation in which the Powers protocol owns and governs a SimpleStakingPool — an on-chain pool where users stake one token and earn another. Powers drives the pool's privileged knobs (reward rate, emergency pause, token sweep, reward funding) through mandates, distributing power across five roles with deliberate checks and balances: the Rate Committee proposes rate changes and sweeps, Stakers hold a veto and a timelock, and a Guardian and Compliance Monitor can pause staking instantly while un-pausing requires a Staker vote. An ERC-4337 paymaster sponsors gas so members can participate without holding ETH. NOTE: this is a reference/demonstration design, not a compliant production system.",
         chainId: arbitrumSepolia.id,
-        address: '0x7F7A41CC2176c7b5e014d5cfC0dbE8c0b1f3dE97'
+        address: '0x1625eB24df6571Ae13ebD9Cc3bd82b5F1E38405a'
     },
     // }, 
     {

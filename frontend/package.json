@@ -10,9 +10,9 @@
     "build": "next build --webpack",
     "start": "next start",
     "preview": "next start",
-    "test": "echo \"No tests specified\"",
+    "test": "playwright test --trace=on",
     "test:e2e": "playwright test --trace=on",
-    "test:e2e:report": "playwright test --trace=on --reporter=html && playwright show-report",
+    "test:report": "playwright test --trace=on --reporter=html && playwright show-report",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix"
   },

@@ -65,7 +65,7 @@ contract Deploy is DeployHelpers {
     // Mandate registry version.
     uint16 constant MAJOR = 0;
     uint16 constant MINOR = 1;
-    uint16 constant PATCH = 8;
+    uint16 constant PATCH = 9;
 
     // Canonical ERC-4337 v0.7 EntryPoint (same address on all supported networks).
     address constant ENTRY_POINT = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
@@ -191,10 +191,10 @@ contract Deploy is DeployHelpers {
         // Quorum-gated + reads live nominee/role state → set maxExecutionDelay (stale-state rule).
         mandateCount++;
         conditions.allowedRole = 1; // Stakers vote
-        conditions.votingPeriod = daysToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.votingPeriod = minutesToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
         conditions.quorum = 30;
         conditions.succeedAt = 51;
-        conditions.maxExecutionDelay = daysToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.maxExecutionDelay = minutesToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Elect Stakers: Existing Stakers peer-vote to elect up to 5 members from the nominee pool. One-time election; revokes itself after execution.",
@@ -249,10 +249,10 @@ contract Deploy is DeployHelpers {
         // Peer-elect the Committee (Stakers vote).
         mandateCount++;
         conditions.allowedRole = 1; // Stakers vote
-        conditions.votingPeriod = daysToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.votingPeriod = minutesToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
         conditions.quorum = 30;
         conditions.succeedAt = 51;
-        conditions.maxExecutionDelay = daysToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.maxExecutionDelay = minutesToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Elect Committee: Stakers peer-vote to elect up to 3 Rate Committee members from the nominee pool. One-time election; revokes itself after execution.",
@@ -324,7 +324,7 @@ contract Deploy is DeployHelpers {
         // Propose a new reward rate (Committee vote).
         mandateCount++;
         conditions.allowedRole = 2; // Rate Committee
-        conditions.votingPeriod = daysToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.votingPeriod = minutesToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
         conditions.quorum = 30;
         conditions.succeedAt = 51;
         constitution.push(
@@ -340,7 +340,7 @@ contract Deploy is DeployHelpers {
         // Veto a proposed rate (Stakers, fast window — Carlisle rapid-access).
         mandateCount++;
         conditions.allowedRole = 1; // Stakers
-        conditions.votingPeriod = daysToBlocks(1, helperConfig.getBlocksPerHour(block.chainid)); // ~24h
+        conditions.votingPeriod = minutesToBlocks(1, helperConfig.getBlocksPerHour(block.chainid)); // ~1 min
         conditions.quorum = 30;
         conditions.succeedAt = 51;
         conditions.needFulfilled = mandateCount - 1; // proposal must have passed first
@@ -359,7 +359,7 @@ contract Deploy is DeployHelpers {
         conditions.allowedRole = 2; // Rate Committee
         conditions.needFulfilled = mandateCount - 2; // proposal fulfilled
         conditions.needNotFulfilled = mandateCount - 1; // veto NOT fulfilled
-        conditions.timelock = daysToBlocks(2, helperConfig.getBlocksPerHour(block.chainid)); // 48h > 24h veto window
+        conditions.timelock = minutesToBlocks(2, helperConfig.getBlocksPerHour(block.chainid)); // 2 min > 1 min veto window
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Execute Reward Rate: Set the approved reward rate on the staking pool after the veto window and timelock.",
@@ -415,7 +415,7 @@ contract Deploy is DeployHelpers {
         // Community un-pause (Stakers vote; deliberate).
         mandateCount++;
         conditions.allowedRole = 1; // Stakers
-        conditions.votingPeriod = daysToBlocks(2, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.votingPeriod = minutesToBlocks(2, helperConfig.getBlocksPerHour(block.chainid));
         conditions.quorum = 30;
         conditions.succeedAt = 51;
         constitution.push(
@@ -474,7 +474,7 @@ contract Deploy is DeployHelpers {
         // Propose a sweep (Committee vote).
         mandateCount++;
         conditions.allowedRole = 2; // Rate Committee
-        conditions.votingPeriod = daysToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.votingPeriod = minutesToBlocks(7, helperConfig.getBlocksPerHour(block.chainid));
         conditions.quorum = 30;
         conditions.succeedAt = 51;
         constitution.push(
@@ -490,7 +490,7 @@ contract Deploy is DeployHelpers {
         // Veto a sweep (Stakers).
         mandateCount++;
         conditions.allowedRole = 1; // Stakers
-        conditions.votingPeriod = daysToBlocks(2, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.votingPeriod = minutesToBlocks(2, helperConfig.getBlocksPerHour(block.chainid));
         conditions.quorum = 30;
         conditions.succeedAt = 51;
         conditions.needFulfilled = mandateCount - 1;
@@ -509,7 +509,7 @@ contract Deploy is DeployHelpers {
         conditions.allowedRole = 2; // Rate Committee
         conditions.needFulfilled = mandateCount - 2;
         conditions.needNotFulfilled = mandateCount - 1;
-        conditions.timelock = daysToBlocks(7, helperConfig.getBlocksPerHour(block.chainid)); // extra-long
+        conditions.timelock = minutesToBlocks(7, helperConfig.getBlocksPerHour(block.chainid)); // extra-long
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Execute Sweep: Sweep the approved tokens out of the staking pool after the veto window and long timelock.",
@@ -531,17 +531,20 @@ contract Deploy is DeployHelpers {
             flows.push(PowersTypes.Flow({ mandateIds: ids, nameDescription: "Governance Reform: Stakers propose and adopt new governance mandates." }));
         }
 
-        string[] memory reformParams = new string[](2);
-        reformParams[0] = "address[] Mandates";
-        reformParams[1] = "uint256[] RoleIds";
+        // Adopt_Mandates v0.2.0 takes one full MandateInitData[]. The propose/veto/ratify
+        // steps are matched to the execute step by hashing the *same* mandateCalldata, so this
+        // must mirror the executor exactly or an approved proposal cannot be executed.
+        string[] memory reformParams = new string[](1);
+        reformParams[0] =
+            "(string,address,bytes,(uint256,uint32,uint32,uint32,uint16,uint16,uint8,uint8,uint32))[] mandateInitData";
 
         // Propose reform (Stakers, supermajority).
         mandateCount++;
         conditions.allowedRole = 1; // Stakers
-        conditions.votingPeriod = daysToBlocks(14, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.votingPeriod = minutesToBlocks(14, helperConfig.getBlocksPerHour(block.chainid));
         conditions.quorum = 50;
         conditions.succeedAt = 66;
-        conditions.maxExecutionDelay = daysToBlocks(14, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.maxExecutionDelay = minutesToBlocks(14, helperConfig.getBlocksPerHour(block.chainid));
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Propose Governance Reform: Stakers vote (supermajority) to adopt new governance mandates.",
@@ -556,11 +559,11 @@ contract Deploy is DeployHelpers {
         mandateCount++;
         conditions.allowedRole = 1; // Stakers
         conditions.needFulfilled = mandateCount - 1;
-        conditions.timelock = daysToBlocks(15, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.timelock = minutesToBlocks(15, helperConfig.getBlocksPerHour(block.chainid));
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Adopt New Mandates: Execute an approved governance reform by adopting the proposed mandates.",
-                targetMandate: registry.getMandateAddress(MAJOR, MINOR, PATCH, "Adopt_Mandates"),
+                targetMandate: _latestAdoptMandates(),
                 config: abi.encode(),
                 conditions: conditions
             })
@@ -600,7 +603,7 @@ contract Deploy is DeployHelpers {
 
         mandateCount++;
         conditions.allowedRole = 2; // Rate Committee
-        conditions.votingPeriod = daysToBlocks(1, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.votingPeriod = minutesToBlocks(1, helperConfig.getBlocksPerHour(block.chainid));
         conditions.quorum = 30;
         conditions.succeedAt = 51;
         conditions.needFulfilled = mandateCount - 1;
@@ -644,7 +647,7 @@ contract Deploy is DeployHelpers {
         // Execute the withdrawal (Committee vote).
         mandateCount++;
         conditions.allowedRole = 2; // Rate Committee
-        conditions.votingPeriod = daysToBlocks(1, helperConfig.getBlocksPerHour(block.chainid));
+        conditions.votingPeriod = minutesToBlocks(1, helperConfig.getBlocksPerHour(block.chainid));
         conditions.quorum = 30;
         conditions.succeedAt = 51;
         conditions.needFulfilled = mandateCount - 1;
@@ -659,5 +662,12 @@ contract Deploy is DeployHelpers {
         delete conditions;
 
         return constitution.length;
+    }
+
+    /// @notice Adopt_Mandates is at version 0.2.0 (full MandateInitData payload), not the
+    /// repo-wide (MAJOR, MINOR, PATCH) pin used for the other mandates.
+    function _latestAdoptMandates() internal view returns (address) {
+        (uint16 major, uint16 minor, uint16 patch) = registry.getLatestVersion("Adopt_Mandates");
+        return registry.getMandateAddress(major, minor, patch, "Adopt_Mandates");
     }
 }

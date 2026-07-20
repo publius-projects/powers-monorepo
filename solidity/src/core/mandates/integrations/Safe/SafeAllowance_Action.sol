@@ -19,7 +19,7 @@ contract SafeAllowance_Action is Mandate {
     mapping(bytes32 mandateHash => ConfigData data) public mandateConfig;
 
     /// @notice Constructor function
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         // Expose expected input parameters for UIs.
         bytes memory configParams =
             abi.encode("string[] inputParams", "bytes4 functionSelector", "address allowanceModule");

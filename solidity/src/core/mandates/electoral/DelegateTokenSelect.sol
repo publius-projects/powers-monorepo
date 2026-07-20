@@ -50,7 +50,7 @@ contract DelegateTokenSelect is Mandate {
     }
 
     /// @notice Constructor for DelegateTokenSelect mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams =
             abi.encode("address VotesToken", "address NomineesContract", "uint256 RoleId", "uint256 MaxRoleHolders");
         emit Mandate__Deployed(configParams);

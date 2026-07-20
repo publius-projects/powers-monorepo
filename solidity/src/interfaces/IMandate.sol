@@ -123,4 +123,16 @@ interface IMandate is IERC165 {
     /// @return minor The minor version number
     /// @return patch The patch version number
     function version() external pure returns (uint16 major, uint16 minor, uint16 patch);
+
+    /// @notice The developer-set adoption price of this mandate, denominated in credits (0 = free).
+    /// @dev Declared by the mandate itself (like version()), so the registry owner cannot alter it.
+    ///      The registry converts credits to wei at adoption time via its owner-set weiPerCredit rate.
+    /// @return price The adoption price in credits.
+    function priceInCredits() external view returns (uint256 price);
+
+    /// @notice The developer payees that receive the paid portion of a priced adoption.
+    /// @dev Declared by the mandate itself. The paid portion (after protocol fee) is split equally,
+    ///      with any indivisible remainder wei going to the first payee. Must be non-empty if priced.
+    /// @return payees The developer payee addresses.
+    function devs() external view returns (address[] memory payees);
 }

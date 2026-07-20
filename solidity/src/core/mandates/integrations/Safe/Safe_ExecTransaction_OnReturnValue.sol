@@ -29,7 +29,7 @@ contract Safe_ExecTransaction_OnReturnValue is Mandate {
     }
 
     /// @notice Exposes the expected input parameters for UIs during deployment.
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode(
             "address TargetContract",
             "bytes4 FunctionSelector",

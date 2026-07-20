@@ -206,7 +206,7 @@ Carlisle & Gruby (2019), Delaware DGCL, and the UK CIC guidance.
 ## Implementation Notes
 
 - Deploy: `Deploy.s.sol` · Actions: `Actions.s.sol` · Runners: `Runners.s.sol` · Test: `Test.t.sol`
-- Mandate version: MAJOR=0, MINOR=1, PATCH=8
+- Mandate version: MAJOR=0, MINOR=1, PATCH = 9
 - Mandate `nameDescription` strings must match exactly across all four files.
 - Tests run against a Sepolia fork; discovery requires pointing Foundry at this folder
   (`FOUNDRY_TEST=governance/staking-pool-governance`) — the Makefile does this for you.

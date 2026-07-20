@@ -14,7 +14,7 @@ import { MandateUtilities } from "@src/libraries/MandateUtilities.sol";
 
 contract BespokeAction_Simple is Mandate {
     /// @notice Constructor of the BespokeAction_Simple mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("address TargetContract", "bytes4 FunctionSelector", "string[] Params");
         emit Mandate__Deployed(configParams);
     }

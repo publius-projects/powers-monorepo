@@ -20,7 +20,7 @@ contract RenounceRole is Mandate {
     }
 
     /// @notice Constructor for RenounceRole mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("uint256[] allowedRoleIds");
         emit Mandate__Deployed(configParams);
     }

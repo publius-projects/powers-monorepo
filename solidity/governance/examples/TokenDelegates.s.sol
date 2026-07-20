@@ -39,7 +39,7 @@ contract Deploy is DeployHelpers {
     // Select version mandates to be used.
     uint16 constant MAJOR = 0;
     uint16 constant MINOR = 1;
-    uint16 constant PATCH = 8;
+    uint16 constant PATCH = 9;
 
     function run() external {
         // step 0, setup.  

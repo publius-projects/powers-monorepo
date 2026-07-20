@@ -8,7 +8,7 @@ the `gh` CLI commands to apply them. Run each command once after creating the `s
 | Branch | Who can PR | Required checks | Review |
 |---|---|---|---|
 | `develop` | Anyone | Vercel build + `Frontend Lint` | None |
-| `staging` | Only from `develop` | `Check source branch` + `Solidity Tests` + `E2E Tests` | None |
+| `staging` | Only from `develop` | `Check source branch` + `E2E Tests` | None |
 | `main` | Only from `staging` | `Check source branch` | 1 approval (admin-bypassable) |
 
 ## Setup commands
@@ -33,13 +33,12 @@ gh api repos/publius-projects/powers-monorepo/branches/develop/protection \
   --field required_pull_request_reviews=null \
   --field restrictions=null
 
-# staging — source branch check + solidity + e2e; no review needed
+# staging — source branch check + e2e; no review needed
 gh api repos/publius-projects/powers-monorepo/branches/staging/protection \
   --method PUT \
   --field enforce_admins=false \
   --field "required_status_checks[strict]=true" \
   --field "required_status_checks[contexts][]=Check source branch" \
-  --field "required_status_checks[contexts][]=Solidity Tests" \
   --field "required_status_checks[contexts][]=E2E Tests" \
   --field required_pull_request_reviews=null \
   --field restrictions=null
@@ -71,6 +70,5 @@ as a GitHub check. To find it:
   (the "overwritable" requirement for `main`). Set to `true` to enforce for everyone.
 - The `Check source branch` job in `ci-staging.yml` / `ci-main.yml` only enforces the
   source-branch restriction on real PRs — manual `workflow_dispatch` triggers skip the check.
-- Solidity fork tests (if any) may need `RPC_URL_*` secrets added to the repo. Add them
-  under Settings → Secrets and variables → Actions, then reference them as
-  `env: RPC_URL_OP_SEPOLIA: ${{ secrets.RPC_URL_OP_SEPOLIA }}` in the `solidity-tests` job.
+- Solidity tests no longer run in CI (the `solidity-tests` job was removed from
+  `ci-staging.yml`); run them locally with `cd solidity && forge test`.

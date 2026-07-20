@@ -206,7 +206,7 @@ The permanent Founding Member structure is a deliberate trade-off against adapti
 - **Actions script:** `solidity/governance/claude/yield-endowment/Actions.s.sol`
 - **Runners script:** `solidity/governance/claude/yield-endowment/Runners.s.sol`
 - **Test file:** `solidity/governance/claude/yield-endowment/Test.t.sol`
-- **Mandate version:** MAJOR=0, MINOR=1, PATCH=8
+- **Mandate version:** MAJOR=0, MINOR=1, PATCH = 9
 - **Mandate nameDescription strings must match exactly across all four files.**
 - **Founder addresses:** Replace `FOUNDER_1` through `FOUNDER_5` constants in `Deploy.s.sol` with the real addresses before deploying.
 - **SlateRegistry timing:** Set `submitSlateDuration` and `voteDuration` to production values (2-week each) in `Deploy.s.sol`. Test files use accelerated timing (~30 min each).

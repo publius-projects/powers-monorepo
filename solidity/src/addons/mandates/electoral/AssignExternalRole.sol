@@ -28,7 +28,7 @@ contract AssignExternalRole is Mandate {
     }
 
     /// @notice Constructor
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("address externalPowers", "uint256 roleId");
         emit Mandate__Deployed(configParams);
     }

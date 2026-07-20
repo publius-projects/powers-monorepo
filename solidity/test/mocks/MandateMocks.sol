@@ -7,6 +7,8 @@ import { MandateUtilities } from "@src/libraries/MandateUtilities.sol";
 
 /// @notice Mock mandate contract that returns empty targets for testing
 contract EmptyTargetsMandate is Mandate {
+    constructor(address registry_) Mandate(registry_) { }
+
     function handleRequest(address, address, uint16, bytes calldata, uint256)
         public
         pure
@@ -23,6 +25,8 @@ contract EmptyTargetsMandate is Mandate {
 
 /// @notice Mock mandate contract that returns specific targets for testing
 contract MockTargetsMandate is Mandate {
+    constructor(address registry_) Mandate(registry_) { }
+
     function handleRequest(address, address, uint16, bytes calldata, uint256)
         public
         pure
@@ -47,6 +51,8 @@ contract MockTargetsMandate is Mandate {
 
 /// @notice Returns mismatched targets/values/calldatas arrays, causing Powers__InvalidCallData in fulfill.
 contract MismatchedArraysMandate is Mandate {
+    constructor(address registry_) Mandate(registry_) { }
+
     function handleRequest(address, address, uint16 mandateId, bytes calldata mandateCalldata, uint256 nonce)
         public
         pure
@@ -64,6 +70,8 @@ contract MismatchedArraysMandate is Mandate {
 contract TooManyTargetsMandate is Mandate {
     uint256 constant TOO_MANY = 26;
 
+    constructor(address registry_) Mandate(registry_) { }
+
     function handleRequest(address, address, uint16 mandateId, bytes calldata mandateCalldata, uint256 nonce)
         public
         pure
@@ -80,6 +88,8 @@ contract TooManyTargetsMandate is Mandate {
 /// @notice Minimal concrete AsyncMandate for unit testing.
 /// Captures oracle call data and exposes _replyPowers for direct testing.
 contract AsyncMandateMock is AsyncMandate {
+    constructor(address registry_) AsyncMandate(registry_) { }
+
     address public pendingPowers;
     uint16 public pendingMandateId;
     uint256 public pendingActionId;

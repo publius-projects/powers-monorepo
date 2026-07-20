@@ -9,12 +9,27 @@ import React from 'react';
  * before navigation (see e2e/mocks/auth-fixture.ts).
  */
 
-export type ConnectedWallet = { address: string; walletClientType?: string };
+// The serializable wallet shape seeded into window.__E2E_PRIVY_STATE__ via
+// page.addInitScript (see auth-fixture.ts). addInitScript can only carry plain
+// JSON, so no methods live here — useWallets() enriches these into full
+// ConnectedWallet objects client-side below.
+type SerializedWallet = { address: string; walletClientType?: string };
+
+// The enriched wallet useWallets() returns. @privy-io/wagmi's
+// useSyncPrivyWallets reads getEthereumProvider(), meta.*, and walletClientType
+// off every connected wallet — a bare { address } makes it throw
+// "getEthereumProvider is not a function" and crashes the WagmiProvider subtree.
+export type ConnectedWallet = SerializedWallet & {
+  connectorType: string;
+  chainId: string;
+  meta: { id: string; name: string; icon: string };
+  getEthereumProvider: () => Promise<StubEip1193Provider>;
+};
 
 type E2EPrivyState = {
   ready: boolean;
   authenticated: boolean;
-  wallets: ConnectedWallet[];
+  wallets: SerializedWallet[];
 };
 
 declare global {
@@ -28,6 +43,55 @@ const DEFAULT_STATE: E2EPrivyState = { ready: true, authenticated: false, wallet
 function getState(): E2EPrivyState {
   if (typeof window === 'undefined') return DEFAULT_STATE;
   return window.__E2E_PRIVY_STATE__ ?? DEFAULT_STATE;
+}
+
+type StubEip1193Provider = {
+  request: (args: { method: string }) => Promise<unknown>;
+  on: () => void;
+  removeListener: () => void;
+};
+
+// Minimal EIP-1193 provider so wagmi's injected() connector can be set up
+// without throwing. The tests only do public reads (via the wagmi config's HTTP
+// transports, not this connector), so it just needs a valid shape.
+function makeStubProvider(address: string): StubEip1193Provider {
+  return {
+    request: async ({ method }) => {
+      if (method === 'eth_chainId') return '0xaa36a7'; // sepolia
+      if (method === 'eth_accounts' || method === 'eth_requestAccounts') return [address];
+      return null;
+    },
+    on: () => {},
+    removeListener: () => {},
+  };
+}
+
+function enrichWallet(w: SerializedWallet): ConnectedWallet {
+  return {
+    ...w,
+    walletClientType: w.walletClientType ?? 'injected',
+    connectorType: 'injected',
+    chainId: 'eip155:11155111',
+    meta: { id: 'io.e2e.mockwallet', name: 'Mock Wallet', icon: '' },
+    getEthereumProvider: async () => makeStubProvider(w.address),
+  };
+}
+
+// useWallets() must return a referentially STABLE array: @privy-io/wagmi's
+// useSyncPrivyWallets keys an effect on the wallets array and calls reconnect()
+// in it, so a fresh array each render loops forever and hangs the page. The
+// source array is stable (DEFAULT_STATE.wallets is a constant;
+// window.__E2E_PRIVY_STATE__ is set once by addInitScript), so cache the
+// enriched result keyed on it.
+const enrichedCache = new WeakMap<SerializedWallet[], ConnectedWallet[]>();
+
+function enrichWallets(source: SerializedWallet[]): ConnectedWallet[] {
+  let cached = enrichedCache.get(source);
+  if (!cached) {
+    cached = source.map(enrichWallet);
+    enrichedCache.set(source, cached);
+  }
+  return cached;
 }
 
 export type PrivyClientConfig = Record<string, unknown>;
@@ -52,7 +116,7 @@ export function usePrivy() {
 
 export function useWallets() {
   const state = getState();
-  return { ready: state.ready, wallets: state.wallets };
+  return { ready: state.ready, wallets: enrichWallets(state.wallets) };
 }
 
 export function useCreateWallet() {

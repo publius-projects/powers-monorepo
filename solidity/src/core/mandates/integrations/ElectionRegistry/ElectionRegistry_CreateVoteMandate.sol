@@ -32,7 +32,7 @@ contract ElectionRegistry_CreateVoteMandate is Mandate {
     }
 
     /// @notice Constructor for OpenVote mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode(
             "address ElectionRegistry", "address ElectionRegistry_Vote", "uint256 maxVotes", "uint256 voterRoleId"
         );

@@ -132,6 +132,6 @@ A `PowersPaymaster` will be deployed alongside Mandate Sandbox and seeded with *
 - **Actions script:** `solidity/governance/mandate-sandbox/Actions.s.sol`
 - **Runners script:** `solidity/governance/mandate-sandbox/Runners.s.sol`
 - **Test file:** `solidity/governance/mandate-sandbox/Test.t.sol`
-- **Mandate version:** MAJOR=0, MINOR=1, PATCH=8
+- **Mandate version:** MAJOR=0, MINOR=1, PATCH = 9
 - **Network:** Arbitrum Sepolia (chainId 421614)
 - Mandate `nameDescription` strings must match exactly across Deploy/Actions/Runners.

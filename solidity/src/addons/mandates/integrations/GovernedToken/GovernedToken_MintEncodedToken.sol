@@ -24,7 +24,7 @@ contract GovernedToken_MintEncodedToken is Mandate {
         uint256 tokenId;
     }
 
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("address governedToken");
         emit Mandate__Deployed(configParams);
     }

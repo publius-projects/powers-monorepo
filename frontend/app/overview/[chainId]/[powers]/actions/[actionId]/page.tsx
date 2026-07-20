@@ -8,6 +8,7 @@ import { parseProposalStatus, shorterDescription } from "@/utils/parsers";
 import { toFullDateFormat, toEurTimeFormat } from "@/utils/toDates";
 import { useBlocks } from "@/hooks/useBlocks";
 import { OrgBanner } from "@/components/OrgBanner";
+import { callDataToActionParams } from "@/utils/callDataToActionParams";
 
 const STATE_STYLES: Record<number, string> = {
   0: 'text-muted-foreground bg-muted',
@@ -47,6 +48,16 @@ export default function ActionDetailPage() {
   // First occurrence with param data for the inputs panel
   const primaryOccurrence = occurrences[0]?.action
   const primaryMandate = powers?.mandates?.find(m => m.index === occurrences[0]?.mandateId)
+
+  // Decode the encoded callData into displayable input values against the mandate's params
+  const decodedInputs = React.useMemo(() => {
+    if (!primaryOccurrence?.callData || !primaryMandate?.params?.length) return []
+    try {
+      return callDataToActionParams(primaryOccurrence, powers)
+    } catch {
+      return []
+    }
+  }, [primaryOccurrence?.callData, primaryMandate?.index, powers])
 
   useEffect(() => {
     if (occurrences.length > 0) {
@@ -100,9 +111,7 @@ export default function ActionDetailPage() {
                 <span className="text-muted-foreground w-32 truncate">{param.varName}</span>
                 <span className="text-foreground/50 text-[10px]">{param.dataType}</span>
                 <span className="text-foreground ml-auto truncate max-w-48">
-                  {primaryOccurrence.paramValues?.[i] !== undefined
-                    ? String(primaryOccurrence.paramValues[i])
-                    : '—'}
+                  {decodedInputs[i] !== undefined ? String(decodedInputs[i]) : '—'}
                 </span>
               </div>
             ))}

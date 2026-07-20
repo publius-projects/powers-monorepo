@@ -184,12 +184,25 @@ contract Configurations is Script {
     }
 
     function getMandateRegistry(uint256 chainId) public pure returns (address) {
-        if (chainId == ETH_SEPOLIA_CHAIN_ID) return 0xA9Eb9FDF9CFe15B98093A05764aE5F7eA84311D9; //
-        if (chainId == ARB_SEPOLIA_CHAIN_ID) return 0xA9Eb9FDF9CFe15B98093A05764aE5F7eA84311D9;
+        if (chainId == ETH_SEPOLIA_CHAIN_ID) return 0x89b77a5eD85F6D442Cf703De8A03F286266de510; //
+        if (chainId == ARB_SEPOLIA_CHAIN_ID) return 0x89b77a5eD85F6D442Cf703De8A03F286266de510;
         if (chainId == OPT_SEPOLIA_CHAIN_ID) return 0x0000000000000000000000000000000000000000;
         if (chainId == BASE_SEPOLIA_CHAIN_ID) return 0x0000000000000000000000000000000000000000;
         if (chainId == MANTLE_SEPOLIA_CHAIN_ID) return 0x0000000000000000000000000000000000000000;
         if (chainId == LOCAL_CHAIN_ID) return 0x0000000000000000000000000000000000000000;
+        revert Configurations__UnsupportedChain();
+    }
+
+    /// @notice Global credit -> wei exchange rate to seed the MandateRegistry with on deploy.
+    /// @dev Mandates declare their price in credits; the registry multiplies by this to get the wei
+    ///      cost at adoption. Tune per network so one credit maps to a sensible fiat-ish amount.
+    function getWeiPerCredit(uint256 chainId) public pure returns (uint256) {
+        if (
+            chainId == ETH_SEPOLIA_CHAIN_ID || chainId == ARB_SEPOLIA_CHAIN_ID || chainId == OPT_SEPOLIA_CHAIN_ID
+                || chainId == BASE_SEPOLIA_CHAIN_ID || chainId == MANTLE_SEPOLIA_CHAIN_ID || chainId == LOCAL_CHAIN_ID
+        ) {
+            return 1e14; // 0.0001 ETH per credit
+        }
         revert Configurations__UnsupportedChain();
     }
 

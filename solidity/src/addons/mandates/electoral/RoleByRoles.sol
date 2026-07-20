@@ -23,7 +23,7 @@ contract RoleByRoles is Mandate {
     }
 
     /// @notice Constructor for RoleByRoles mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("uint256 newRoleId", "uint256[] roleIdsNeeded");
         emit Mandate__Deployed(configParams);
     }

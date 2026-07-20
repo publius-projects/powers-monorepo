@@ -17,7 +17,7 @@ import { MandateUtilities } from "@src/libraries/MandateUtilities.sol";
  * @dev Integrates with Soulbound1155.sol and Governed721.sol to create flexible gated access to roleId in Powers organisations.
  */
 contract GovernedToken_BurnToAccess is Mandate {
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("string[] inputParams", "address governedTokenAddress");
         emit Mandate__Deployed(configParams);
     }

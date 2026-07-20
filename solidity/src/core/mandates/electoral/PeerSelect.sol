@@ -20,9 +20,7 @@ import { Strings } from "@lib/openzeppelin-contracts/contracts/utils/Strings.sol
 
 contract PeerSelect is Mandate {
     struct Mem {
-        address caller;
         address[] nominees;
-        string[] nomineeList;
         bool[] selection;
         uint256 numSelections;
         uint256 i;
@@ -33,31 +31,25 @@ contract PeerSelect is Mandate {
     }
 
     /// @notice Constructor for PeerSelect mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("uint8 numberToSelect", "uint256 roleId", "address NomineesContract");
         emit Mandate__Deployed(configParams);
     }
 
-    function initializeMandate(
-        uint16 index,
-        string memory nameDescription,
-        bytes memory inputParams,
-        bytes memory config
-    ) public override {
-        Mem memory mem;
-        (,, mem.nomineesContract) = abi.decode(config, (uint8, uint256, address));
+    /// @notice Build the input fields dynamically from the *current* nominees.
+    /// @dev One `bool <address>` field per nominee. Computed on read (not snapshotted at
+    ///      initialization) because nominations happen after the constitution is deployed —
+    ///      snapshotting at init would freeze an empty list and the UI would show no inputs.
+    function getInputParams(address powers, uint16 mandateId) public view override returns (bytes memory inputParams) {
+        (,, address nomineesContract) = abi.decode(getConfig(powers, mandateId), (uint8, uint256, address));
 
-        // Get nominees from the Nominees contract
-        mem.nominees = Nominees(mem.nomineesContract).getNominees();
-
-        // Create dynamic inputParams based on nominees
-        mem.nomineeList = new string[](mem.nominees.length);
-        for (uint256 i = 0; i < mem.nominees.length; i++) {
-            mem.nomineeList[i] = string.concat("bool ", Strings.toHexString(mem.nominees[i]));
+        address[] memory nominees = Nominees(nomineesContract).getNominees();
+        string[] memory nomineeList = new string[](nominees.length);
+        for (uint256 i = 0; i < nominees.length; i++) {
+            nomineeList[i] = string.concat("bool ", Strings.toHexString(nominees[i]));
         }
 
-        inputParams = abi.encode(mem.nomineeList);
-        super.initializeMandate(index, nameDescription, inputParams, config);
+        return abi.encode(nomineeList);
     }
 
     /// @notice Build calls to assign or revoke roles for selected nominees

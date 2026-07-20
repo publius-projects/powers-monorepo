@@ -223,6 +223,6 @@ sufficient to block malicious reforms without requiring admin supremacy.
 - **Actions script:** `solidity/governance/examples/SecuredSlate/actions/SecuredSlateActions.s.sol`
 - **Runners script:** `solidity/governance/examples/SecuredSlate/actions/SecuredSlateRunners.s.sol`
 - **Test file:** `solidity/test/governance/SecuredSlate.t.sol`
-- **Mandate version:** MAJOR=0, MINOR=1, PATCH=8
+- **Mandate version:** MAJOR=0, MINOR=1, PATCH = 9
 - **nameDescription strings must match exactly across all four files.**
 - **PauseMandates targets:** Flow 0 positions 1 and 2 (Cast Vote, Execute Results); Flow 1 position 0 (Add Slate).

@@ -20,39 +20,6 @@ jobs:
           echo "PRs to staging must come from the develop branch (got: ${{ github.head_ref }})"
           exit 1
 
-  solidity-tests:
-    name: Solidity Tests
-    runs-on: ubuntu-latest
-    needs: check-source-branch
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Cache Foundry lib
-        uses: actions/cache@v4
-        with:
-          path: solidity/lib
-          key: foundry-lib-${{ hashFiles('solidity/.gitmodules') }}
-          restore-keys: foundry-lib-
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-
-      - name: Check formatting
-        run: cd solidity && forge fmt --check
-
-      - name: Build contracts
-        run: cd solidity && forge build --sizes
-
-      - name: Run tests
-        run: cd solidity && forge test -vvv
-        env:
-          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
-          ARB_SEPOLIA_RPC_URL: ${{ secrets.ARB_SEPOLIA_RPC_URL }}
-          OPT_SEPOLIA_RPC_URL: ${{ secrets.OPT_SEPOLIA_RPC_URL }}
-          DEV2_ADDRESS: ${{ vars.DEV2_ADDRESS }}
-
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest

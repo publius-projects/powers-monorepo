@@ -16,6 +16,12 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
+  // NOTE: theme-color is managed dynamically by <ThemeColorMeta/> so it can
+  // follow next-themes' resolvedTheme. Do NOT also declare `themeColor` here:
+  // that makes React/Next render its own theme-color meta nodes, which
+  // ThemeColorMeta then removes from the DOM, causing a "removeChild of null"
+  // crash in React's commit phase on the next navigation.
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

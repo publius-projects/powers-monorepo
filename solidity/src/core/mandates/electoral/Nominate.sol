@@ -13,7 +13,7 @@ import { Nominees } from "@src/core/helpers/Nominees.sol";
 
 contract Nominate is Mandate {
     /// @notice Constructor for Nominate mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("address NomineesContract");
         emit Mandate__Deployed(configParams);
     }

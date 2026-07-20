@@ -8,7 +8,7 @@ import {
 } from 'reactflow'
 import { Mandate, Powers, Action, Status, Flow } from '@/context/types'
 import { toFullDateFormat, toEurTimeFormat } from '@/utils/toDates'
-import { useBlocks } from '@/hooks/useBlocks'
+import { useBlocks, L2_TO_L1_CHAIN_MAP } from '@/hooks/useBlocks'
 import { parseChainId } from '@/utils/parsers'
 import { fromFutureBlockToDateTime } from '@/public/organisations/helpers'
 import { useBlockNumber } from 'wagmi'
@@ -108,7 +108,9 @@ export interface MandateSchemaNodeData {
 const MandateSchemaNode: React.FC<NodeProps<MandateSchemaNodeData>> = ({ data }) => {
   const { mandate, powers, onNodeClick, chainActionData, chainId, isHighlighted, isDimmed } = data
   const { timestamps, fetchTimestamps } = useBlocks()
-  const { data: blockNumber } = useBlockNumber()
+  const parsedChainIdForBlock = parseChainId(chainId) as number
+  const blockChainId = (L2_TO_L1_CHAIN_MAP[parsedChainIdForBlock] ?? parsedChainIdForBlock) as number
+  const { data: blockNumber } = useBlockNumber({ chainId: blockChainId })
   const cond = mandate.conditions
 
   const nameParts = mandate.nameDescription?.split(':') ?? []

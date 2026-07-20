@@ -172,7 +172,7 @@ This URI will be used as the second argument to the `Powers` constructor in the 
 
 ## Implementation Notes
 
-- **Mandate version:** MAJOR=0, MINOR=1, PATCH=8
+- **Mandate version:** MAJOR=0, MINOR=1, PATCH = 9
 - **Mandate nameDescription strings must match exactly across Deploy, Actions, Runners, and Test files.**
 - **Demo timing:** All voting periods and timelocks use 5-minute blocks for quick iteration. A `minutesToBlocks()` helper converts to chain-specific block counts.
 - **Production timing:** Replace 5-min periods with 3 days, and 10-min timelocks with 4 days, before deploying to mainnet.

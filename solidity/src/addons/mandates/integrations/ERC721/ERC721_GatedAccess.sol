@@ -18,7 +18,7 @@ contract ERC721_GatedAccess is Mandate {
         uint256 minBalance;
     }
 
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode(
             "address erc721Address", // The ERC721 contract address
             "uint256 assignRoleId", // The role Id to assign if checks pass

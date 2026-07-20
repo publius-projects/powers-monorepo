@@ -1,19 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.26;
 
-import {
-    TestSetupReform,
-    TestSetupExecutive,
-    TestSetupMandatePackageStatic,
-    TestSetupRevokeMandates
-} from "../../TestSetup.t.sol";
+import { TestSetupReform, TestSetupExecutive, TestSetupRevokeMandates } from "../../TestSetup.t.sol";
 
 import { MandateUtilities } from "@src/libraries/MandateUtilities.sol";
 import { Powers } from "@src/Powers.sol";
 import { PowersTypes } from "@src/interfaces/PowersTypes.sol";
 import { PowersErrors } from "@src/interfaces/PowersErrors.sol";
 import { PowersMock } from "../../mocks/PowersMock.sol";
-import { MandatePackage } from "@src/core/mandates/reform/MandatePackage.sol";
+import { Mandate } from "@src/Mandate.sol";
+import { Adopt_Mandates } from "@src/core/mandates/reform/Adopt_Mandates.sol";
 
 // ─────────────────────────────────────────────
 //               BASIC BEHAVIOUR
@@ -192,13 +188,26 @@ contract AdoptMandatesBasicTest is TestSetupExecutive {
         mandateId = findMandateIdInOrg("Adopt_Mandates: A mandate to adopt new mandates into the DAO.", daoMock);
     }
 
-    function testAdoptMandatesAdoptsSingleMandate() public {
-        address[] memory mandatesArr = new address[](1);
-        mandatesArr[0] = findMandateAddress("SelfSelect");
-        uint256[] memory roleIdsArr = new uint256[](1);
-        roleIdsArr[0] = ROLE_ONE;
+    /// @dev Helper: one MandateInitData with the given target, name, config and role.
+    function _initData(string memory name_, address target_, bytes memory config_, uint256 role_)
+        internal
+        pure
+        returns (PowersTypes.MandateInitData memory)
+    {
+        PowersTypes.Conditions memory cond;
+        cond.allowedRole = role_;
+        return PowersTypes.MandateInitData({
+            nameDescription: name_, targetMandate: target_, config: config_, conditions: cond
+        });
+    }
 
-        mandateCalldata = abi.encode(mandatesArr, roleIdsArr);
+    function testAdoptMandatesAdoptsSingleMandate() public {
+        PowersTypes.MandateInitData[] memory initData = new PowersTypes.MandateInitData[](1);
+        initData[0] = _initData(
+            "SelfSelect: adopted by reform.", findMandateAddress("SelfSelect"), abi.encode(ROLE_ONE), ROLE_ONE
+        );
+
+        mandateCalldata = abi.encode(initData);
         uint16 counterBefore = daoMock.mandateCounter();
 
         vm.prank(alice);
@@ -209,19 +218,73 @@ contract AdoptMandatesBasicTest is TestSetupExecutive {
         assertEq(daoMock.mandateCounter(), counterBefore + 1);
 
         (address adoptedAddr,, bool active) = daoMock.getAdoptedMandate(counterBefore);
-        assertEq(adoptedAddr, mandatesArr[0]);
+        assertEq(adoptedAddr, initData[0].targetMandate);
         assertTrue(active);
     }
 
-    function testAdoptMandatesAdoptsMultipleMandates() public {
-        address[] memory mandatesArr = new address[](2);
-        mandatesArr[0] = findMandateAddress("SelfSelect");
-        mandatesArr[1] = findMandateAddress("RenounceRole");
-        uint256[] memory roleIdsArr = new uint256[](2);
-        roleIdsArr[0] = ROLE_ONE;
-        roleIdsArr[1] = ROLE_TWO;
+    /// @notice The v0.2.0 point: config survives adoption. Under v0.1.9 this was always empty.
+    function testAdoptMandatesPreservesConfigAndName() public {
+        bytes memory config = abi.encode(ROLE_TWO);
+        PowersTypes.MandateInitData[] memory initData = new PowersTypes.MandateInitData[](1);
+        initData[0] = _initData("SelfSelect: claim role two.", findMandateAddress("SelfSelect"), config, ROLE_ONE);
 
-        mandateCalldata = abi.encode(mandatesArr, roleIdsArr);
+        mandateCalldata = abi.encode(initData);
+        uint16 counterBefore = daoMock.mandateCounter();
+
+        vm.prank(alice);
+        daoMock.request(mandateId, mandateCalldata, nonce, "Adopt configured SelfSelect");
+
+        (address adoptedAddr,,) = daoMock.getAdoptedMandate(counterBefore);
+        assertEq(Mandate(adoptedAddr).getConfig(address(daoMock), counterBefore), config);
+        assertEq(
+            Mandate(adoptedAddr).getNameDescription(address(daoMock), counterBefore), "SelfSelect: claim role two."
+        );
+    }
+
+    /// @notice Conditions survive adoption too — under v0.1.9 every field but allowedRole was zeroed.
+    function testAdoptMandatesPreservesConditions() public {
+        PowersTypes.Conditions memory cond;
+        cond.allowedRole = ROLE_ONE;
+        cond.votingPeriod = 1200;
+        cond.timelock = 300;
+        cond.quorum = 50;
+        cond.succeedAt = 66;
+
+        PowersTypes.MandateInitData[] memory initData = new PowersTypes.MandateInitData[](1);
+        initData[0] = PowersTypes.MandateInitData({
+            nameDescription: "SelfSelect: adopted with a vote.",
+            targetMandate: findMandateAddress("SelfSelect"),
+            config: abi.encode(ROLE_ONE),
+            conditions: cond
+        });
+
+        mandateCalldata = abi.encode(initData);
+        uint16 counterBefore = daoMock.mandateCounter();
+
+        vm.prank(alice);
+        daoMock.request(mandateId, mandateCalldata, nonce, "Adopt with conditions");
+
+        PowersTypes.Conditions memory stored = daoMock.getConditions(counterBefore);
+        assertEq(stored.allowedRole, ROLE_ONE);
+        assertEq(stored.votingPeriod, 1200);
+        assertEq(stored.timelock, 300);
+        assertEq(stored.quorum, 50);
+        assertEq(stored.succeedAt, 66);
+    }
+
+    function testAdoptMandatesAdoptsMultipleMandates() public {
+        PowersTypes.MandateInitData[] memory initData = new PowersTypes.MandateInitData[](2);
+        initData[0] = _initData(
+            "SelfSelect: adopted by reform.", findMandateAddress("SelfSelect"), abi.encode(ROLE_ONE), ROLE_ONE
+        );
+        initData[1] = _initData(
+            "RenounceRole: adopted by reform.",
+            findMandateAddress("RenounceRole"),
+            abi.encode(new uint256[](0)),
+            ROLE_TWO
+        );
+
+        mandateCalldata = abi.encode(initData);
         uint16 counterBefore = daoMock.mandateCounter();
 
         vm.prank(alice);
@@ -233,10 +296,44 @@ contract AdoptMandatesBasicTest is TestSetupExecutive {
 
         (address addr0,, bool active0) = daoMock.getAdoptedMandate(counterBefore);
         (address addr1,, bool active1) = daoMock.getAdoptedMandate(uint16(counterBefore + 1));
-        assertEq(addr0, mandatesArr[0]);
+        assertEq(addr0, initData[0].targetMandate);
         assertTrue(active0);
-        assertEq(addr1, mandatesArr[1]);
+        assertEq(addr1, initData[1].targetMandate);
         assertTrue(active1);
+    }
+
+    /// @notice Two mandates adopted in one call, the second chained to the first via needFulfilled.
+    ///         The predicted id is counterBefore (the first adoption's slot).
+    function testAdoptMandatesChainsNeedFulfilledWithinOneCall() public {
+        uint16 counterBefore = daoMock.mandateCounter();
+
+        PowersTypes.Conditions memory condA;
+        condA.allowedRole = ROLE_ONE;
+
+        PowersTypes.Conditions memory condB;
+        condB.allowedRole = ROLE_ONE;
+        condB.needFulfilled = counterBefore; // the mandate adopted immediately before this one
+
+        PowersTypes.MandateInitData[] memory initData = new PowersTypes.MandateInitData[](2);
+        initData[0] = PowersTypes.MandateInitData({
+            nameDescription: "Step 1: propose.",
+            targetMandate: findMandateAddress("StatementOfIntent"),
+            config: abi.encode(new string[](0)),
+            conditions: condA
+        });
+        initData[1] = PowersTypes.MandateInitData({
+            nameDescription: "Step 2: execute after step 1.",
+            targetMandate: findMandateAddress("StatementOfIntent"),
+            config: abi.encode(new string[](0)),
+            conditions: condB
+        });
+
+        mandateCalldata = abi.encode(initData);
+        vm.prank(alice);
+        daoMock.request(mandateId, mandateCalldata, nonce, "Adopt a two-step flow");
+
+        PowersTypes.Conditions memory stored = daoMock.getConditions(uint16(counterBefore + 1));
+        assertEq(stored.needFulfilled, counterBefore);
     }
 }
 
@@ -249,19 +346,15 @@ contract AdoptMandatesEdgeCaseTest is TestSetupExecutive {
         mandateId = findMandateIdInOrg("Adopt_Mandates: A mandate to adopt new mandates into the DAO.", daoMock);
     }
 
-    function testAdoptMandatesWithEmptyArraysFulfills() public {
-        address[] memory mandatesArr = new address[](0);
-        uint256[] memory roleIdsArr = new uint256[](0);
-
-        mandateCalldata = abi.encode(mandatesArr, roleIdsArr);
-        uint16 counterBefore = daoMock.mandateCounter();
+    /// @notice v0.2.0 rejects an empty array outright — a no-op adoption is a caller mistake.
+    ///         (v0.1.9 fulfilled it silently.)
+    function testAdoptMandatesWithEmptyArrayReverts() public {
+        PowersTypes.MandateInitData[] memory initData = new PowersTypes.MandateInitData[](0);
+        mandateCalldata = abi.encode(initData);
 
         vm.prank(alice);
+        vm.expectRevert(Adopt_Mandates.Adopt_Mandates__NoMandates.selector);
         daoMock.request(mandateId, mandateCalldata, nonce, "Adopt zero mandates");
-
-        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
-        assertEq(uint8(daoMock.getActionState(actionId)), uint8(PowersTypes.ActionState.Fulfilled));
-        assertEq(daoMock.mandateCounter(), counterBefore);
     }
 }
 
@@ -269,6 +362,19 @@ contract AdoptMandatesEdgeCaseTest is TestSetupExecutive {
 //               ACCESS CONTROL
 // ─────────────────────────────────────────────
 contract AdoptMandatesAccessTest is TestSetupExecutive {
+    function _selfSelectInitData(uint256 role_) internal view returns (bytes memory) {
+        PowersTypes.Conditions memory cond;
+        cond.allowedRole = role_;
+        PowersTypes.MandateInitData[] memory initData = new PowersTypes.MandateInitData[](1);
+        initData[0] = PowersTypes.MandateInitData({
+            nameDescription: "SelfSelect: adopted by reform.",
+            targetMandate: findMandateAddress("SelfSelect"),
+            config: abi.encode(ROLE_ONE),
+            conditions: cond
+        });
+        return abi.encode(initData);
+    }
+
     function testAdoptMandatesRevertsIfCallerLacksRole() public {
         // Deploy a fresh DAO with Adopt_Mandates restricted to ROLE_ONE
         PowersMock freshDao = new PowersMock();
@@ -290,11 +396,7 @@ contract AdoptMandatesAccessTest is TestSetupExecutive {
         vm.prank(address(freshDao));
         freshDao.assignRole(ROLE_ONE, alice);
 
-        address[] memory mandatesArr = new address[](1);
-        mandatesArr[0] = findMandateAddress("SelfSelect");
-        uint256[] memory roleIdsArr = new uint256[](1);
-        roleIdsArr[0] = type(uint256).max;
-        mandateCalldata = abi.encode(mandatesArr, roleIdsArr);
+        mandateCalldata = _selfSelectInitData(type(uint256).max);
 
         uint16 restrictedId =
             findMandateIdInOrg("Adopt_Mandates: restricted to role 1.", Powers(payable(address(freshDao))));
@@ -309,11 +411,7 @@ contract AdoptMandatesAccessTest is TestSetupExecutive {
         // In the executive constitution, Adopt_Mandates has allowedRole = type(uint256).max — any caller passes
         mandateId = findMandateIdInOrg("Adopt_Mandates: A mandate to adopt new mandates into the DAO.", daoMock);
 
-        address[] memory mandatesArr = new address[](1);
-        mandatesArr[0] = findMandateAddress("SelfSelect");
-        uint256[] memory roleIdsArr = new uint256[](1);
-        roleIdsArr[0] = type(uint256).max;
-        mandateCalldata = abi.encode(mandatesArr, roleIdsArr);
+        mandateCalldata = _selfSelectInitData(type(uint256).max);
 
         // eve has no assigned roles — public mandate must still let her through
         vm.prank(eve);
@@ -321,240 +419,6 @@ contract AdoptMandatesAccessTest is TestSetupExecutive {
 
         actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
         assertEq(uint8(daoMock.getActionState(actionId)), uint8(PowersTypes.ActionState.Fulfilled));
-    }
-}
-
-/////////////////////////////////////////////////////////////////////
-//                    MANDATE PACKAGE STATIC                       //
-/////////////////////////////////////////////////////////////////////
-
-// ─────────────────────────────────────────────
-//               BASIC BEHAVIOUR
-// ─────────────────────────────────────────────
-contract MandatePackageStaticBasicTest is TestSetupMandatePackageStatic {
-    function setUp() public override {
-        super.setUp();
-        mandateId = findMandateIdInOrg("MandatePackage_Static: Adopt SelfSelect package.", daoMock);
-    }
-
-    function testPackageAdoptsMandatesOnExecution() public {
-        uint16 counterBefore = daoMock.mandateCounter();
-        mandateCalldata = abi.encode();
-
-        vm.prank(alice);
-        daoMock.request(mandateId, mandateCalldata, nonce, "Execute static package");
-
-        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
-        assertEq(uint8(daoMock.getActionState(actionId)), uint8(PowersTypes.ActionState.Fulfilled));
-
-        // The one baked-in mandate was adopted — counter incremented by 1
-        assertEq(daoMock.mandateCounter(), counterBefore + 1);
-
-        // The newly adopted mandate (at the slot that was counterBefore) is active
-        (,, bool active) = daoMock.getAdoptedMandate(counterBefore);
-        assertTrue(active);
-    }
-
-    function testPackageSelfRevokesAfterExecution() public {
-        mandateCalldata = abi.encode();
-
-        vm.prank(alice);
-        daoMock.request(mandateId, mandateCalldata, nonce, "Execute static package");
-
-        // The package mandate's own slot must now be inactive
-        (,, bool active) = daoMock.getAdoptedMandate(mandateId);
-        assertFalse(active);
-    }
-}
-
-// ─────────────────────────────────────────────
-//               EDGE CASES
-// ─────────────────────────────────────────────
-contract MandatePackageStaticEdgeCaseTest is TestSetupMandatePackageStatic {
-    function testEmptyPackageOnlyRevokesSelf() public {
-        mandateId = findMandateIdInOrg("MandatePackage_Static: empty package.", daoMock);
-        uint16 counterBefore = daoMock.mandateCounter();
-        mandateCalldata = abi.encode();
-
-        vm.prank(alice);
-        daoMock.request(mandateId, mandateCalldata, nonce, "Execute empty package");
-
-        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
-        assertEq(uint8(daoMock.getActionState(actionId)), uint8(PowersTypes.ActionState.Fulfilled));
-
-        // No new mandates were adopted — counter unchanged
-        assertEq(daoMock.mandateCounter(), counterBefore);
-
-        // The package mandate itself is now inactive
-        (,, bool active) = daoMock.getAdoptedMandate(mandateId);
-        assertFalse(active);
-    }
-}
-
-// ─────────────────────────────────────────────
-//               ACCESS CONTROL
-// ─────────────────────────────────────────────
-contract MandatePackageStaticAccessTest is TestSetupMandatePackageStatic {
-    function testPackageRevertsIfCallerLacksRole() public {
-        // pkg3 requires ROLE_ONE; charlotte holds only ROLE_TWO
-        mandateId = findMandateIdInOrg("MandatePackage_Static: restricted to role 1.", daoMock);
-        mandateCalldata = abi.encode();
-
-        vm.prank(charlotte);
-        vm.expectRevert(Powers__CannotCallMandate.selector);
-        daoMock.request(mandateId, mandateCalldata, nonce, "Charlotte attempts restricted package");
-    }
-
-    function testPackageSucceedsForPublicCaller() public {
-        // pkg1 has allowedRole = type(uint256).max; eve has no assigned roles
-        mandateId = findMandateIdInOrg("MandatePackage_Static: Adopt SelfSelect package.", daoMock);
-        mandateCalldata = abi.encode();
-
-        vm.prank(eve);
-        daoMock.request(mandateId, mandateCalldata, nonce, "Eve executes public package");
-
-        actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
-        assertEq(uint8(daoMock.getActionState(actionId)), uint8(PowersTypes.ActionState.Fulfilled));
-    }
-}
-
-/////////////////////////////////////////////////////////////////////
-//                        MANDATE PACKAGE                          //
-/////////////////////////////////////////////////////////////////////
-
-// ─────────────────────────────────────────────
-//               BASIC BEHAVIOUR
-// ─────────────────────────────────────────────
-contract MandatePackageBasicTest is TestSetupExecutive {
-    MandatePackage mandatePackage;
-    uint16 adoptMandatesId;
-    uint16 pkgMandateId;
-
-    function setUp() public override {
-        super.setUp();
-        adoptMandatesId = findMandateIdInOrg("Adopt_Mandates: A mandate to adopt new mandates into the DAO.", daoMock);
-
-        address[] memory pkgAddresses = new address[](2);
-        pkgAddresses[0] = findMandateAddress("OpenAction");
-        pkgAddresses[1] = findMandateAddress("StatementOfIntent");
-        mandatePackage = new MandatePackage(pkgAddresses);
-
-        pkgMandateId = daoMock.mandateCounter();
-        address[] memory toAdopt = new address[](1);
-        toAdopt[0] = address(mandatePackage);
-        uint256[] memory roleIds_ = new uint256[](1);
-        roleIds_[0] = ROLE_ONE;
-
-        vm.prank(alice);
-        daoMock.request(adoptMandatesId, abi.encode(toAdopt, roleIds_), nonce, "Adopt MandatePackage");
-    }
-
-    function testMandatePackageHandleRequestAdoptsMandatesAndSelfDestructs() public {
-        uint16 counterBefore = daoMock.mandateCounter();
-        nonce = 456;
-        mandateCalldata = abi.encode();
-
-        vm.prank(alice);
-        daoMock.request(pkgMandateId, mandateCalldata, nonce, "Execute MandatePackage");
-
-        actionId = MandateUtilities.computeActionId(pkgMandateId, mandateCalldata, nonce);
-        assertEq(uint8(daoMock.getActionState(actionId)), uint8(PowersTypes.ActionState.Fulfilled));
-        assertEq(daoMock.mandateCounter(), counterBefore + 3);
-
-        (,, bool pkgActive) = daoMock.getAdoptedMandate(pkgMandateId);
-        assertFalse(pkgActive);
-
-        (,, bool active0) = daoMock.getAdoptedMandate(counterBefore);
-        (,, bool active1) = daoMock.getAdoptedMandate(uint16(counterBefore + 1));
-        (,, bool active2) = daoMock.getAdoptedMandate(uint16(counterBefore + 2));
-        assertTrue(active0);
-        assertTrue(active1);
-        assertTrue(active2);
-
-        // The needFulfilled/needNotFulfilled chain should wire the 3 new mandates together
-        PowersTypes.Conditions memory cond1 = daoMock.getConditions(uint16(counterBefore + 1));
-        assertEq(cond1.needFulfilled, counterBefore);
-
-        PowersTypes.Conditions memory cond2 = daoMock.getConditions(uint16(counterBefore + 2));
-        assertEq(cond2.needFulfilled, counterBefore);
-        assertEq(cond2.needNotFulfilled, uint16(counterBefore + 1));
-    }
-
-    function testGetNewMandatesReturnsCorrectInitData() public {
-        address openActionAddr = findMandateAddress("OpenAction");
-        address statementAddr = findMandateAddress("StatementOfIntent");
-
-        address[] memory pkgAddresses = new address[](2);
-        pkgAddresses[0] = openActionAddr;
-        pkgAddresses[1] = statementAddr;
-
-        uint16 mandateCount = 10;
-        PowersTypes.MandateInitData[] memory initData =
-            mandatePackage.getNewMandates(pkgAddresses, address(daoMock), mandateCount);
-
-        assertEq(initData.length, 3);
-
-        // mandateInitData[0]: StatementOfIntent, voteable by role 1
-        assertEq(initData[0].targetMandate, statementAddr);
-        assertEq(initData[0].conditions.allowedRole, 1);
-        assertEq(initData[0].conditions.quorum, 20);
-        assertEq(initData[0].conditions.succeedAt, 66);
-        assertEq(initData[0].conditions.votingPeriod, 1200);
-        assertEq(initData[0].conditions.needFulfilled, 0);
-
-        // mandateInitData[1]: Veto (StatementOfIntent), admin only, needs slot mandateCount fulfilled
-        assertEq(initData[1].targetMandate, statementAddr);
-        assertEq(initData[1].conditions.allowedRole, 0);
-        assertEq(initData[1].conditions.needFulfilled, mandateCount);
-
-        // mandateInitData[2]: OpenAction, role 2, needs mandateCount fulfilled and mandateCount+1 NOT fulfilled
-        assertEq(initData[2].targetMandate, openActionAddr);
-        assertEq(initData[2].conditions.allowedRole, 2);
-        assertEq(initData[2].conditions.needFulfilled, mandateCount);
-        assertEq(initData[2].conditions.needNotFulfilled, uint16(mandateCount + 1));
-    }
-}
-
-// ─────────────────────────────────────────────
-//               EDGE CASES
-// ─────────────────────────────────────────────
-contract MandatePackageEdgeCaseTest is TestSetupExecutive {
-    function testMandatePackageInitializeMandateOverridesInputParams() public {
-        address[] memory pkgAddresses = new address[](2);
-        pkgAddresses[0] = findMandateAddress("OpenAction");
-        pkgAddresses[1] = findMandateAddress("StatementOfIntent");
-        MandatePackage pkg = new MandatePackage(pkgAddresses);
-
-        uint16 adoptId = findMandateIdInOrg("Adopt_Mandates: A mandate to adopt new mandates into the DAO.", daoMock);
-        uint16 pkgId = daoMock.mandateCounter();
-
-        address[] memory toAdopt = new address[](1);
-        toAdopt[0] = address(pkg);
-        uint256[] memory roleIds_ = new uint256[](1);
-        roleIds_[0] = ROLE_ONE;
-
-        vm.prank(alice);
-        daoMock.request(adoptId, abi.encode(toAdopt, roleIds_), nonce, "Adopt package");
-
-        // MandatePackage.initializeMandate overrides inputParams to abi.encode() (empty)
-        bytes memory storedParams = pkg.getInputParams(address(daoMock), pkgId);
-        assertEq(storedParams.length, 0);
-    }
-
-    function testMandatePackageGetNewMandatesNeedFulfilledOffsets() public {
-        address[] memory pkgAddresses = new address[](2);
-        pkgAddresses[0] = findMandateAddress("OpenAction");
-        pkgAddresses[1] = findMandateAddress("StatementOfIntent");
-        MandatePackage pkg = new MandatePackage(pkgAddresses);
-
-        uint16 mandateCount = 42;
-        PowersTypes.MandateInitData[] memory initData = pkg.getNewMandates(pkgAddresses, address(daoMock), mandateCount);
-
-        // Veto slot depends on propose slot (mandateCount)
-        assertEq(initData[1].conditions.needFulfilled, mandateCount);
-        // Execute slot depends on propose (mandateCount) and is blocked by veto (mandateCount+1)
-        assertEq(initData[2].conditions.needFulfilled, mandateCount);
-        assertEq(initData[2].conditions.needNotFulfilled, uint16(mandateCount + 1));
     }
 }
 
@@ -666,43 +530,5 @@ contract RevokeMandatesAccessTest is TestSetupRevokeMandates {
         vm.prank(eve);
         vm.expectRevert(Powers__CannotCallMandate.selector);
         daoMock.request(mandateId, mandateCalldata, nonce, "Eve attempts revoke");
-    }
-}
-
-// ─────────────────────────────────────────────
-//               ACCESS CONTROL
-// ─────────────────────────────────────────────
-contract MandatePackageAccessTest is TestSetupExecutive {
-    MandatePackage mandatePackage;
-    uint16 pkgMandateId;
-
-    function setUp() public override {
-        super.setUp();
-        uint16 adoptMandatesId =
-            findMandateIdInOrg("Adopt_Mandates: A mandate to adopt new mandates into the DAO.", daoMock);
-
-        address[] memory pkgAddresses = new address[](2);
-        pkgAddresses[0] = findMandateAddress("OpenAction");
-        pkgAddresses[1] = findMandateAddress("StatementOfIntent");
-        mandatePackage = new MandatePackage(pkgAddresses);
-
-        pkgMandateId = daoMock.mandateCounter();
-        address[] memory toAdopt = new address[](1);
-        toAdopt[0] = address(mandatePackage);
-        uint256[] memory roleIds_ = new uint256[](1);
-        roleIds_[0] = ROLE_ONE;
-
-        vm.prank(alice);
-        daoMock.request(adoptMandatesId, abi.encode(toAdopt, roleIds_), nonce, "Adopt MandatePackage");
-    }
-
-    function testMandatePackageRevertsForCallerWithWrongRole() public {
-        nonce = 456;
-        mandateCalldata = abi.encode();
-
-        // charlotte holds ROLE_TWO; package was adopted with allowedRole = ROLE_ONE
-        vm.prank(charlotte);
-        vm.expectRevert(Powers__CannotCallMandate.selector);
-        daoMock.request(pkgMandateId, mandateCalldata, nonce, "Charlotte attempts execution");
     }
 }

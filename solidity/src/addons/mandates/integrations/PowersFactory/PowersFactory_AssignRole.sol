@@ -16,7 +16,7 @@ contract PowersFactory_AssignRole is Mandate {
         address decodedAddress;
     }
 
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams =
             abi.encode("uint16 factoryMandateId", "uint256 roleIdNewOrg", "string[] inputParams");
         emit Mandate__Deployed(configParams);

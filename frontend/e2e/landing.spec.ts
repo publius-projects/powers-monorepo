@@ -6,14 +6,14 @@ import { VIEWPORTS } from './viewports';
 // loaded through Playwright's test loader (works fine inside Next.js's
 // bundler, but not standalone) - see arbitrumSepolia.id=421614, sepolia.id=11155111.
 const DeployedExamples = [
-  { id: 'governed-721', chainId: 421614, address: '0xaa3146fBa89b6e93303c397f76B2cC36545372D0' },
-  { id: 'bicameralism', chainId: 421614, address: '0xA23d34135d285FA4efb51168fb5719405BC36a24' },
-  { id: 'optimistic-execution', chainId: 421614, address: '0x0133081239254Ca966B3570bd775cAEE93Cfd4E2' },
-  { id: 'nested-governance-parent', chainId: 421614, address: '0x69752fE5a307e324cd508d5F6BAD0276b5716Cf3' },
-  { id: 'open-elections', chainId: 421614, address: '0x44341f8dadB0f1C311D09145bD2fDA688Aea058c' },
-  { id: 'token-delegates', chainId: 11155111, address: '0xEFaD9408876295A3B0Dd7fD8f6606dd551b82695' },
-  { id: 'account-abstraction', chainId: 11155111, address: '0xf93D1775d1A734220AE6Fb751313961c0f869363' },
-  { id: 'powers101', chainId: 11155111, address: '0x7EF3396E64BcdF5b58dE2A097BC5b72712059098' },
+  { id: 'staking-pool-governance', chainId: 421614, address: '0x1625eB24df6571Ae13ebD9Cc3bd82b5F1E38405a' },
+  { id: 'bicameralism', chainId: 421614, address: '0x9b16B31FF15535F871d8017b1Cca682E65E49ee1' },
+  { id: 'optimistic-execution', chainId: 421614, address: '0x455810765b497519869187eCf57424611a83709E' },
+  { id: 'nested-governance-parent', chainId: 421614, address: '0x0CE0eB29E56cead1499061991de07Cf86658740a' },
+  { id: 'open-elections', chainId: 421614, address: '0x5F44F12114d352eF191557Fb7a7202D96035d883' },
+  { id: 'token-delegates', chainId: 421614, address: '0xc80A4747AA3562E23497e7E3570B10dA3A0F706D' },
+  { id: 'account-abstraction', chainId: 421614, address: '0x2D95D1b1562a12C4220F29414837b238Dcf3430c' },
+  { id: 'powers101', chainId: 421614, address: '0x6D5A3A936bb1e5434ad60E58E58848Bd67Afb79B' },
 ];
 
 // The same sentence list rendered by CyclingTypewriter (app/CyclingTypewriter.tsx).

@@ -10,6 +10,7 @@ import { useEffectiveAddress } from "@/hooks/useEffectiveAddress";
 
 import { NavigationDropdownMenu } from './NavigationDropdownMenu';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { ShareQrButton } from '@/components/ShareQrButton';
 import { ChevronRightIcon } from "@heroicons/react/24/solid";
 import { useAddressDisplay } from "@/hooks/useAddressDisplay";
 
@@ -110,7 +111,7 @@ export default function ForumLayout({ children }: Readonly<{ children: React.Rea
  
   return (  
     <div className="h-screen w-screen flex flex-col bg-background scanlines overflow-hidden">
-      <header className="hidden sm:flex w-full flex-col items-center border-b border-border px-3 sm:px-4 py-4 flex-shrink-0">
+      <header className="hidden min-[700px]:flex w-full flex-col items-center border-b border-border px-3 sm:px-4 py-4 flex-shrink-0">
         <div className="w-full flex flex-nowrap items-center justify-between max-w-4xl gap-2 sm:gap-3">
           <div className="flex items-center gap-2 sm:gap-4">
             <Link href="/forum" className="font-mono text-base sm:text-lg text-foreground tracking-wider truncate hover:text-foreground/80 transition-colors">{
@@ -158,6 +159,7 @@ export default function ForumLayout({ children }: Readonly<{ children: React.Rea
                 <span className="text-muted-foreground">NOT CONNECTED</span>
               </button>
             }
+            <ShareQrButton />
             <ThemeToggle />
           </div>
         </div>
@@ -194,7 +196,7 @@ export default function ForumLayout({ children }: Readonly<{ children: React.Rea
           </div>
           
           {/* Hamburger button - only visible on mobile */}
-          <div className="flex items-center gap-1 sm:hidden">
+          <div className="flex items-center gap-1 min-[700px]:hidden">
             <button
               onClick={() => setMobileMenuOpen(true)}
               className="p-2 text-foreground hover:text-foreground/80 transition-colors cursor-pointer"
@@ -215,7 +217,7 @@ export default function ForumLayout({ children }: Readonly<{ children: React.Rea
 
       {/* Mobile Slide-out Menu */}
       <div 
-        className={`fixed inset-0 z-50 sm:hidden transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-0 z-50 min-[700px]:hidden transition-transform duration-300 ease-in-out ${
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -236,9 +238,6 @@ export default function ForumLayout({ children }: Readonly<{ children: React.Rea
           
           {/* Menu content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {/* Divider */}
-            <div className="border-t border-border" />
-            
             {/* Wallet Connection */}
             <div className="space-y-3">
               <span className="text-xs text-muted-foreground font-mono uppercase">Wallet</span>
@@ -297,9 +296,6 @@ export default function ForumLayout({ children }: Readonly<{ children: React.Rea
             {/* Divider */}
             <div className="border-t border-border" />
 
-            {/* Divider */}
-            <div className="border-t border-border" />
-
             {/* Theme Toggle */}
             <div className="space-y-3">
               <span className="text-xs text-muted-foreground font-mono uppercase">Theme</span>
@@ -307,6 +303,15 @@ export default function ForumLayout({ children }: Readonly<{ children: React.Rea
                 <ThemeToggle />
                 <span className="text-sm font-mono text-muted-foreground">Toggle theme</span>
               </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border" />
+
+            {/* Share */}
+            <div className="space-y-3">
+              <span className="text-xs text-muted-foreground font-mono uppercase">Share</span>
+              <ShareQrButton variant="menu" />
             </div>
           </div>
         </div>

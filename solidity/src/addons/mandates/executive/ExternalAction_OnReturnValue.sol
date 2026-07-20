@@ -11,7 +11,7 @@ import { MandateUtilities } from "@src/libraries/MandateUtilities.sol";
 import { IPowers } from "@src/interfaces/IPowers.sol";
 
 contract ExternalAction_OnReturnValue is Mandate {
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams =
             abi.encode("bytes paramsBefore", "string[] Params", "uint16 parentMandateId", "bytes paramsAfter");
         emit Mandate__Deployed(configParams);

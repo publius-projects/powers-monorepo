@@ -28,7 +28,7 @@ contract ElectionRegistry_CleanUpVoteMandate is Mandate {
     }
 
     /// @notice Constructor for OpenVote mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("uint16 CreateVoteMandate_Id");
         emit Mandate__Deployed(configParams);
     }

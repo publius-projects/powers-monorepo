@@ -132,6 +132,10 @@ contract DeployMandates is Script {
             vm.startBroadcast();
             registry = new MandateRegistry{ salt: keccak256("MandateRegistry2") }(msg.sender);
             vm.stopBroadcast();
+            // Seed the credit -> wei exchange rate so priced mandates work out of the box (owner-gated).
+            vm.startBroadcast(registry.owner());
+            registry.setWeiPerCredit(helperConfig.getWeiPerCredit(block.chainid));
+            vm.stopBroadcast();
         }
         // MandateRegistry registry = MandateRegistry(registryAddr);
         // IPowers powers = IPowers(registry.owner());
@@ -231,203 +235,204 @@ contract DeployMandates is Script {
         //////////////////////////////////////////////////////////////////////////
         names.push("PeerSelect");
         creationCodes.push(type(PeerSelect).creationCode);
-        constructorArgs.push(abi.encode("PeerSelect"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("RoleByRoles");
         creationCodes.push(type(RoleByRoles).creationCode);
-        constructorArgs.push(abi.encode("RoleByRoles"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("SelfSelect");
         creationCodes.push(type(SelfSelect).creationCode);
-        constructorArgs.push(abi.encode("SelfSelect"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("RenounceRole");
         creationCodes.push(type(RenounceRole).creationCode);
-        constructorArgs.push(abi.encode("RenounceRole"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("AssignExternalRole");
         creationCodes.push(type(AssignExternalRole).creationCode);
-        constructorArgs.push(abi.encode("AssignExternalRole"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("DelegateTokenSelect");
         creationCodes.push(type(DelegateTokenSelect).creationCode);
-        constructorArgs.push(abi.encode("DelegateTokenSelect"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("Nominate");
         creationCodes.push(type(Nominate).creationCode);
-        constructorArgs.push(abi.encode("Nominate"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("RevokeInactiveAccounts");
         creationCodes.push(type(RevokeInactiveAccounts).creationCode);
-        constructorArgs.push(abi.encode("RevokeInactiveAccounts"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("RevokeAccountsRoleId");
         creationCodes.push(type(RevokeAccountsRoleId).creationCode);
-        constructorArgs.push(abi.encode("RevokeAccountsRoleId"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         //////////////////////////////////////////////////////////////////////////
         //                       Executive Mandates                             //
         //////////////////////////////////////////////////////////////////////////
         names.push("PresetActions");
         creationCodes.push(type(PresetActions).creationCode);
-        constructorArgs.push(abi.encode("PresetActions"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("PresetActions_OnOwnPowers");
         creationCodes.push(type(PresetActions_OnOwnPowers).creationCode);
-        constructorArgs.push(abi.encode("PresetActions_OnOwnPowers"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("OpenAction");
         creationCodes.push(type(OpenAction).creationCode);
-        constructorArgs.push(abi.encode("OpenAction"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("StatementOfIntent");
         creationCodes.push(type(StatementOfIntent).creationCode);
-        constructorArgs.push(abi.encode("StatementOfIntent"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("BespokeAction_Advanced");
         creationCodes.push(type(BespokeAction_Advanced).creationCode);
-        constructorArgs.push(abi.encode("BespokeAction_Advanced"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("BespokeAction_OnReturnValue");
         creationCodes.push(type(BespokeAction_OnReturnValue).creationCode);
-        constructorArgs.push(abi.encode("BespokeAction_OnReturnValue"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("BespokeAction_Simple");
         creationCodes.push(type(BespokeAction_Simple).creationCode);
-        constructorArgs.push(abi.encode("BespokeAction_Simple"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("CheckExternalActionState");
         creationCodes.push(type(CheckExternalActionState).creationCode);
-        constructorArgs.push(abi.encode("CheckExternalActionState"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("ExternalAction_Simple");
         creationCodes.push(type(ExternalAction_Simple).creationCode);
-        constructorArgs.push(abi.encode("ExternalAction_Simple"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("ExternalAction_OnReturnValue");
         creationCodes.push(type(ExternalAction_OnReturnValue).creationCode);
-        constructorArgs.push(abi.encode("ExternalAction_OnReturnValue"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("ExternalAction_Flexible");
         creationCodes.push(type(ExternalAction_Flexible).creationCode);
-        constructorArgs.push(abi.encode("ExternalAction_Flexible"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         //////////////////////////////////////////////////////////////////////////
         //                      Integrations Mandates                           //
         //////////////////////////////////////////////////////////////////////////
         names.push("Governor_CreateProposal");
         creationCodes.push(type(Governor_CreateProposal).creationCode);
-        constructorArgs.push(abi.encode("Governor_CreateProposal"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("Governor_ExecuteProposal");
         creationCodes.push(type(Governor_ExecuteProposal).creationCode);
-        constructorArgs.push(abi.encode("Governor_ExecuteProposal"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("Safe_ExecTransaction");
         creationCodes.push(type(Safe_ExecTransaction).creationCode);
-        constructorArgs.push(abi.encode("Safe_ExecTransaction"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("Safe_ExecTransaction_OnReturnValue");
         creationCodes.push(type(Safe_ExecTransaction_OnReturnValue).creationCode);
-        constructorArgs.push(abi.encode("Safe_ExecTransaction_OnReturnValue"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("Safe_RecoverTokens");
         creationCodes.push(type(Safe_RecoverTokens).creationCode);
-        constructorArgs.push(abi.encode("Safe_RecoverTokens"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("SafeAllowance_Transfer");
         creationCodes.push(type(SafeAllowance_Transfer).creationCode);
-        constructorArgs.push(abi.encode("SafeAllowance_Transfer"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("SafeAllowance_PresetTransfer");
         creationCodes.push(type(SafeAllowance_PresetTransfer).creationCode);
-        constructorArgs.push(abi.encode("SafeAllowance_PresetTransfer"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("SafeAllowance_Action");
         creationCodes.push(type(SafeAllowance_Action).creationCode);
-        constructorArgs.push(abi.encode("SafeAllowance_Action"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("PowersFactory_AssignRole");
         creationCodes.push(type(PowersFactory_AssignRole).creationCode);
-        constructorArgs.push(abi.encode("PowersFactory_AssignRole"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("PowersFactory_AddSafeDelegate");
         creationCodes.push(type(PowersFactory_AddSafeDelegate).creationCode);
-        constructorArgs.push(abi.encode("PowersFactory_AddSafeDelegate"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("GovernedToken_GatedAccess");
         creationCodes.push(type(GovernedToken_GatedAccess).creationCode);
-        constructorArgs.push(abi.encode("GovernedToken_GatedAccess"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("ERC721_GatedAccess");
         creationCodes.push(type(ERC721_GatedAccess).creationCode);
-        constructorArgs.push(abi.encode("ERC721_GatedAccess"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("GovernedToken_MintEncodedToken");
         creationCodes.push(type(GovernedToken_MintEncodedToken).creationCode);
-        constructorArgs.push(abi.encode("GovernedToken_MintEncodedToken"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("GovernedToken_BurnToAccess");
         creationCodes.push(type(GovernedToken_BurnToAccess).creationCode);
-        constructorArgs.push(abi.encode("GovernedToken_BurnToAccess"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("ElectionRegistry_Vote");
         creationCodes.push(type(ElectionRegistry_Vote).creationCode);
-        constructorArgs.push(abi.encode("ElectionRegistry_Vote"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("ElectionRegistry_Nominate");
         creationCodes.push(type(ElectionRegistry_Nominate).creationCode);
-        constructorArgs.push(abi.encode("ElectionRegistry_Nominate"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("ElectionRegistry_CreateVoteMandate");
         creationCodes.push(type(ElectionRegistry_CreateVoteMandate).creationCode);
-        constructorArgs.push(abi.encode("ElectionRegistry_CreateVoteMandate"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("ElectionRegistry_Tally");
         creationCodes.push(type(ElectionRegistry_Tally).creationCode);
-        constructorArgs.push(abi.encode("ElectionRegistry_Tally"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("ElectionRegistry_CleanUpVoteMandate");
         creationCodes.push(type(ElectionRegistry_CleanUpVoteMandate).creationCode);
-        constructorArgs.push(abi.encode("ElectionRegistry_CleanUpVoteMandate"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("SlateRegistry_AddSlate");
         creationCodes.push(type(SlateRegistry_AddSlate).creationCode);
-        constructorArgs.push(abi.encode("SlateRegistry_AddSlate"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("SlateRegistry_RemoveSlate");
         creationCodes.push(type(SlateRegistry_RemoveSlate).creationCode);
-        constructorArgs.push(abi.encode("SlateRegistry_RemoveSlate"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("SlateRegistry_ExecuteResult");
         creationCodes.push(type(SlateRegistry_ExecuteResult).creationCode);
-        constructorArgs.push(abi.encode("SlateRegistry_ExecuteResult"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("GovernedToken_CollectSplitPayment");
         creationCodes.push(type(GovernedToken_CollectSplitPayment).creationCode);
-        constructorArgs.push(abi.encode("GovernedToken_CollectSplitPayment"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("ZKPassport_Check");
         creationCodes.push(type(ZKPassport_Check).creationCode);
-        constructorArgs.push(abi.encode());
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("ChainlinkFunctions_Open");
         creationCodes.push(type(ChainlinkFunctions_Open).creationCode);
-        constructorArgs.push(abi.encode("ChainlinkFunctions_Open"));
+        // router placeholder (not configured in this script) + canonical registry
+        constructorArgs.push(abi.encode(address(0), address(registry)));
 
         //////////////////////////////////////////////////////////////////////////
         //                          Reform Mandates                             //
         //////////////////////////////////////////////////////////////////////////
         names.push("Adopt_Mandates");
         creationCodes.push(type(Adopt_Mandates).creationCode);
-        constructorArgs.push(abi.encode("Adopt_Mandates"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("PauseMandates");
         creationCodes.push(type(PauseMandates).creationCode);
-        constructorArgs.push(abi.encode("PauseMandates"));
+        constructorArgs.push(abi.encode(address(registry)));
 
         names.push("Revoke_Mandates");
         creationCodes.push(type(Revoke_Mandates).creationCode);
-        constructorArgs.push(abi.encode("Revoke_Mandates"));
+        constructorArgs.push(abi.encode(address(registry)));
     }
 }

@@ -22,7 +22,6 @@ contract ElectionRegistry_Vote is Mandate {
         address caller;
         bytes32 mandateHash;
         address[] nominees;
-        string[] nomineeList;
         bool[] vote;
         uint256 numVotes;
         uint256 i;
@@ -32,36 +31,27 @@ contract ElectionRegistry_Vote is Mandate {
     }
 
     /// @notice Constructor for ElectionRegistry_Vote mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams =
             abi.encode("address ElectionRegistryContract", "uint256 maxVotes", "uint256 electionId");
         emit Mandate__Deployed(configParams);
     }
 
-    function initializeMandate(
-        uint16 index,
-        string memory nameDescription,
-        bytes memory inputParams,
-        bytes memory config
-    ) public override {
-        Mem memory mem;
-        (mem.openElectionContract, mem.maxVotes, mem.electionId) = abi.decode(config, (address, uint256, uint256));
+    /// @notice Build the input fields dynamically from the *current* election nominees.
+    /// @dev One `bool <address>` field per nominee. Computed on read (not snapshotted at
+    ///      initialization) because nominees register after the constitution is deployed —
+    ///      snapshotting at init would freeze an empty list and the UI would show no inputs.
+    function getInputParams(address powers, uint16 mandateId) public view override returns (bytes memory inputParams) {
+        (address openElectionContract,, uint256 electionId) =
+            abi.decode(getConfig(powers, mandateId), (address, uint256, uint256));
 
-        // Check if election is open - otherwise revert.
-        if (!ElectionRegistry(mem.openElectionContract).isElectionOpen(mem.electionId)) {
-            revert("Election is not open.");
+        address[] memory nominees = ElectionRegistry(openElectionContract).getNominees(electionId);
+        string[] memory nomineeList = new string[](nominees.length);
+        for (uint256 i = 0; i < nominees.length; i++) {
+            nomineeList[i] = string.concat("bool ", Strings.toHexString(nominees[i]));
         }
 
-        // Get nominees from the ElectionRegistry contract
-        mem.nominees = ElectionRegistry(mem.openElectionContract).getNominees(mem.electionId);
-
-        // Create dynamic inputParams based on nominees
-        mem.nomineeList = new string[](mem.nominees.length);
-        for (uint256 i = 0; i < mem.nominees.length; i++) {
-            mem.nomineeList[i] = string.concat("bool ", Strings.toHexString(mem.nominees[i]));
-        }
-        inputParams = abi.encode(mem.nomineeList);
-        super.initializeMandate(index, nameDescription, inputParams, config);
+        return abi.encode(nomineeList);
     }
 
     /// @notice Build a call to cast a vote in the ElectionRegistry contract

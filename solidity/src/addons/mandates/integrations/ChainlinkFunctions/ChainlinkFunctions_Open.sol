@@ -49,7 +49,7 @@ contract ChainlinkFunctions_Open is AsyncMandate, FunctionsClient {
 
     // --- Constructor ---
 
-    constructor(address router) FunctionsClient(router) {
+    constructor(address router, address registry_) FunctionsClient(router) AsyncMandate(registry_) {
         // Define the parameters required to configure this mandate
         bytes memory configParams = abi.encode(
             "string source", "string[] inputParams", "uint64 subscriptionId", "uint32 gasLimit", "bytes32 donID"
