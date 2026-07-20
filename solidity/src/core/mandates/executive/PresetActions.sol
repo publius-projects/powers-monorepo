@@ -14,7 +14,7 @@ import { MandateUtilities } from "@src/libraries/MandateUtilities.sol";
 
 contract PresetActions is Mandate {
     /// @notice Constructor of the PresetActions mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("address[] targets", "uint256[] values", "bytes[] calldatas");
         emit Mandate__Deployed(configParams);
     }

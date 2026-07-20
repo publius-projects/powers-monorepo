@@ -219,9 +219,13 @@ contract Deploy is DeployHelpers {
             nameDescription: "Governance Reform: Members unanimously vote to adopt new governance mandates."
         }));
 
-        string[] memory reformParams = new string[](2);
-        reformParams[0] = "address[] mandates"; // lowercase to match Adopt_Mandates hardcoded params
-        reformParams[1] = "uint256[] roleIds";
+        // Adopt_Mandates v0.2.0 takes one full MandateInitData[]. The propose step is matched to
+        // the execute step by hashing the *same* mandateCalldata, so this must mirror the executor
+        // exactly or an approved proposal cannot be executed. (The old two-array shape needed a
+        // lowercase-name workaround to match v0.1.9's hardcoded params; that is no longer relevant.)
+        string[] memory reformParams = new string[](1);
+        reformParams[0] =
+            "(string,address,bytes,(uint256,uint32,uint32,uint32,uint16,uint16,uint8,uint8,uint32))[] mandateInitData";
 
         // Step 1 — All Members must unanimously agree to adopt new mandates.
         mandateCount++;
@@ -244,7 +248,7 @@ contract Deploy is DeployHelpers {
         conditions.timelock = minutesToBlocks(10, helperConfig.getBlocksPerHour(block.chainid));
         constitution.push(PowersTypes.MandateInitData({
             nameDescription: "Execute Governance Reform: Adopt new mandates after unanimous member approval.",
-            targetMandate: registry.getMandateAddress(MAJOR, MINOR, PATCH, "Adopt_Mandates"),
+            targetMandate: _latestAdoptMandates(),
             config: abi.encode(),
             conditions: conditions
         }));
@@ -339,5 +343,12 @@ contract Deploy is DeployHelpers {
         delete conditions;
 
         return constitution.length;
+    }
+
+    /// @notice Adopt_Mandates is at version 0.2.0 (full MandateInitData payload), not the
+    /// repo-wide (MAJOR, MINOR, PATCH) pin used for the other mandates.
+    function _latestAdoptMandates() internal view returns (address) {
+        (uint16 major, uint16 minor, uint16 patch) = registry.getLatestVersion("Adopt_Mandates");
+        return registry.getMandateAddress(major, minor, patch, "Adopt_Mandates");
     }
 }

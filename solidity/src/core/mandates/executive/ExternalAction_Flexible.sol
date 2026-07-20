@@ -12,7 +12,7 @@ import { IPowers } from "@src/interfaces/IPowers.sol";
 
 contract ExternalAction_Flexible is Mandate {
     /// @notice Constructor of the BespokeAction_Simple mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("string[] Params");
         emit Mandate__Deployed(configParams);
     }

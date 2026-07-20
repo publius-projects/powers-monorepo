@@ -31,7 +31,7 @@ contract SafeAllowance_PresetTransfer is Mandate {
     }
 
     /// @notice Constructor function
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         // Expose expected input parameters for UIs.
         bytes memory configParams =
             abi.encode("address Token", "uint256 Amount", "address allowanceModule", "address safeProxy");

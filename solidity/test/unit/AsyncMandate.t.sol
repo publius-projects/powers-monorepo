@@ -18,7 +18,7 @@ contract AsyncMandateBasicTest is TestSetupAsync {
 
     function setUp() public override {
         super.setUp();
-        asyncMock = new AsyncMandateMock();
+        asyncMock = AsyncMandateMock(registerTestMandate(address(new AsyncMandateMock(address(registry)))));
     }
 
     function testInitializeMandateSetsNameDescription() public {
@@ -157,7 +157,7 @@ contract AsyncMandateHelperTest is TestSetupAsync {
 
     function setUp() public override {
         super.setUp();
-        asyncMock = new AsyncMandateMock();
+        asyncMock = AsyncMandateMock(registerTestMandate(address(new AsyncMandateMock(address(registry)))));
     }
 
     function testGetNameDescriptionReturnsStoredValue() public {
@@ -249,7 +249,7 @@ contract AsyncMandateVersionInterfaceTest is TestSetupAsync {
 
     function setUp() public override {
         super.setUp();
-        asyncMock = new AsyncMandateMock();
+        asyncMock = AsyncMandateMock(registerTestMandate(address(new AsyncMandateMock(address(registry)))));
     }
 
     function testVersionReturnsExpectedValues() public view {
@@ -280,7 +280,7 @@ contract AsyncMandateExecuteTest is TestSetupAsync {
 
     function setUp() public override {
         super.setUp();
-        asyncMock = new AsyncMandateMock();
+        asyncMock = AsyncMandateMock(registerTestMandate(address(new AsyncMandateMock(address(registry)))));
     }
 
     function testExecuteMandateRevertsIfMandateNotInitialized() public {
@@ -370,7 +370,7 @@ contract AsyncMandateFlowTest is TestSetupAsync {
 
     function setUp() public override {
         super.setUp();
-        asyncMock = new AsyncMandateMock();
+        asyncMock = AsyncMandateMock(registerTestMandate(address(new AsyncMandateMock(address(registry)))));
 
         // Adopt the async mock as a mandate in daoMock accessible by ROLE_ONE holders
         conditions.allowedRole = ROLE_ONE;

@@ -33,7 +33,7 @@ contract GovernedToken_GatedAccess is Mandate {
         uint48 mintBlock;
     }
 
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode(
             "address governedTokenAddress",
             "uint256 assignRoleId", // the role Id to assign if checks pass

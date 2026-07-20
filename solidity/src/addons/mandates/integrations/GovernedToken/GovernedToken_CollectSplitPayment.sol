@@ -33,7 +33,7 @@ contract GovernedToken_CollectSplitPayment is Mandate {
         bytes powersSignature;
     }
 
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("address Governed721Address");
         emit Mandate__Deployed(configParams);
     }

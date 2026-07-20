@@ -531,9 +531,12 @@ contract Deploy is DeployHelpers {
             flows.push(PowersTypes.Flow({ mandateIds: ids, nameDescription: "Governance Reform: Stakers propose and adopt new governance mandates." }));
         }
 
-        string[] memory reformParams = new string[](2);
-        reformParams[0] = "address[] Mandates";
-        reformParams[1] = "uint256[] RoleIds";
+        // Adopt_Mandates v0.2.0 takes one full MandateInitData[]. The propose/veto/ratify
+        // steps are matched to the execute step by hashing the *same* mandateCalldata, so this
+        // must mirror the executor exactly or an approved proposal cannot be executed.
+        string[] memory reformParams = new string[](1);
+        reformParams[0] =
+            "(string,address,bytes,(uint256,uint32,uint32,uint32,uint16,uint16,uint8,uint8,uint32))[] mandateInitData";
 
         // Propose reform (Stakers, supermajority).
         mandateCount++;
@@ -560,7 +563,7 @@ contract Deploy is DeployHelpers {
         constitution.push(
             PowersTypes.MandateInitData({
                 nameDescription: "Adopt New Mandates: Execute an approved governance reform by adopting the proposed mandates.",
-                targetMandate: registry.getMandateAddress(MAJOR, MINOR, PATCH, "Adopt_Mandates"),
+                targetMandate: _latestAdoptMandates(),
                 config: abi.encode(),
                 conditions: conditions
             })
@@ -659,5 +662,12 @@ contract Deploy is DeployHelpers {
         delete conditions;
 
         return constitution.length;
+    }
+
+    /// @notice Adopt_Mandates is at version 0.2.0 (full MandateInitData payload), not the
+    /// repo-wide (MAJOR, MINOR, PATCH) pin used for the other mandates.
+    function _latestAdoptMandates() internal view returns (address) {
+        (uint16 major, uint16 minor, uint16 patch) = registry.getLatestVersion("Adopt_Mandates");
+        return registry.getMandateAddress(major, minor, patch, "Adopt_Mandates");
     }
 }

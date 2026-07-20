@@ -17,7 +17,7 @@ contract PowersFactory_AddSafeDelegate is Mandate {
         address decodedAddress;
     }
 
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams =
             abi.encode("uint16 factoryMandateId", "address allowanceModule", "string[] inputParams");
         emit Mandate__Deployed(configParams);

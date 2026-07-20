@@ -31,7 +31,7 @@ contract PeerSelect is Mandate {
     }
 
     /// @notice Constructor for PeerSelect mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("uint8 numberToSelect", "uint256 roleId", "address NomineesContract");
         emit Mandate__Deployed(configParams);
     }

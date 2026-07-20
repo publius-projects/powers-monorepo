@@ -46,7 +46,7 @@ contract PauseMandates is Mandate {
         uint16 newMandateId;
     }
 
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         emit Mandate__Deployed("");
     }
 

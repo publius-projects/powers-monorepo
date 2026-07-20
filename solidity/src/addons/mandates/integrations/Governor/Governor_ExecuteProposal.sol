@@ -27,7 +27,7 @@ contract Governor_ExecuteProposal is Mandate {
     }
 
     /// @notice Constructor for Governor_ExecuteProposal mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("address GovernorContract");
         emit Mandate__Deployed(configParams);
     }

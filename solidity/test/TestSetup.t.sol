@@ -370,8 +370,22 @@ abstract contract TestHelperFunctions is Test, TestVariables {
         }
     }
 
+    /// @notice Resolves a mandate by name at its latest registered version.
+    /// @dev Deliberately not pinned to (MAJOR, MINOR, PATCH): mandates version independently of
+    /// each other (e.g. Adopt_Mandates is at 0.2.0 while most others remain at 0.1.9), so a pinned
+    /// lookup reverts with MandateNotFound the moment any single mandate is bumped.
     function findMandateAddress(string memory name) internal view returns (address) {
-        return registry.getMandateAddress(MAJOR, MINOR, PATCH, name);
+        (uint16 major, uint16 minor, uint16 patch) = registry.getLatestVersion(name);
+        return registry.getMandateAddress(major, minor, patch, name);
+    }
+
+    /// @notice Registers a freshly deployed mandate instance in the shared test `registry` under a
+    /// unique name, so the mandatory onAdopt whitelist check passes on adoption. The mandate must have
+    /// been constructed with `address(registry)` as its MANDATE_REGISTRY. Returns the mandate address.
+    function registerTestMandate(address mandate) internal returns (address) {
+        vm.prank(registry.owner());
+        registry.registerMandate(vm.toString(mandate), mandate, keccak256(abi.encodePacked(mandate)));
+        return mandate;
     }
 
     function findMandateIdInOrg(string memory description, Powers org) public view returns (uint16) {
@@ -776,25 +790,6 @@ abstract contract TestSetupRevokeMandates is BaseSetup {
 
         (PowersTypes.MandateInitData[] memory mandateInitData_) =
             testConstitutions.revokeMandatesTestConstitution(address(daoMock));
-
-        daoMock.constitute(mandateInitData_);
-        daoMock.closeConstitute();
-
-        vm.startPrank(address(daoMock));
-        daoMock.assignRole(ROLE_ONE, alice);
-        daoMock.assignRole(ROLE_ONE, bob);
-        daoMock.assignRole(ROLE_TWO, charlotte);
-        daoMock.assignRole(ROLE_TWO, david);
-        vm.stopPrank();
-    }
-}
-
-abstract contract TestSetupMandatePackageStatic is BaseSetup {
-    function setUpVariables() public override {
-        super.setUpVariables();
-
-        (PowersTypes.MandateInitData[] memory mandateInitData_) =
-            testConstitutions.mandatePackageStaticTestConstitution(address(daoMock));
 
         daoMock.constitute(mandateInitData_);
         daoMock.closeConstitute();

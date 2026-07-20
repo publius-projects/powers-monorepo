@@ -20,7 +20,7 @@ contract BespokeAction_Advanced is Mandate {
     }
 
     /// @notice Constructor of the BespokeAction_Advanced mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode(
             "address TargetContract",
             "bytes4 TargetFunction",

@@ -814,7 +814,8 @@ contract FulfillTest is TestSetupPowers {
 
     function testFulfillRevertsIfMismatchedArrays() public {
         // Adopt a mandate whose handleRequest returns mismatched arrays
-        MismatchedArraysMandate mismatchMandate = new MismatchedArraysMandate();
+        MismatchedArraysMandate mismatchMandate =
+            MismatchedArraysMandate(registerTestMandate(address(new MismatchedArraysMandate(address(registry)))));
         PowersTypes.MandateInitData memory initData = PowersTypes.MandateInitData({
             nameDescription: "Test mismatched: triggers Powers__InvalidCallData",
             targetMandate: address(mismatchMandate),
@@ -831,7 +832,8 @@ contract FulfillTest is TestSetupPowers {
 
     function testFulfillRevertsIfExecutionArrayTooLong() public {
         // Adopt a mandate whose handleRequest returns 26 targets (> MAX_EXECUTIONS_LENGTH=25)
-        TooManyTargetsMandate tooManyMandate = new TooManyTargetsMandate();
+        TooManyTargetsMandate tooManyMandate =
+            TooManyTargetsMandate(registerTestMandate(address(new TooManyTargetsMandate(address(registry)))));
         PowersTypes.MandateInitData memory initData = PowersTypes.MandateInitData({
             nameDescription: "Test too many: triggers Powers__ExecutionArrayTooLong",
             targetMandate: address(tooManyMandate),
@@ -849,7 +851,7 @@ contract FulfillTest is TestSetupPowers {
     function testFulfillRevertsIfCallFailsWithNoData() public {
         // OpenAction passes targets directly to fulfill; AlwaysRevertMock.revertNoData() fails with no returndata
         AlwaysRevertMock revertMock = new AlwaysRevertMock();
-        OpenAction openAction = new OpenAction();
+        OpenAction openAction = OpenAction(registerTestMandate(address(new OpenAction(address(registry)))));
 
         PowersTypes.Conditions memory openConditions;
         openConditions.allowedRole = PUBLIC_ROLE; // anyone can call
@@ -878,7 +880,7 @@ contract FulfillTest is TestSetupPowers {
     function testFulfillBubblesUpRevertData() public {
         // OpenAction passes targets directly to fulfill; AlwaysRevertMock.revertWithData() bubbles up the error
         AlwaysRevertMock revertMock = new AlwaysRevertMock();
-        OpenAction openAction = new OpenAction();
+        OpenAction openAction = OpenAction(registerTestMandate(address(new OpenAction(address(registry)))));
 
         PowersTypes.Conditions memory openConditions;
         openConditions.allowedRole = PUBLIC_ROLE;
@@ -911,7 +913,7 @@ contract FulfillTest is TestSetupPowers {
 contract MandateAdminTest is TestSetupPowers {
     function testAdoptMandateSetsNewMandate() public {
         mandateCounter = daoMock.mandateCounter();
-        newMandate = address(new OpenAction());
+        newMandate = registerTestMandate(address(new OpenAction(address(registry))));
 
         PowersTypes.MandateInitData memory mandateInitData = PowersTypes.MandateInitData({
             nameDescription: "Test mandate: Test mandate description",
@@ -929,7 +931,7 @@ contract MandateAdminTest is TestSetupPowers {
 
     function testAdoptMandateEmitsEvent() public {
         mandateCounter = daoMock.mandateCounter();
-        newMandate = address(new OpenAction());
+        newMandate = registerTestMandate(address(new OpenAction(address(registry))));
 
         PowersTypes.MandateInitData memory mandateInitData = PowersTypes.MandateInitData({
             nameDescription: "Test mandate: Test mandate description",
@@ -945,7 +947,7 @@ contract MandateAdminTest is TestSetupPowers {
     }
 
     function testAdoptMandateRevertsIfNotCalledFromPowers() public {
-        newMandate = address(new OpenAction());
+        newMandate = registerTestMandate(address(new OpenAction(address(registry))));
 
         PowersTypes.MandateInitData memory mandateInitData = PowersTypes.MandateInitData({
             nameDescription: "Test mandate: Test mandate description",
@@ -990,7 +992,7 @@ contract MandateAdminTest is TestSetupPowers {
     }
 
     function testAdoptMandateRevertsWithPublicRoleAndQuorum() public {
-        newMandate = address(new OpenAction());
+        newMandate = registerTestMandate(address(new OpenAction(address(registry))));
 
         PowersTypes.Conditions memory invalidConditions = PowersTypes.Conditions({
             allowedRole: PUBLIC_ROLE,
@@ -1017,7 +1019,7 @@ contract MandateAdminTest is TestSetupPowers {
     }
 
     function testAdoptingSameMandateTwice() public {
-        newMandate = address(new OpenAction());
+        newMandate = registerTestMandate(address(new OpenAction(address(registry))));
 
         vm.prank(alice);
         PowersMock daoMockTest = new PowersMock();

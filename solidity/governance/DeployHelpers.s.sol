@@ -8,9 +8,6 @@ import { console2 } from "forge-std/console2.sol";
 // interfaces
 import { PowersTypes } from "@src/interfaces/PowersTypes.sol";
 
-// mandates
-import { ReformMandate_Static } from "@src/core/mandates/reform/MandatePackage_Static.sol";
-
 contract DeployHelpers is Script {
     address testAccount1 = vm.addr(vm.envUint("TEST_ACCOUNT_KEY_1"));
     address testAccount2 = vm.addr(vm.envUint("TEST_ACCOUNT_KEY_2"));
@@ -92,69 +89,6 @@ contract DeployHelpers is Script {
         for (uint16 i = 0; i < foundCount; i++) {
             flowIndices[i] = tempFlowIndices[i];
             mandateIndices[i] = tempMandateIndices[i];
-        }
-    }
-
-    // this function takes
-    // as param a long list of MandateInitData,
-    // deploys the mandates in ReformMandate_Static of packageSize size using create2
-    // and returns the mandateInitData for those packages.
-    // the packages can then be adopted in Powers but are linked sequentially through needFulfilled conditions.
-    function packageInitData(PowersTypes.MandateInitData[] memory mandateInitData, uint256 packageSize)
-        public
-        returns (PowersTypes.MandateInitData[] memory packages)
-    {
-        require(packageSize > 0, "Package size must be greater than 0");
-
-        uint256 totalMandates = mandateInitData.length;
-        if (totalMandates == 0) {
-            return new PowersTypes.MandateInitData[](0);
-        }
-
-        uint256 packageCount = (totalMandates + packageSize - 1) / packageSize;
-        packages = new PowersTypes.MandateInitData[](packageCount);
-
-        for (uint256 i = 0; i < packageCount; i++) {
-            uint256 start = i * packageSize;
-            uint256 end = start + packageSize;
-            if (end > totalMandates) {
-                end = totalMandates;
-            }
-            uint256 currentPackageSize = end - start;
-
-            // Create sub-array for this package
-            PowersTypes.MandateInitData[] memory batch = new PowersTypes.MandateInitData[](currentPackageSize);
-            for (uint256 j = 0; j < currentPackageSize; j++) {
-                batch[j] = mandateInitData[start + j];
-            }
-
-            // Deploy ReformMandate_Static with the batch
-            bytes memory constructorArgs = abi.encode(batch);
-            bytes32 salt = bytes32(abi.encodePacked(constructorArgs));
-            address deployedAddress = vm.computeCreate2Address(
-                salt,
-                keccak256(abi.encodePacked(type(ReformMandate_Static).creationCode, constructorArgs))
-            );
-
-            if (deployedAddress.code.length == 0) {
-                vm.startBroadcast();
-                new ReformMandate_Static{salt: salt}(batch);
-                vm.stopBroadcast();
-            }
-
-            // Create MandateInitData for the package
-            // Link sequentially using needFulfilled
-            PowersTypes.Conditions memory conditions;
-            if (i >= 0) {
-                conditions.allowedRole = type(uint256).max; // public
-            }
-
-            packages[i] = PowersTypes.MandateInitData({
-                nameDescription: string(abi.encodePacked("Reform Package ", vm.toString(i + 1))),
-                targetMandate: deployedAddress,
-                config: "",
-                conditions: conditions
-            });
         }
     }
 

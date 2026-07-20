@@ -280,7 +280,7 @@ contract ChecksTest is TestSetupPowers {
     //                  EXECUTION WINDOW CHECKS                  //
     //////////////////////////////////////////////////////////////
     function _adoptOpenActionWithExecutionWindow(uint32 maxExecutionDelay) internal returns (uint16 windowMandateId) {
-        OpenAction openAction = new OpenAction();
+        OpenAction openAction = OpenAction(registerTestMandate(address(new OpenAction(address(registry)))));
 
         PowersTypes.Conditions memory execConditions;
         execConditions.allowedRole = ROLE_ONE;

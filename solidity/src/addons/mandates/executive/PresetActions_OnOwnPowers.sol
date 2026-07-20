@@ -26,7 +26,7 @@ contract PresetActions_OnOwnPowers is Mandate {
     }
 
     /// @notice Constructor of the PresetActions mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("bytes[] callDatas[]");
         emit Mandate__Deployed(configParams);
     }

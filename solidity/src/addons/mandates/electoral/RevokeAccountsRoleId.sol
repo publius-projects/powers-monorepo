@@ -20,7 +20,7 @@ contract RevokeAccountsRoleId is Mandate {
     }
 
     /// @notice Constructor for RevokeAccountsRoleId mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("uint256 RoleId", "string[] InputParams");
         emit Mandate__Deployed(configParams);
     }

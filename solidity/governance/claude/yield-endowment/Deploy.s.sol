@@ -466,9 +466,12 @@ contract Deploy is DeployHelpers {
         // Mandate: A single Founding Member proposes a governance reform (no vote required).
         // Any one of the five founders can initiate; the reform carries the list of new
         // mandate addresses and their associated role IDs.
-        string[] memory reformParams = new string[](2);
-        reformParams[0] = "address[] Mandates";
-        reformParams[1] = "uint256[] RoleIds";
+        // Adopt_Mandates v0.2.0 takes one full MandateInitData[]. The propose/veto/ratify
+        // steps are matched to the execute step by hashing the *same* mandateCalldata, so this
+        // must mirror the executor exactly or an approved proposal cannot be executed.
+        string[] memory reformParams = new string[](1);
+        reformParams[0] =
+            "(string,address,bytes,(uint256,uint32,uint32,uint32,uint16,uint16,uint8,uint8,uint32))[] mandateInitData";
 
         mandateCount++;
         conditions.allowedRole = 1; // Any Founding Member can propose
@@ -506,7 +509,7 @@ contract Deploy is DeployHelpers {
         conditions.timelock = minutesToBlocks(15, helperConfig.getBlocksPerHour(block.chainid));
         constitution.push(PowersTypes.MandateInitData({
             nameDescription: "Execute Governance Reform: Adopt the approved new governance mandates after member ratification.",
-            targetMandate: registry.getMandateAddress(MAJOR, MINOR, PATCH, "Adopt_Mandates"),
+            targetMandate: _latestAdoptMandates(),
             config: abi.encode(),
             conditions: conditions
         }));
@@ -643,5 +646,12 @@ contract Deploy is DeployHelpers {
         delete conditions;
 
         return constitution.length;
+    }
+
+    /// @notice Adopt_Mandates is at version 0.2.0 (full MandateInitData payload), not the
+    /// repo-wide (MAJOR, MINOR, PATCH) pin used for the other mandates.
+    function _latestAdoptMandates() internal view returns (address) {
+        (uint16 major, uint16 minor, uint16 patch) = registry.getLatestVersion("Adopt_Mandates");
+        return registry.getMandateAddress(major, minor, patch, "Adopt_Mandates");
     }
 }

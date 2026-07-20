@@ -29,7 +29,7 @@ contract ElectionRegistry_Nominate is Mandate {
     }
 
     /// @notice Constructor for Nominate mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("address ElectionRegistry", "bool shouldNominate");
         emit Mandate__Deployed(configParams);
     }

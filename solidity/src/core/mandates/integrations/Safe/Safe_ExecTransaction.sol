@@ -26,7 +26,7 @@ contract Safe_ExecTransaction is Mandate {
     // abi.encode("address TargetContract", "bytes4 FunctionSelector", "bytes paramsBefore", "string[] Params", "uint16 parentMandateId", "bytes paramsAfter");
 
     /// @notice Exposes the expected input parameters for UIs during deployment.
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("string[] InputParams", "bytes4 FunctionSelector", "address Target");
         emit Mandate__Deployed(configParams);
     }

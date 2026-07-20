@@ -657,9 +657,12 @@ contract Deploy is DeployHelpers {
             }));
         }
 
-        string[] memory reformParams = new string[](2);
-        reformParams[0] = "address[] Mandates";
-        reformParams[1] = "uint256[] RoleIds";
+        // Adopt_Mandates v0.2.0 takes one full MandateInitData[]. The propose/veto/ratify
+        // steps are matched to the execute step by hashing the *same* mandateCalldata, so this
+        // must mirror the executor exactly or an approved proposal cannot be executed.
+        string[] memory reformParams = new string[](1);
+        reformParams[0] =
+            "(string,address,bytes,(uint256,uint32,uint32,uint32,uint16,uint16,uint8,uint8,uint32))[] mandateInitData";
 
         // Step 1: Leaders propose reform (50% quorum, 66% supermajority, 2-week vote)
         mandateCount++;
@@ -704,7 +707,7 @@ contract Deploy is DeployHelpers {
         conditions.timelock = minutesToBlocks(56 * 24 * 60, helperConfig.getBlocksPerHour(block.chainid));
         constitution.push(PowersTypes.MandateInitData({
             nameDescription: "Execute Governance Reform: Adopt new mandates after successful leader proposal and sub-org ratification.",
-            targetMandate: registry.getMandateAddress(MAJOR, MINOR, PATCH, "Adopt_Mandates"),
+            targetMandate: _latestAdoptMandates(),
             config: abi.encode(),
             conditions: conditions
         }));
@@ -754,9 +757,12 @@ contract Deploy is DeployHelpers {
     // _buildParentConstitution() sets subOrgRatifyMandateId and before the factory
     // ownership is transferred to the parent Powers contract.
     function _fixSubOrgRatificationMandate() internal {
-        string[] memory ratifyParams = new string[](2);
-        ratifyParams[0] = "address[] Mandates";
-        ratifyParams[1] = "uint256[] RoleIds";
+        // Adopt_Mandates v0.2.0 takes one full MandateInitData[]. The propose/veto/ratify
+        // steps are matched to the execute step by hashing the *same* mandateCalldata, so this
+        // must mirror the executor exactly or an approved proposal cannot be executed.
+        string[] memory ratifyParams = new string[](1);
+        ratifyParams[0] =
+            "(string,address,bytes,(uint256,uint32,uint32,uint32,uint16,uint16,uint8,uint8,uint32))[] mandateInitData";
 
         // Replicate the exact conditions from _buildSubOrgConstitution() Flow D step 2.
         // proposeRatifyId in the sub-org constitution is always 13 (fixed by the template).
@@ -1042,9 +1048,12 @@ contract Deploy is DeployHelpers {
             }));
         }
 
-        string[] memory ratifyParams = new string[](2);
-        ratifyParams[0] = "address[] Mandates";
-        ratifyParams[1] = "uint256[] RoleIds";
+        // Adopt_Mandates v0.2.0 takes one full MandateInitData[]. The propose/veto/ratify
+        // steps are matched to the execute step by hashing the *same* mandateCalldata, so this
+        // must mirror the executor exactly or an approved proposal cannot be executed.
+        string[] memory ratifyParams = new string[](1);
+        ratifyParams[0] =
+            "(string,address,bytes,(uint256,uint32,uint32,uint32,uint16,uint16,uint8,uint8,uint32))[] mandateInitData";
 
         mandateCount++;
         conditions.allowedRole = 1; // Sub-org Coordinators
@@ -1095,9 +1104,12 @@ contract Deploy is DeployHelpers {
             }));
         }
 
-        string[] memory localReformParams = new string[](2);
-        localReformParams[0] = "address[] Mandates";
-        localReformParams[1] = "uint256[] RoleIds";
+        // Adopt_Mandates v0.2.0 takes one full MandateInitData[]. The propose/veto/ratify
+        // steps are matched to the execute step by hashing the *same* mandateCalldata, so this
+        // must mirror the executor exactly or an approved proposal cannot be executed.
+        string[] memory localReformParams = new string[](1);
+        localReformParams[0] =
+            "(string,address,bytes,(uint256,uint32,uint32,uint32,uint16,uint16,uint8,uint8,uint32))[] mandateInitData";
 
         mandateCount++;
         conditions.allowedRole = 1; // Coordinators propose
@@ -1120,10 +1132,17 @@ contract Deploy is DeployHelpers {
         conditions.timelock = minutesToBlocks(21 * 24 * 60, helperConfig.getBlocksPerHour(block.chainid));
         subOrgConstitution.push(PowersTypes.MandateInitData({
             nameDescription: "Sub-org: Execute Local Reform.  adopt new mandates after a successful coordinator vote.",
-            targetMandate: registry.getMandateAddress(MAJOR, MINOR, PATCH, "Adopt_Mandates"),
+            targetMandate: _latestAdoptMandates(),
             config: abi.encode(),
             conditions: conditions
         }));
         delete conditions;
+    }
+
+    /// @notice Adopt_Mandates is at version 0.2.0 (full MandateInitData payload), not the
+    /// repo-wide (MAJOR, MINOR, PATCH) pin used for the other mandates.
+    function _latestAdoptMandates() internal view returns (address) {
+        (uint16 major, uint16 minor, uint16 patch) = registry.getLatestVersion("Adopt_Mandates");
+        return registry.getMandateAddress(major, minor, patch, "Adopt_Mandates");
     }
 }

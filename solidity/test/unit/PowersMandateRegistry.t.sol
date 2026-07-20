@@ -23,8 +23,8 @@ contract PowersMandateRegistryTest is Test {
 
     function setUp() public {
         registry = new MandateRegistry(address(this));
-        registeredMandate = new OpenAction();
-        unregisteredMandate = new StatementOfIntent(); // deliberately never registered
+        registeredMandate = new OpenAction(address(registry));
+        unregisteredMandate = new StatementOfIntent(address(registry)); // deliberately never registered
 
         registry.registerMandate("OpenAction", address(registeredMandate), keccak256(type(OpenAction).creationCode));
     }
@@ -73,13 +73,14 @@ contract PowersMandateRegistryTest is Test {
         assertEq(mandate, address(registeredMandate));
     }
 
-    function testZeroAddressRegistryAllowsAnyMandate() public {
+    function testZeroAddressRegistryStillEnforcedAtMandateLevel() public {
+        // A zero-address Powers registry disables the Powers-side check, but the mandate itself
+        // enforces registration via onAdopt (strict, no address(0) escape at the mandate level).
+        // The mandate points at the canonical registry where it is unregistered, so adoption reverts.
         Powers powers = _deployPowers(address(0));
-        powers.constitute(_constitutionFor(address(unregisteredMandate)));
 
-        (address mandate,, bool active) = powers.getAdoptedMandate(1);
-        assertEq(mandate, address(unregisteredMandate));
-        assertTrue(active);
+        vm.expectRevert(abi.encodeWithSelector(MandateRegistry.NotRegistered.selector, address(unregisteredMandate)));
+        powers.constitute(_constitutionFor(address(unregisteredMandate)));
     }
 
     // ─── EDGE CASES ──────────────────────────────────────────────────────────

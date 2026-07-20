@@ -26,6 +26,7 @@ pragma solidity ^0.8.26;
 import { IPowers } from "./interfaces/IPowers.sol";
 import { MandateUtilities } from "./libraries/MandateUtilities.sol";
 import { IMandate } from "./interfaces/IMandate.sol";
+import { IMandateRegistry } from "@src/core/helpers/MandateRegistry.sol";
 import { ERC165 } from "@lib/openzeppelin-contracts/contracts/utils/introspection/ERC165.sol";
 import { IERC165 } from "@lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol";
 
@@ -43,6 +44,15 @@ abstract contract Mandate is ERC165, IMandate {
     }
     mapping(bytes32 mandateHash => MandateData) public mandates;
 
+    /// @notice Canonical MandateRegistry this mandate reports adoptions to (whitelist + paid-tier charge).
+    address public immutable MANDATE_REGISTRY;
+
+    /// @param registry_ Canonical MandateRegistry address. Adoption reverts if this mandate is not
+    /// registered/active there; if priced, the adopting org is charged from its prepaid credits.
+    constructor(address registry_) {
+        MANDATE_REGISTRY = registry_;
+    }
+
     //////////////////////////////////////////////////////////////
     //                   LAW EXECUTION                          //
     //////////////////////////////////////////////////////////////
@@ -53,6 +63,9 @@ abstract contract Mandate is ERC165, IMandate {
         bytes memory inputParams,
         bytes memory config
     ) public virtual {
+        // Enforce the whitelist and (if priced) charge the adopting org. msg.sender is the adopting Powers org.
+        IMandateRegistry(MANDATE_REGISTRY).onAdopt(msg.sender);
+
         bytes32 mandateHash = MandateUtilities.hashMandate(msg.sender, index);
         MandateUtilities.checkStringLength(nameDescription, 1, 255);
 
@@ -129,6 +142,19 @@ abstract contract Mandate is ERC165, IMandate {
 
     function version() public pure virtual returns (uint16 major, uint16 minor, uint16 patch) {
         return (0, 1, 9);
+    }
+
+    /// @notice Adoption price in credits. Default 0 (free); override to charge on adoption.
+    /// @dev The registry reads this on adoption and converts credits -> wei via its weiPerCredit rate.
+    ///      Declared view (not pure) so overrides may return a constant or a storage-backed value.
+    function priceInCredits() public view virtual returns (uint256 price) {
+        return 0;
+    }
+
+    /// @notice Developer payees for the paid portion of a priced adoption. Default empty (free mandates).
+    /// @dev Must be non-empty when priceInCredits() > 0, or adoption reverts in the registry.
+    function devs() public view virtual returns (address[] memory payees) {
+        return new address[](0);
     }
 
     // can include here a getMetadata that returns a string uri from the config -- if there is one. This would be useful for frontends to easily retrieve metadata about the mandate.

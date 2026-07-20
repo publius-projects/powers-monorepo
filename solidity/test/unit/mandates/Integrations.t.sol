@@ -99,7 +99,7 @@ contract GovernorIntegrationTest is TestSetupIntegrations {
 
     function test_Governor_CreateProposal_Revert_NotConfigured() public {
         // Create a fresh mandate that is NOT configured
-        Governor_CreateProposal unconfiguredMandate = new Governor_CreateProposal();
+        Governor_CreateProposal unconfiguredMandate = new Governor_CreateProposal(address(registry));
         // Don't initialize it, or initialize with 0 address
 
         uint16 unconfiguredId = 999;

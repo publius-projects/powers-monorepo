@@ -15,7 +15,7 @@ import { MandateUtilities } from "@src/libraries/MandateUtilities.sol";
 
 contract StatementOfIntent is Mandate {
     /// @notice Constructor function for StatementOfIntent mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         // This mandate does not require config; it forwards user-provided calls.
         // Expose expected input parameters for UIs.
         bytes memory configParams = abi.encode("string[] inputParams");

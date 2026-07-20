@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-/// @notice Adopt a set of mandates configured at initialization.
-/// @dev Builds calls to `IPowers.adoptMandate` for each configured mandate. No self-destruction occurs.
+/// @notice Adopt a set of fully configured mandates through governance.
+/// @dev Builds calls to `IPowers.adoptMandate` for each mandate supplied at runtime. The caller
+///      provides complete `MandateInitData` structs, which are passed through unmodified: name,
+///      target, config and conditions are all preserved. This mandate is a transport, not a
+///      policy — what may be adopted is constrained by the conditions on the reform flow that
+///      gates this mandate, not by degrading the payload. No self-destruction occurs.
+///
+///      v0.2.0 — previously the calldata was `(address[] mandates, uint256[] roleIds)` and every
+///      adoption was forced to an empty config, zeroed conditions and the name "Reform mandate",
+///      which made it impossible to adopt any mandate needing configuration or a vote. v0.1.9
+///      remains registered for organisations already wired to the old shape; see
+///      `governance/REFORM_MANDATES.md`.
 ///
 /// @author 7Cedars,
 
@@ -13,7 +23,11 @@ import { IPowers } from "@src/interfaces/IPowers.sol";
 import { PowersTypes } from "@src/interfaces/PowersTypes.sol";
 
 contract Adopt_Mandates is Mandate {
-    constructor() {
+    /// @notice Thrown when the caller supplies an empty mandate array — an adoption that would
+    ///         execute no calls at all.
+    error Adopt_Mandates__NoMandates();
+
+    constructor(address registry_) Mandate(registry_) {
         emit Mandate__Deployed("");
     }
 
@@ -21,14 +35,22 @@ contract Adopt_Mandates is Mandate {
         public
         override
     {
-        string[] memory params = new string[](2);
-        params[0] = "address[] mandates";
-        params[1] = "uint256[] roleIds";
+        string[] memory params = new string[](1);
+        // Full MandateInitData[]: (nameDescription, targetMandate, config, conditions), where
+        // conditions is (allowedRole, votingPeriod, timelock, throttleExecution, needFulfilled,
+        // needNotFulfilled, quorum, succeedAt, maxExecutionDelay).
+        params[0] =
+        "(string,address,bytes,(uint256,uint32,uint32,uint32,uint16,uint16,uint8,uint8,uint32))[] mandateInitData";
         super.initializeMandate(index, nameDescription, abi.encode(params), config);
     }
 
-    /// @notice Build calls to adopt the configured mandates
-    /// @param mandateCalldata Unused for this mandate
+    /// @notice Build calls to adopt the mandates supplied at runtime
+    /// @param mandateCalldata abi-encoded `PowersTypes.MandateInitData[]`
+    /// @dev Each struct is forwarded to `IPowers.adoptMandate` exactly as given. Mandates are
+    ///      adopted in array order, so an entry chaining to an earlier one via `needFulfilled`
+    ///      must reference the id that entry will receive — `mandateCounter` at execution time,
+    ///      plus its index. That prediction is only valid if no other adoption lands between
+    ///      proposal and execution; callers should re-check `mandateCounter` before executing.
     function handleRequest(
         address,
         /*caller*/
@@ -44,24 +66,27 @@ contract Adopt_Mandates is Mandate {
     {
         actionId = MandateUtilities.computeActionId(mandateId, mandateCalldata, nonce);
 
-        (address[] memory mandates_, uint256[] memory roleIds_) = abi.decode(mandateCalldata, (address[], uint256[]));
+        PowersTypes.MandateInitData[] memory mandateInitData =
+            abi.decode(mandateCalldata, (PowersTypes.MandateInitData[]));
 
-        // Create arrays for the calls to adoptMandate
-        uint256 length = mandates_.length;
+        uint256 length = mandateInitData.length;
+        if (length == 0) revert Adopt_Mandates__NoMandates();
+
+        // Powers.fulfill enforces MAX_EXECUTIONS_LENGTH (a per-instance immutable) and reverts
+        // with Powers__ExecutionArrayTooLong, so no length cap is duplicated here.
         (targets, values, calldatas) = MandateUtilities.createEmptyArrays(length);
-        PowersTypes.Conditions memory conditions;
 
         for (uint256 i; i < length; i++) {
-            conditions.allowedRole = roleIds_[i];
-            PowersTypes.MandateInitData memory mandateInitData = PowersTypes.MandateInitData({
-                nameDescription: "Reform mandate",
-                targetMandate: mandates_[i],
-                config: abi.encode(),
-                conditions: conditions
-            });
             targets[i] = powers;
-            calldatas[i] = abi.encodeWithSelector(IPowers.adoptMandate.selector, mandateInitData);
+            calldatas[i] = abi.encodeWithSelector(IPowers.adoptMandate.selector, mandateInitData[i]);
         }
         return (actionId, targets, values, calldatas);
+    }
+
+    /// @notice v0.2.0 — runtime calldata takes full MandateInitData structs.
+    /// @dev Bumped from the inherited (0, 1, 9) so this registers alongside the previous version
+    ///      rather than replacing it; DeployMandates reads the version off the deployed contract.
+    function version() public pure override returns (uint16 major, uint16 minor, uint16 patch) {
+        return (0, 2, 0);
     }
 }

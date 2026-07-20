@@ -31,7 +31,7 @@ contract ElectionRegistry_Vote is Mandate {
     }
 
     /// @notice Constructor for ElectionRegistry_Vote mandate
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams =
             abi.encode("address ElectionRegistryContract", "uint256 maxVotes", "uint256 electionId");
         emit Mandate__Deployed(configParams);

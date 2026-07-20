@@ -22,7 +22,7 @@ contract CheckExternalActionState is Mandate {
     }
 
     /// @notice Constructor
-    constructor() {
+    constructor(address registry_) Mandate(registry_) {
         bytes memory configParams = abi.encode("address parentPowers", "uint16 mandateId", "string[] inputParams");
         emit Mandate__Deployed(configParams);
     }
